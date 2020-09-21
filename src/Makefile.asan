@@ -1,0 +1,28 @@
+#for static analysis, use 
+#scan-build-11 --use-cc=/usr/bin/clang-11 make
+#and setup the compiler as clang
+
+RDRND=-mrdrnd
+
+#debugging
+CC=clang-11
+MUTE=-Wno-padded -Wno-disabled-macro-expansion -Wno-gnu-statement-expression -Wno-bad-function-cast -Wno-missing-braces
+#For general debugging (e.g., with static analyzer)
+
+#standard debug
+#DEBUGCFLAGS=-O2
+#DEBUGLDFLAGS=-lprofiler
+#undefined flag and ASAN
+DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined
+DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
+#For sanitize memory
+#DEBUGCFLAGS=-O1 -fsanitize-memory-track-origins -fsanitize=memory
+#DEBUGLDFLAGS=-fsanitize=memory
+#for thread san
+#DEBUGCFLAGS=-O1 -fsanitize=thread
+#DEBUGLDFLAGS=-fsanitize=thread
+
+CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -O2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -fno-optimize-sibling-calls -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS)
+LDFLAGS=$(DEBUGLDFLAGS)
+
+include Makefile.rules

@@ -1,0 +1,189 @@
+src = $(wildcard *.c)
+obj = $(src:.c=.o)
+dep = $(obj:.o=.d)  # one dependency file for each sourc
+
+BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov generate-precision discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-expand-bitwidth u32-regress-to-mean mementsource double-sort double-merge mean u32-to-categorical double-minmaxdelta
+
+SIMPLEBINS=hex-to-u32 u16-to-sd dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sd u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex
+
+all:	$(BINARIES) $(SIMPLEBINS)
+
+-include $(dep)   # include all dep files in the makefile
+
+# rule to generate a dep file by using the C preprocessor
+# (see man cpp for details on the -MM and -MT options)
+%.d: %.c precision.h
+	@$(CPP) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
+
+sources:	$(src)
+
+style:	$(src:.c=.style-check-stamp)
+
+clean:
+	rm -f *.o *~ *.style-check-stamp *.orig $(BINARIES) $(SIMPLEBINS) precision.h a.out *.d
+
+generate-precision:    generate-precision.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+precision.h:    generate-precision
+	./generate-precision > precision.h
+
+$(SIMPLEBINS):	%: %.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-counter-raw: u32-counter-raw.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u64-counter-raw: u64-counter-raw.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-gcd: u32-gcd.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-bit-permute: u32-bit-permute.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-bit-select: u32-bit-select.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u128-bit-select: u128-bit-select.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u64-counter-endian: u64-counter-endian.o binio.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u64-to-u32: u64-to-u32.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u64-jent-to-delta: u64-jent-to-delta.o binio.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-delta: u32-delta.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-expand-bitwidth: u32-expand-bitwidth.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-counter-bitwidth: u32-counter-bitwidth.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-regress-to-mean: u32-regress-to-mean.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+extractbits: extractbits.o binio.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+discard-fixed-bits: discard-fixed-bits.o binutil.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+u32-discard-fixed-bits: u32-discard-fixed-bits.o binutil.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+u128-discard-fixed-bits: u128-discard-fixed-bits.o binutil.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+bits-in-use: bits-in-use.o binio.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+highbin: highbin.o binio.o red_black_tree.o rbt_misc.o fancymath.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+mementsource: mementsource.o randlib.o SFMT.o fancymath.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+u32-selectdata: u32-selectdata.o binio.o 
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+u32-manbin: u32-manbin.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-selectrange: u32-selectrange.o binio.o 
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-to-sd: u32-to-sd.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-counter-endian: u32-counter-endian.o binio.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+markov: markov.o binio.o entlib.o translate.o fancymath.o poolalloc.o dictionaryTree.o sa.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -ldivsufsort
+
+translate-data: translate-data.o binio.o translate.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+
+u32-translate-data: u32-translate-data.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+
+u32-to-categorical: u32-to-categorical.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+lrs-test: lrs-test.o binio.o translate.o sa.o randlib.o SFMT.o fancymath.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+
+chisquare: chisquare.o binio.o cephes.o fancymath.o translate.o randlib.o SFMT.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+randomfile: randomfile.o randlib.o SFMT.o fancymath.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+simulate-osc: simulate-osc.o randlib.o SFMT.o fancymath.o incbeta.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
+downsample: downsample.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+restart-transpose: restart-transpose.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+double-sort: double-sort.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+double-minmaxdelta: double-minmaxdelta.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+double-merge: double-merge.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+
+#pthreads needing files
+selectbits.o: selectbits.c binio.h translate.h precision.h fancymath.h binutil.h
+	$(CC) -c $(CFLAGS) -pthread -o $@ $<
+
+selectbits: selectbits.o binio.o translate.o entlib.o fancymath.o poolalloc.o dictionaryTree.o sa.o binutil.o incbeta.o
+	$(CC) -pthread -o $@ $^ $(LDFLAGS) -lm -ldivsufsort
+
+permtests.o: permtests.c binio.h precision.h randlib.h SFMT.h translate.h
+	$(CC) -c $(CFLAGS) -pthread -o $@ $<
+
+permtests: permtests.o randlib.o SFMT.o binio.o translate.o fancymath.o incbeta.o
+	$(CC) -pthread -o $@ $^ $(LDFLAGS) -lbz2 -lm
+
+restart-sanity.o: 
+	$(CC) -c $(CFLAGS) -pthread -o $@ $<
+
+restart-sanity: restart-sanity.o binio.o randlib.o SFMT.o incbeta.o translate.o fancymath.o
+	$(CC) -pthread -o $@ $^ $(LDFLAGS) -lm
+
+#openMP needing files
+
+non-iid-main.o: non-iid-main.c
+	$(CC) -c $(CFLAGS) -fopenmp -o $@ $<
+
+bootstrap.o: bootstrap.c bootstrap.h cephes.h fancymath.h randlib.h incbeta.h
+	$(CC) -c $(CFLAGS) -fopenmp -o $@ $<
+
+percentile: percentile.o binio.o cephes.o fancymath.o bootstrap.o randlib.o SFMT.o incbeta.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -fopenmp
+
+mean: mean.o binio.o cephes.o fancymath.o bootstrap.o randlib.o SFMT.o incbeta.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -fopenmp
+
+failrate: failrate.o binio.o cephes.o fancymath.o bootstrap.o randlib.o SFMT.o incbeta.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -fopenmp
+
+non-iid-main: non-iid-main.o binio.o entlib.o fancymath.o sa.o translate.o randlib.o SFMT.o dictionaryTree.o poolalloc.o assessments.o bootstrap.o cephes.o incbeta.o binutil.o
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm -fopenmp
+
+%.style-check-stamp:    %.c
+	clang-format-11 -i $< && touch $@

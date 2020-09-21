@@ -15,17 +15,18 @@ This was written with a fairly modern Linux system running on a somewhat modern 
 
 ## How to run
 
-The tools in this package operate on `statData_t` (a `uint8_t` by default) or on `uint32_t` unless otherwise specified.
+The tools in this package operate on symbols of type `statData_t` (`uint8_t` by default) or on `uint32_t` unless otherwise specified.
 
 One can make all the binaries using:
 
 	make
 
-### The following executable implement portions of the SP 800-90B testing.
+### Executables that Implement Portions of SP 800-90B Testing
+#### `non-iid-main`
 Usage:
-    `non-iid-main [-v] [-s] [-b <bitmask>] [-e <value>] [-l <index>,<samples> ] inputfile`
-    or
-    `non-iid-main [-v] [-s] [-b <bitmask>] [-e <value>] -R <k>,<L> -f`
+	`non-iid-main [-v] [-s] [-b <bitmask>] [-e <value>] [-l <index>,<samples> ] inputfile`
+	or
+	`non-iid-main [-v] [-s] [-b <bitmask>] [-e <value>] -R <k>,<L> -f`
 
 inputfile is presumed to consist of `statData_t` integers in machine format
 * `-v`: Verbose mode (can be used up to 10 times for increased verbosity).
@@ -47,29 +48,29 @@ inputfile is presumed to consist of `statData_t` integers in machine format
 * `-F`: Establish an overall assessment based on bootstrap of final assessments.
 * `-S`: Establish an overall assessment using a large block assessment.
 
-The final assessment is the minimum of the overall assessments.
+	The final assessment is the minimum of the overall assessments.
 
 
-lrs-test
-permtests
-chisquare
-markov
-restart-transpose
-restart-sanity
+#### `restart-transpose`
+Usage:
+	`restart-transpose [-v] [-l <index> ] [-d <samples>,<restarts>] <inputfile>`
 
-### This package contains some utilities that are useful sources of test data.
-randomfile
-simulate-osc
-mementsource
+* `<inputfile>` is assumed to be a sequence of statData_t integers
+* output is sent to stdout
+* `-v`: verbose mode
+* `-l <index>`: Read the `<index>` substring of length `<samples * restarts>`. (default index = 0)
+* `-d <samples>,<restarts>`: Perform the restart testing using the described matrix dimensions. (default is 1000x1000)
 
-### This package contains a number of tools that are used to interpret results.
-percentile
-mean
-failrate
-double-minmaxdelta
-double-merge
+#### `restart-sanity`
+
+#### `permtests`
+
+#### `chisquare`
+
+#### `lrs-test`
 
 ### This package also contains a number of utilities for performing certain styles of data interpretation and processing:
+markov
 selectbits
 highbin
 translate-data
@@ -94,6 +95,18 @@ u128-discard-fixed-bits
 u32-gcd
 u32-manbin
 u32-regress-to-mean
+
+### This package contains some utilities that are useful sources of test data.
+randomfile
+simulate-osc
+mementsource
+
+### This package contains a number of tools that are used to interpret results.
+percentile
+mean
+failrate
+double-minmaxdelta
+double-merge
 
 ### This package also contains a number of utilities for converting data between various formats:
 u64-to-u32

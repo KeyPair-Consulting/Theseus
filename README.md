@@ -130,7 +130,7 @@ Usage:
 
 ### Utilities for Performing Interpretation and Processing
 
-#### selectbits
+#### `selectbits`
 Usage:
 	`selectbits [-l logging dir] [-v] [-t <n>] [-c] <inputfile> <outputBits>`
 * Identify the bit selections that are likely to contain the most entropy, up to `<outputBits>` bits wide.
@@ -140,14 +140,14 @@ Usage:
 * `-v`: verbose mode.
 * `-c`: Conservative mode (use confidence intervals with the Markov estimator).
 
-#### highbin
+#### `highbin`
 Usage:
 	`highbin <inputfile> <outputBits>`
 * Attempts to bin input symbols into `2^<outputBits>` bins with equal numbers of adjacent samples.
 * `<inputfile>` is assumed to be a stream of `uint32_t` ints.
 * output is to stdout, and is `statData_t` ints.
 
-#### translate-data
+#### `translate-data`
 Usage:
 	`translate-data [-v] <inputfile>`
 * Perform an order-preserving map to arrange the input symbols to (0, ..., k-1)
@@ -156,7 +156,7 @@ Usage:
 * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
 * `-n`: No data output. Report number of symbols on stdout.
 
-#### u32-translate-data
+#### `u32-translate-data`
 Usage:
 	`u32-translate-data [-v] <inputfile>`
 * Perform an order-preserving map to arrange the input symbols to (0, ..., k-1)
@@ -165,7 +165,7 @@ Usage:
 * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
 * `-n`: No data output. Report number of symbols on stdout.
 
-#### Markov
+#### `Markov`
 Usage:
 	`markov [-v] [-c] <inputfile>`
 * Run some variant of the SP 800-90B 2016 Markov test.

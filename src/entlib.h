@@ -165,4 +165,5 @@ struct entropyTestingResult {
 
 void printEntropyTestingResult(const struct entropyTestingResult *result);
 void initEntropyTestingResult(const char *label, struct entropyTestingResult *result);
+double shannonEntropyEstimate(const statData_t *S, size_t L, size_t k);
 #endif

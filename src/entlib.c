@@ -227,6 +227,54 @@ void printEntropyTestingResult(const struct entropyTestingResult *result) {
   }
 }
 
+double shannonEntropyEstimate(const statData_t *S, size_t L, size_t k) {
+  double entropy = 0.0;
+  struct compensatedState entropyAccumulator;
+#if STATDATA_BITS <= 8
+  size_t count[256] = {0};
+#else
+  size_t *count;
+#endif
+
+  assert(L > 0);
+  assert(k > 0);
+
+  initCompensatedSum(&entropyAccumulator, "entropyAccumulator", 10);
+
+#if STATDATA_BITS > 8
+  if ((count = calloc(k, sizeof(size_t))) == NULL) {
+    perror("Memory allocation error");
+    exit(EX_OSERR);
+  }
+#else
+  assert(k <= 256);
+#endif
+
+  // Count the symbols
+  for (const statData_t *curdataptr = S; curdataptr < S + L; curdataptr++) {
+    assert((size_t)*curdataptr < k);
+    count[*curdataptr]++;
+  }
+
+  // We could have done this while summarizing the data, but that would result in
+  // L comparisons, whereas this approach uses k comparisons, and k<<L.
+  for (size_t i = 0; i < k; i++) {
+    if (count[i] > 0) {
+      double p = (double)count[i]/(double)L;
+      if(configVerbose > 2) fprintf(stderr, "p[ X = %zu ] = %.17g\n", i, p);
+      compensatedSum(&entropyAccumulator, p * log2(p));
+    }
+  }
+
+ entropy = compensatedSumResult(&entropyAccumulator);
+ delCompensatedSum(&entropyAccumulator);
+#if STATDATA_BITS > 8
+  free(count);
+#endif
+
+  return (-entropy);
+}
+
 /*SP800-90B-final 6.3.1*/
 double mostCommonValueEstimate(const statData_t *S, size_t L, size_t k, struct MCVresult *result) {
   size_t maxCount;

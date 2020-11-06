@@ -6,7 +6,7 @@ RDRND=-mrdrnd
 
 #debugging
 CC=clang-11
-MUTE=-Wno-padded -Wno-disabled-macro-expansion -Wno-gnu-statement-expression -Wno-bad-function-cast -Wno-missing-braces
+MUTE=-Wno-padded -Wno-gnu-statement-expression -Wno-bad-function-cast -Wno-missing-braces
 #For general debugging (e.g., with static analyzer)
 
 #standard debug

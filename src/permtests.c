@@ -23,6 +23,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <inttypes.h>
 #include <stdint.h>
@@ -39,7 +40,8 @@
 
 #define NUMOFOFFSETS 5
 #define PERMROUNDS 10000U
-#define TWOSIDEDERROR PERMROUNDS / 2000
+#define REPORTROUNDS 100U
+#define TWOSIDEDERROR (PERMROUNDS / 2000)
 
 #define EXCURSIONINDEX 0  // 5.1.1
 #define NUMOFDIRRUNSINDEX 1  // 5.1.2
@@ -111,6 +113,15 @@ static sem_t initialTestingFlag;
 
 // The assignment sent to the threads
 static uint32_t nextToDo = 0;
+// Try to keep track of the types of the things that are passing
+#define EXCURSIONTESTS 0x01
+#define DIRRUNTESTS 0x02
+#define RUNSTESTS 0x04
+#define COLLISIONSTESTS 0x08
+#define PERODICITYTESTS 0x10
+#define COMPRESSIONTESTS 0x20
+static uint32_t testsPassed = 0;
+static uint32_t lastReportedPassed = 0;
 
 static uint32_t configK = 2;
 static bool configComplete = false;
@@ -653,7 +664,8 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
     if (configComplete || !localExcursionTestingPassed) {
-      localExcursionTestingPassed = inData->excursionTestingPassed = CHECKPERMRESULT(excursionResults, EXCURSIONINDEX);
+      localExcursionTestingPassed = CHECKPERMRESULT(excursionResults, EXCURSIONINDEX);
+      inData->excursionTestingPassed |= localExcursionTestingPassed;
     }
 #pragma GCC diagnostic pop
 
@@ -662,14 +674,14 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
       localDirRunsTestingPassed = CHECKPERMRESULT(numOfDirRuns, NUMOFDIRRUNSINDEX);
       localDirRunsTestingPassed = CHECKPERMRESULT(longestDirRun, LONGESTDIRRUNINDEX) && localDirRunsTestingPassed;
       localDirRunsTestingPassed = CHECKPERMRESULT(maxChanges, MAXCHANGESINDEX) && localDirRunsTestingPassed;
-      inData->dirRunsTestingPassed = localDirRunsTestingPassed;
+      inData->dirRunsTestingPassed |= localDirRunsTestingPassed;
     }
 
     // 5.1.5, 5.1.6
     if (configComplete || !localRunsTestingPassed) {
       localRunsTestingPassed = CHECKPERMRESULT(numOfRuns, NUMOFRUNSINDEX);
       localRunsTestingPassed = CHECKPERMRESULT(longestRun, LONGESTRUNINDEX) && localRunsTestingPassed;
-      inData->runsTestingPassed = localRunsTestingPassed;
+      inData->runsTestingPassed |= localRunsTestingPassed;
     }
 
     // 5.1.7, 5.1.8
@@ -678,7 +690,7 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
     if (configComplete || !localCollisionTestingPassed) {
       localCollisionTestingPassed = CHECKPERMRESULT(meanCollisionDist, MEANCOLLISIONDISTINDEX);
       localCollisionTestingPassed = CHECKPERMRESULT(longestCollisionDist, LONGESTCOLLISIONDISTINDEX) && localCollisionTestingPassed;
-      inData->collisionTestingPassed = localCollisionTestingPassed;
+      inData->collisionTestingPassed |= localCollisionTestingPassed;
     }
 #pragma GCC diagnostic pop
 
@@ -689,12 +701,13 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
         localPeriodicityTestingPassed = CHECKPERMRESULT(periodicity[j], PERIODICITYINDEX + j) && localPeriodicityTestingPassed;
         localPeriodicityTestingPassed = CHECKPERMRESULT(covariance[j], COVARIANCEINDEX + j) && localPeriodicityTestingPassed;
       }
-      inData->periodicityTestingPassed = localPeriodicityTestingPassed;
+      inData->periodicityTestingPassed |= localPeriodicityTestingPassed;
     }
 
     // 5.1.11
     if (configComplete || !localCompressionTestingPassed) {
-      localCompressionTestingPassed = inData->compressionTestingPassed = CHECKPERMRESULT(compressionResults, COMPRESSIONINDEX);
+      localCompressionTestingPassed = CHECKPERMRESULT(compressionResults, COMPRESSIONINDEX);
+      inData->compressionTestingPassed |= localCompressionTestingPassed;
     }
 
     canShortCircuit = localExcursionTestingPassed && localDirRunsTestingPassed && localRunsTestingPassed && localCollisionTestingPassed && localPeriodicityTestingPassed && localCompressionTestingPassed;
@@ -703,8 +716,16 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
       inData->finishedCycle = curState->index;
     }
 
+    if(inData->excursionTestingPassed) testsPassed |= EXCURSIONTESTS;
+    if(inData->dirRunsTestingPassed) testsPassed |= DIRRUNTESTS;
+    if(inData->runsTestingPassed) testsPassed |= RUNSTESTS;
+    if(inData->collisionTestingPassed) testsPassed |= COLLISIONSTESTS;
+    if(inData->periodicityTestingPassed) testsPassed |= PERODICITYTESTS;
+    if(inData->compressionTestingPassed) testsPassed |= COMPRESSIONTESTS;
+
+
     if (pthread_mutex_unlock(&(inData->resultsMutex)) != 0) {
-      perror("Can't lock resultsMutex");
+      perror("Can't unlock resultsMutex");
       pthread_exit(NULL);
     }
 
@@ -719,7 +740,7 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
 
 static void printResults(FILE *outfp, struct permResults *results) {
   uint32_t i;
-
+/*
   struct permResults {
     double excursionResults;  // 5.1.1
     int64_t numOfDirRuns;  // 5.1.2
@@ -732,7 +753,7 @@ static void printResults(FILE *outfp, struct permResults *results) {
     int64_t periodicity[NUMOFOFFSETS];  // 5.1.9
     int64_t covariance[NUMOFOFFSETS];  // 5.1.10
     int64_t compressionResults;  // 5.1.11
-  };
+  };*/
 
   if (results->excursionResults >= 0) fprintf(outfp, "\t Max excursion: %.17g\n", results->excursionResults);
   if (results->numOfDirRuns >= 0) fprintf(outfp, "\t Number of directional runs: %" PRId64 "\n", results->numOfDirRuns);
@@ -852,8 +873,21 @@ static uint32_t getassignment(void) {
     nextToDo++;
 
     // do the print within the mutex protected area to order the outputs
-    if (configVerbose > 1) {
-      fprintf(stderr, "Assigned Round: %u / %u\n", assignment, PERMROUNDS);
+    if ((configVerbose > 1) || ((configVerbose == 1) && (((assignment % REPORTROUNDS)==0) || (testsPassed != lastReportedPassed)))) {
+      lastReportedPassed = testsPassed;
+      fprintf(stderr, "%jd Assigned Round: %u / %u.", (intmax_t)time(NULL), assignment, PERMROUNDS);
+      if(testsPassed == 0x00) {
+        fprintf(stderr, " No tests passed.\n");
+      } else {
+        fprintf(stderr, " Finished tests: ");
+        if(testsPassed & EXCURSIONTESTS) fprintf(stderr, "Excursion ");
+        if(testsPassed & DIRRUNTESTS) fprintf(stderr, "DirectedRuns ");
+        if(testsPassed & RUNSTESTS) fprintf(stderr, "Runs ");
+        if(testsPassed & COLLISIONSTESTS) fprintf(stderr, "Collision ");
+        if(testsPassed & PERODICITYTESTS) fprintf(stderr, "Perodicity ");
+        if(testsPassed & COMPRESSIONTESTS) fprintf(stderr, "Compression ");
+        fprintf(stderr, "\n");
+      }
     }
   }
 

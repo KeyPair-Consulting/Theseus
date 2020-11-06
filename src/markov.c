@@ -25,7 +25,7 @@
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "markov [-v] [-c] <inputfile>\n");
+  fprintf(stderr, "markov [-v] [-c] [-p <cutoff>] <inputfile>\n");
   fprintf(stderr, "Run some variant of the SP 800-90B 2016 Markov test.\n");
   fprintf(stderr, "inputfile is presumed to be a stream of " STATDATA_STRING "s\n");
   fprintf(stderr, "-v\tVerbose mode (can be used several times for increased verbosity).\n");

@@ -83,4 +83,5 @@ void FYShuffle(double *indata, size_t datalen, struct randstate *rstate);
 statData_t ringOscillatorNextDeterministicSample(double oscFreq, double oscPhase, double sampleFreq, double samplePhase);
 statData_t ringOscillatorNextNonDeterministicSample(double oscFreq, double oscJitter, double *relOscPhase, double sampleFreq, double *relSamplePhase, struct randstate *rstate);
 void randomBits(statData_t *data, size_t datalen, struct randstate *rstate);
+uint8_t genRandBit(double p, struct randstate *rstate);
 #endif

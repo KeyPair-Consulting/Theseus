@@ -546,6 +546,11 @@ uint32_t SUMSgenerate(struct SUMSstate *sstate, struct randstate *rstate) {
   return (sstate->lastOutput);
 }
 
+/*The probability of outputting a 1 is p.*/
+uint8_t genRandBit(double p, struct randstate *rstate) {
+  return (randomUnit(rstate) < p)?1U:0U;
+}
+
 uint32_t genRandCorrelatedBit(double c, uint32_t lastbit, struct randstate *rstate) {
   if (randomUnit(rstate) < (c + 1.0) / 2.0)
     return lastbit;

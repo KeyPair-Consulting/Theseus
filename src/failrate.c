@@ -17,7 +17,6 @@
 #include <stdnoreturn.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <x86intrin.h>
 
 #include "binio.h"
 #include "bootstrap.h"

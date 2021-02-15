@@ -29,6 +29,15 @@
 
 #define BIRTHDAYBOUNDEXP 10
 // The binomial cutoff is the maximum probability that we can tolerate that there are not suitably extremal values.
+// As a reference, if you want there to be:
+//    * less than a 50% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 934 data samples.
+//    * less than a 5% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 1829 data samples.
+//    * less than a 1% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 2318 data samples.
+//    * less than a 0.01% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 3550 data samples.
+//    * less than a 50% likelihood of of there being 0 values above the 99.5 percentile, you need 139 data samples.
+//    * less than a 5% likelihood of of there being 4 or fewer values above the 50th percentile, you need 21 data samples.
+//    * less than a 1% likelihood of of there being 4 or fewer values above the 50th percentile, you need 24 data samples.
+//    * less than a 0.01% likelihood of of there being 4 or fewer values above the 50th percentile, you need 28 data samples.
 #define BINOMIALCUTOFF 0.5
 #define SMALLEST_SIGNIFICANT 5LU
 // Guidance for "at least 30 data elements" comes from Chernick's "Bootstrap Methods".
@@ -442,27 +451,39 @@ double BCaBootstrapPercentile(double p, double *data, size_t datalen, double val
   //    * do we have at least a 1-BINOMIALCUTOFF likelihood of seeing at least 1 value more extreme than the requested proportion?
   //    * do we have at least a 1-BINOMIALCUTOFF likelihood of seeing at least SMALLEST_SIGNIFICANT value more extreme than the requested proportion?
   // We use the binomial distribution to determine if this is so.
-  // As a reference, if you want there to be:
-  //    * less than a 50% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 934 data samples.
-  //    * less than a 5% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 1829 data samples.
-  //    * less than a 1% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 2318 data samples.
-  //    * less than a 0.01% likelihood of there being 4 or fewer values above the 99.5 percentile, you need 3550 data samples.
-  //    * less than a 50% likelihood of of there being 0 values above the 99.5 percentile, you need 139 data samples.
-  //    * less than a 5% likelihood of of there being 4 or fewer values above the 50th percentile, you need 21 data samples.
-  //    * less than a 1% likelihood of of there being 4 or fewer values above the 50th percentile, you need 24 data samples.
-  //    * less than a 0.01% likelihood of of there being 4 or fewer values above the 50th percentile, you need 28 data samples.
   {
     double moreExtremeProp = fmin(p, 1.0 - p);
     double bound;
 
     // bound is the probability of fewer than SMALLEST_SIGNIFICANT extremal elements
     bound = binomialCDF(SMALLEST_SIGNIFICANT - 1, datalen, moreExtremeProp);
-    if (configVerbose > 1) fprintf(stderr, "Probability of there being fewer than %zu samples more extreme than the sought percentile in a set of %zu samples = %.17g\n", SMALLEST_SIGNIFICANT, datalen, bound);
+    
+    if(fetestexcept(FE_UNDERFLOW) != 0) {
+      if(configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data is likely meaningful.\n");
+      if(bound <= DBL_MIN) bound = 0.0;
+      feclearexcept(FE_UNDERFLOW);
+    } 
+
+    if(configVerbose > 1) {
+      if(bound < DBL_MIN) {
+        fprintf(stderr, "There is essentially no chance that this data will not include suitable extremal values.\n");
+      } else {
+        fprintf(stderr, "Probability of there being fewer than %zu samples more extreme than the sought percentile in a set of %zu samples = %.17g\n", SMALLEST_SIGNIFICANT, datalen, bound);
+      }
+    }
+
     if (bound > BINOMIALCUTOFF) {
       // We don't have enough for the normal process... Check to see if the percentile likely makes sense...
       // bound is the probability of there being 0 extremal elements
       bound = binomialCDF(0LU, datalen, moreExtremeProp);
+      if(fetestexcept(FE_UNDERFLOW) != 0) {
+        if(configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data could be meaningful.\n");
+        if(bound <= DBL_MIN) bound = 0.0;
+        feclearexcept(FE_UNDERFLOW);
+      } 
+
       if (configVerbose > 1) fprintf(stderr, "Probability of there being no samples more extreme than the sought percentile in a set of %zu samples = %.17g\n", datalen, bound);
+
       if (bound > BINOMIALCUTOFF) {
         // We don't have enough for any meaningful process
         fprintf(stderr, "There is a significant chance that the data set doesn't contain any data more extremal than the requested percentile. Returning only the extremal data value.\n");

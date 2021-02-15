@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
   struct entropyTestingResult *rawResults;
   struct entropyTestingResult *binaryResults;
   bool configBootstrapAssessments;
-  bool configRandomNu;
+  bool configFixedRandomNu;
   double indouble;
   size_t bitBlockSize;
   size_t startIndex;
@@ -288,7 +288,7 @@ int main(int argc, char *argv[]) {
   configBootstrapParams = false;
   configLargeBlockAssessment = false;
   configBootstrapAssessments = false;
-  configRandomNu = false;
+  configFixedRandomNu = false;
 
   initGenerator(&rstate);
 
@@ -335,7 +335,7 @@ int main(int argc, char *argv[]) {
         configTestBitmask = (uint32_t)inint;
         break;
       case 'f':
-        configRandomNu = true;
+        configFixedRandomNu = true;
         break;
       case 'g':
         configLittleEndian = true;
@@ -479,7 +479,11 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  if (configRandomNu) {
+  //There are two ways for Nu to vary, if it is random.
+  //If configRONu < 0, then this Nu value is generated randomly.
+  //If configFixedRandomNu is true, then we want it to be a fixed randomly selected value (fixed for any number of generation blocks and rounds for a single invocatation of this program).
+  //If configFixedRandomNu is false, then Nu is reset for each generation Block.
+  if (configFixedRandomNu) {
     if (!configRingOscillator) {
       fprintf(stderr, "Can only use random nu values when ring oscillator generation is selected.\n");
       useageExit();
@@ -610,7 +614,7 @@ int main(int argc, char *argv[]) {
   bitBlockSize = evaluationBlockSize * bitWidth;
 
   if (configEval != bitstring) {
-    if ((rawResults = malloc(sizeof(struct entropyTestingResult) * (configRandomRounds * blockCount + 1))) == NULL) {
+    if ((rawResults = calloc(configRandomRounds * blockCount + 1, sizeof(struct entropyTestingResult))) == NULL) {
       perror("Can't allocate buffer for raw results");
       exit(EX_OSERR);
     }
@@ -619,7 +623,9 @@ int main(int argc, char *argv[]) {
   }
 
   if (configEval != raw) {
-    if ((binaryResults = malloc(sizeof(struct entropyTestingResult) * (configRandomRounds * blockCount + 1))) == NULL) {
+    //Note that, in non-raw modes, non-binary data is still evaluated as binary data (to calculate H_bitstring). 
+    // For consistency with the NIST tools, we evaluate the same number of blocks of data, but the size of the block is multiplied by (floor(log(k-1))+1)
+    if ((binaryResults = calloc(configRandomRounds * blockCount + 1, sizeof(struct entropyTestingResult))) == NULL) {
       perror("Can't allocate buffer for binary results");
       exit(EX_OSERR);
     }
@@ -640,16 +646,21 @@ int main(int argc, char *argv[]) {
 
       if (configRingOscillator) {
         double oscFreq = 1000000000;  // Reference RO design is 1GHz
-        double sampleFreq = oscFreq / (1000.0 + configRONu);  // Reference RO design is sampled near 1MHz.
-        double oscJitter = (1.0 / oscFreq) * (configJitterPercentage / 100.0);  // Jitter was entered as a percentage.
+        double oscJitter = (1.0 / oscFreq) * (configJitterPercentage / 100.0);  // Jitter was entered as a percentage per-RO-period.
+
 
         assert(oscJitter <= 1 / oscFreq);
 
         if (configVerbose > 0) {
           if (i == 0) {
             fprintf(stderr, "oscFreq: %.17g\n", oscFreq);
+            fprintf(stderr, "Per-sample osc jitter percentage: %.17g\n", configJitterPercentage*sqrt(1000.0));
             fprintf(stderr, "oscJitter: %.17g\n", oscJitter);
-            if (configRONu >= 0.0) fprintf(stderr, "sampleFreq: %.17g\n", sampleFreq);
+            if (configRONu >= 0.0) {
+              fprintf(stderr, "sampleFreq: %.17g\n", oscFreq / (1000.0 + configRONu));
+            } else {
+              fprintf(stderr, "sampleFreq in the interval [%.17g, %.17g]\n", oscFreq / (1000.25), oscFreq / (1000.0));
+            }
           }
           fprintf(stderr, "%lu Generate %zu bits from a simulated ring oscillator for round %zu.", time(NULL), configRandDataSize, i + 1);
         }
@@ -666,18 +677,21 @@ int main(int argc, char *argv[]) {
           // We thread across generationBlocks, so configRandDataSize should be made large to allow for multithreading speedups.
 #pragma omp for
           for (size_t l = 0; l < generationBlocks; l++) {
+            double localSampleFreq;
             // Each generationBlock reflects data used in a different evaluation.
             oscPhase = randomUnit(&threadrstate);  // Initial phase is random
             if (configRONu < 0.0) {  // if Nu < 0, then we're supposed to randomly vary it randomly.
               double randNu;
               // For modeling, we want the entire phase space [0,.25) explored.
               // Note that divide by 4 only changes the exponent!
-              randNu = randomUnit(&threadrstate) / 4;
-              sampleFreq = oscFreq / (1000.0 + randNu);
+              randNu = randomUnit(&threadrstate) / 4.0;
+              localSampleFreq = oscFreq / (1000.0 + randNu); // Reference RO design is sampled near 1MHz.
+            } else {
+              localSampleFreq = oscFreq / (1000.0 + configRONu);  // Reference RO design is sampled near 1MHz.
             }
 
             for (size_t j = 0; j < evaluationBlockSize; j++) {
-              data[l * evaluationBlockSize + j] = ringOscillatorNextNonDeterministicSample(oscFreq, oscJitter, &oscPhase, sampleFreq, &samplePhase, &threadrstate);
+              data[l * evaluationBlockSize + j] = ringOscillatorNextNonDeterministicSample(oscFreq, oscJitter, &oscPhase, localSampleFreq, &samplePhase, &threadrstate);
             }
           }
         }

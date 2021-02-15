@@ -155,4 +155,5 @@ bool combinationsGreaterThanBound(uint64_t n, uint64_t k, uint64_t bound);
 uint64_t selectionsForBirthdayCollisionBound(size_t n, uint32_t bExp);
 double binomialCDF(size_t k, size_t n, double p);
 int doublecompare(const void *in1, const void *in2);
+double monotonicBinarySearch(double (*fval)(double, const size_t *), double ldomain, double hdomain, double target, const size_t *params, bool decreasing);
 #endif

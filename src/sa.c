@@ -165,7 +165,7 @@ static int SAcmp(const void *o1, const void *o2) {
 void calcSALCP(const statData_t *inData, size_t n, size_t k, SAINDEX *SA, SAINDEX *LCP) {
   size_t j;
   int32_t res;
-#if STATDATA_MAX > 256
+#if STATDATA_MAX >= 256
   uint8_t *smallData;
 #endif
 
@@ -198,7 +198,7 @@ void calcSALCP(const statData_t *inData, size_t n, size_t k, SAINDEX *SA, SAINDE
       fprintf(stderr, "Calculate fancy suffix array: ");
     }
 
-#if STATDATA_MAX > 256
+#if STATDATA_MAX >= 256
     if ((smallData = (uint8_t *)malloc((n) * sizeof(uint8_t))) == NULL) {
       perror("Can't allocate smaller array");
       exit(EX_OSERR);

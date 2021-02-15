@@ -7,12 +7,13 @@
  * Joshua E. Hill, UL VS LLC.
  * Joshua E. Hill, KeyPair Consulting, Inc.  <josh@keypair.us>
  */
-#include <cpuid.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
+#if defined(__x86_64) || defined(__x86_64__)
+#include <cpuid.h>
 #ifndef bit_SSE4_2
 #define bit_SSE4_2 (1 << 20)
 #endif
@@ -20,13 +21,17 @@
 #ifndef bit_BMI2
 #define bit_BMI2 (1 << 20)
 #endif
+#endif
 
 int main(void) {
+#if defined(__x86_64) || defined(__x86_64__)
   uint32_t eax = 0;
   uint32_t ebx = 0;
   uint32_t ecx = 0;
   uint32_t edx = 0;
   uint32_t ids = 0;
+#endif
+
   printf("#ifndef PRECISION_H\n");
   printf("#define PRECISION_H\n");
 #if __GNUC__ > 4
@@ -45,6 +50,7 @@ int main(void) {
   printf("#define PRECISION(umax_value) __builtin_popcountll(umax_value)\n");
 #endif
 
+#if defined(__x86_64) || defined(__x86_64__)
   __get_cpuid(0, &eax, &ebx, &ecx, &edx);
   ids = eax;
 
@@ -79,6 +85,7 @@ int main(void) {
       printf("#define BMI2\n");
     }
   }
+#endif
 
   printf("\n");
   printf("#endif\n");

@@ -24,7 +24,7 @@
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "blocks-to-sd [-l] <blocksize> <ordering>\n");
-  fprintf(stderr, "Extract bits from a blocksize-sized block a byte at a time, in the specified ordering.\n");
+  fprintf(stderr, "Extract bits from a blocksize-sized block a byte at a time, in the specified byte ordering.\n");
   fprintf(stderr, "blocksize \t is the number of bytes per block\n");
   fprintf(stderr, "ordering \t is the indexing order for bytes (zero indexed decimal, separated by colons)\n");
   fprintf(stderr, "-l\t Extract bits from least to most significant within each byte.\n");
@@ -36,22 +36,17 @@ noreturn static void useageExit(void) {
   exit(EX_USAGE);
 }
 
-static size_t strtosize(const char *nptr, char **endptr, size_t lrange, size_t hrange) {
+static int strtoint(const char *nptr, char **endptr, int lrange, int hrange) {
   long int inint;
-  size_t out;
+  int out;
 
   inint = strtol(nptr, endptr, 0);
-  if ((errno == ERANGE) && ((inint == LONG_MIN) || (inint == LONG_MAX))) {
+  if ((errno == ERANGE) && ((inint < INT_MIN) || (inint > INT_MAX))) {
     fprintf(stderr, "Can't convert integer: out of long integer range\n");
     exit(EX_USAGE);
   }
 
-  if (inint < 0) {
-    fprintf(stderr, "Can't convert integer: negative value\n");
-    exit(EX_USAGE);
-  }
-
-  out = (size_t)inint;
+  out = (int)inint;
 
   if ((out < lrange) || (out > hrange)) {
     fprintf(stderr, "Integer out of range\n");
@@ -64,13 +59,12 @@ static size_t strtosize(const char *nptr, char **endptr, size_t lrange, size_t h
 int main(int argc, char *argv[]) {
   statData_t outdata;
   uint8_t bitmask;
-  size_t curByteIndex;
-  size_t j, k;
+  int curByteIndex;
   size_t outputBytesPerBlock;
   bool configLTH;
   size_t blockSize;
   char *buffer;
-  size_t *order;
+  int *order;
   char *curStrLoc;
   char *nextStrLoc;
   bool foundCurrent;
@@ -95,7 +89,7 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  blockSize = strtosize(argv[0], NULL, 0, SIZE_MAX);
+  blockSize = (size_t) strtoint(argv[0], NULL, 1, INT_MAX);
   fprintf(stderr, "%zu-byte block\n", blockSize);
   if (blockSize == 0) {
     useageExit();
@@ -106,10 +100,12 @@ int main(int argc, char *argv[]) {
     exit(EX_OSERR);
   }
 
-  if ((order = malloc(sizeof(size_t) * blockSize)) == NULL) {
+  if ((order = malloc(sizeof(int) * blockSize)) == NULL) {
     perror("Can't allocate block order array");
     exit(EX_OSERR);
   }
+
+  for(size_t j=0; j<blockSize; j++) order[j]=-1;
 
   outputBytesPerBlock = 0;
 
@@ -117,10 +113,9 @@ int main(int argc, char *argv[]) {
   curStrLoc = argv[1];
 
   while (*curStrLoc != '\0') {
-    curByteIndex = strtosize(curStrLoc, &nextStrLoc, (size_t)0U, blockSize - 1);
+    curByteIndex = strtoint(curStrLoc, &nextStrLoc, 0, (int)blockSize - 1);
     if (curStrLoc != nextStrLoc) {
-      order[outputBytesPerBlock] = curByteIndex;
-      outputBytesPerBlock++;
+      order[outputBytesPerBlock++] = curByteIndex;
     } else {
       useageExit();
     }
@@ -132,10 +127,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  for (k = 0; k < blockSize; k++) {
+  for (size_t k = 0; k < blockSize; k++) {
     foundCurrent = false;
-    for (j = 0; j < outputBytesPerBlock; j++) {
-      if (order[j] == k) {
+    for (size_t j = 0; j < outputBytesPerBlock; j++) {
+      assert((order[j] >= 0) && (order[j]<(int)blockSize));
+      if (order[j] == (int)k) {
         if (foundCurrent) {
           fprintf(stderr, "Error: Can't reference the same byte more than once\n");
           exit(EX_USAGE);
@@ -151,15 +147,16 @@ int main(int argc, char *argv[]) {
 
   while (feof(stdin) == 0) {
     if (fread(buffer, blockSize, 1, stdin) == 1) {
-      for (k = 0; k < outputBytesPerBlock; k++) {
+      for (size_t k = 0; k < outputBytesPerBlock; k++) {
+        statData_t curByte = (statData_t)buffer[order[k]];
         if (configLTH) {
           bitmask = (uint8_t)0x01;
         } else {
           bitmask = (uint8_t)0x80;
         }
 
-        for (j = 0; j < 8; j++) {
-          outdata = (statData_t)(((buffer[k] & bitmask) == 0) ? 0U : 1U);
+        for (size_t j = 0; j < 8; j++) {
+          outdata = (statData_t)(((curByte & bitmask) == 0) ? 0U : 1U);
           if (fwrite(&outdata, sizeof(statData_t), 1, stdout) != 1) {
             perror("Can't write to output");
             exit(EX_OSERR);

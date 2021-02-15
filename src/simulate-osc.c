@@ -191,10 +191,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (configVerbose > 0) {
+    double integerPart, fractionalPart;
     fprintf(stderr, "oscFreq: %.17g\n", oscFreq);
     fprintf(stderr, "oscJitter: %.17g\n", oscJitter);
     fprintf(stderr, "sampleFreq: %.17g\n", sampleFreq);
     fprintf(stderr, "Initial Phase: %.17g\n", oscPhase);
+    fractionalPart=modf(oscFreq/sampleFreq, &integerPart);
+    fprintf(stderr, "Complete RO cycles per sample: %.17g, Nu: %.17g\n", integerPart, fractionalPart);
+    fprintf(stderr, "Normalized per-sample oscillator jitter: %.17g\n", oscJitter*oscFreq*sqrt(integerPart));
   }
 
   if ((data = malloc(sizeof(statData_t) * dataSample)) == NULL) {

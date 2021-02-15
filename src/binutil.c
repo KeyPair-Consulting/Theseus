@@ -14,7 +14,10 @@
 #include <stdlib.h>
 #include <sysexits.h>
 #include <unistd.h>
+
+#if defined(__x86_64) || defined(__x86_64__)
 #include <x86intrin.h>
+#endif
 
 #include "binutil.h"
 #include "entlib.h"

@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <sysexits.h>
-#include <x86intrin.h>
 
 #include "precision.h"
 

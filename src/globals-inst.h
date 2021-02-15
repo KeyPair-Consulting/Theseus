@@ -20,7 +20,7 @@ int configVerbose = 0;
 bool configBootstrapParams = false;
 size_t configThreadCount = 0;
 double globalErrors[ERRORSLOTS] = {-1.0};
-char errorLabels[ERRORSLOTS][LABELLEN] = {'\0'};
+char errorLabels[ERRORSLOTS][LABELLEN] = {0};
 
 double configBootstrapConfidence = 0.99;
 size_t configBootstrapRounds = 15000;

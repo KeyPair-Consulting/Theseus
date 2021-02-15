@@ -15,9 +15,12 @@
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <x86intrin.h>
 #include <errno.h>
 #include <math.h>
+
+#if defined(__x86_64) || defined(__x86_64__)
+#include <x86intrin.h>
+#endif
 
 #include "binio.h"
 #include "entlib.h"
@@ -285,4 +288,61 @@ size_t readasciidoubles(FILE *input, double **buffer) {
   }
 
   return readdoubles;
+}
+
+size_t readasciidoublepoints(FILE *input, double **buffer) {
+  double *newbuffer;
+  long int scdata;
+  size_t curbuflen = 0;
+  size_t pagesize;
+  size_t readdoubles = 0;
+  char curline[4096];
+  char *curloc;
+  double indouble;
+  char *afterDouble;
+
+  assert(buffer != NULL);
+
+  scdata = sysconf(_SC_PAGESIZE);
+  assert(scdata > 0);
+  pagesize = (size_t)scdata;
+
+  while (feof(input) == 0) {
+    if (((readdoubles + 2) * sizeof(double)) > curbuflen) {
+      if ((newbuffer = realloc(*buffer, curbuflen + pagesize)) == NULL) {
+        perror("Cannot allocate new memory block");
+        exit(EX_OSERR);
+      } else {
+        *buffer = newbuffer;
+        curbuflen += pagesize;
+      }
+    }
+
+    if (fgets(curline, sizeof(curline), input) != NULL) {
+      curloc = curline;
+      if((*curloc == '(') || (*curloc == '[') || (*curloc == '{')) curloc++;
+      indouble = strtod(curloc, &afterDouble);
+      if ((*afterDouble != ',') || (errno == ERANGE)) {
+        fprintf(stderr, "First place data error\n");
+        exit(EX_DATAERR);
+      }
+      (*buffer)[readdoubles++] = indouble;
+
+      curloc = afterDouble+1;
+      indouble = strtod(curloc, &afterDouble);
+
+      if (((*afterDouble != '\r') && (*afterDouble != '\n') && (*afterDouble != '\0') && (*afterDouble != ')') && (*afterDouble != ']') && (*afterDouble != '}')) || (errno == ERANGE) || !isfinite(indouble)) {
+        fprintf(stderr, "Second place data error: \"%c\"\n", *afterDouble);
+        exit(EX_DATAERR);
+      }
+      (*buffer)[readdoubles++] = indouble;
+    }
+
+    if (ferror(input) != 0) {
+      perror("Error reading input file");
+      exit(EX_OSERR);
+    }
+  }
+
+  return readdoubles/2;
 }

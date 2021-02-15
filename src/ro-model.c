@@ -249,10 +249,12 @@ static long double SaarinenModel(long double sigma) {
 
   /*Now do the central part of the sum, starting at the outside, and heading to the middle.*/
   for(int j=cutoff-1; j > 0; j--) {
+    long double summand;
+
     //calculate b_{j}
     //Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
     b_j = ((long double)j)*sigmaTermInv;
-    long double summand = SaarinenSummand(b_j, sigmaTermInv);
+    summand = SaarinenSummand(b_j, sigmaTermInv);
 
     if(summand >= LDBL_MIN) {
       sum += 2.0L*summand;

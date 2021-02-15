@@ -20,4 +20,5 @@ size_t readuintfileloc(FILE *input, statData_t **buffer, size_t subsetIndex, siz
 size_t readdoublefile(FILE *input, double **buffer);
 size_t readasciidoubles(FILE *input, double **buffer);
 void mergeSortedLists(const double *in1, size_t len1, const double *in2, size_t len2, double *out);
+size_t readasciidoublepoints(FILE *input, double **buffer);
 #endif

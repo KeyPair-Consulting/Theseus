@@ -26,13 +26,12 @@
 
 #define PIL 3.141592653589793238463L
 
-/*Takes doubles from stdin and gives the mean*/
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "ro-model [-v] [-J] [-g gaussian-prop] <sigma>\n");
   fprintf(stderr, "Produce a min entropy estimate using the selected stochastic model.\n");
   fprintf(stderr, "-v\tVerbose mode (can be used up to 3 times for increased verbosity).\n");
-  fprintf(stderr, "-J\tUse Ben Jackson's stochastic model.\n");
+  fprintf(stderr, "-J\tUse Jackson stochastic model.\n");
   fprintf(stderr, "-B\tUse BLMT stochastic model.\n");
   fprintf(stderr, "-S\tUse Saarinen stochastic model.\n");
   exit(EX_USAGE);
@@ -51,11 +50,21 @@ noreturn static void useageExit(void) {
  * It presents an average case (results are averaged over all initial phases).
  */
 /*Implementation notes:
- * After the Saarinen model was published, I noticed that a bunch of his terms occur in Ben's model as well, 
- * and many of the computational refinements that I made to that model apply here as well.
- *This model sums from -cutoff to cutoff, but we make use of some symmetry and sum from the outside (which are expected 
- *to be small) to the middle (whose terms are expected to be large.)
- *This is done in an attempt at reducing floating point error accumulation.
+ * After the Saarinen model was published, I noticed that a bunch of his terms occur in the Jackson model as well, 
+ * and many of the computational refinements that I made to that model apply to the Jackson model as well.
+ * This model sums from -cutoff to cutoff, but we make use of some symmetry and sum from the outside (which are expected 
+ * to be small) to the middle (whose terms are expected to be large.)
+ * This is done in an attempt at reducing floating point error accumulation.
+ *
+ * Note that this implementation of the Jackson and and the Saarinen models rely on some symmetry in the positive and 
+ * negative terms of their sums.
+ * Note that
+ * 	The modelGFunction(x,y)=x*erfl(x) - y*erfl(y) + (expl(-x*x)-expl(-y*y))/sqrt(Pi) is even in both x and y.
+ * 	b_i = i/sqrt(2*sigma^2) is an odd function in i, as b_{-i} = - b_{i}.
+ * 	a_i = (i+1/2)/sqrt(2*sigma^2) is "shifted odd", as a_{-(i+1)} = - a_{i}.
+ * 	c_i = (i-1/2)/sqrt(2*sigma^2) is related to a_i, as a_{-i} = - c_{i} and c_{-i} = - a_{i}
+ * These allow for various groupings of the truncated sum, which runs \sum_{i=-cutoff}^{cutoff}, with the end result being that we
+ * only need to sum over the positive terms, and then correct.
  */
 
 /*This function outputs a function that is in both the Jackson and Saarinens models*/
@@ -94,26 +103,19 @@ static long double JacksonModel(long double sigma) {
   long double averageEntropy;
   const long double sigmaTerm = sigma * sqrtl(2.0L);
   const long double sigmaTermInv = 1.0L/sigmaTerm;
-  long double b_j;
 
   if(sigma <= 0.0L) return 0.0L;
 
   cutoff = (int)ceil(7.0L * sigma);
-
-  //Calculate b_cutoff (=-b_{-cutoff})
-  b_j = ((long double)cutoff)*sigmaTermInv;
 
   //This calculates \sum_{j=-cutoff}^cutoff F_j
   //We have a great deal of symmetry here that we can use to sum the F_j and F_{-j} terms at the same time.
   for(int j=cutoff; j > 0; j--) {
     long double summand;
 
-    //calculate b_{j}
+    //calculate b_{j} and calculate the current summand.
     //Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
-    b_j = ((long double)j)*sigmaTermInv;
-
-    //Calculate the current summand
-    summand = JacksonSummand(b_j, sigmaTermInv);
+    summand = JacksonSummand(((long double)j)*sigmaTermInv, sigmaTermInv);
 
     if(summand >= LDBL_MIN) {
       tuplePmax = tuplePmax + 2.0L*summand;
@@ -213,7 +215,7 @@ static long double BLMTModel(long double sigma) {
  * 
  *Weaknesses:
  * It presents an average case (results are averaged over all initial phases).
- * It is based on a novel approach only very recently proposed. */
+ */
 static long double SaarinenSummand(long double bn, long double delta) {
   //const long double an = bn + 0.5L*delta;
   long double result;
@@ -224,15 +226,16 @@ static long double SaarinenSummand(long double bn, long double delta) {
   return result; 
 }
 
-/*These are sums from -cutoff to cutoff, but we make use of some symmetry and sum from the outside (which are expected 
- *to be small) to the middle (whose terms are expected to be large.)
- *This is done in an attempt at reducing floating point error accumulation.*/
+/* These are sums from -cutoff to cutoff, but we make use of some symmetry in the sum and work from the outside terms (which 
+ * are expected to be small) to the middle terms (whose terms are expected to be large.)
+ * This is done in an attempt at reducing floating point error accumulation.
+ */
 static long double SaarinenModel(long double sigma) {
   int cutoff;
   long double sum=0.0L;
   long double pe;
   long double entropy;
-  long double b_j;
+  long double b_cutoff;
   const long double sigmaTerm = sigma * sqrtl(2.0L);
   const long double sigmaTermInv = 1.0L/sigmaTerm;
 
@@ -242,21 +245,21 @@ static long double SaarinenModel(long double sigma) {
   cutoff = (int)ceil(7.0L * sigma);
 
   //calculate b_{cutoff}
-  b_j = ((long double)cutoff)/(sigma*sqrtl(2.0L));
+  b_cutoff = ((long double)cutoff)/(sigma*sqrtl(2.0L));
 
   /*Here are some end terms from the end of the range that aren't picked up in the central sum*/
-  sum = SaarinenSummand(b_j, sigmaTermInv) - b_j*erfl(b_j) - expl(-b_j*b_j)/sqrtl(PIL);
+  sum = SaarinenSummand(b_cutoff, sigmaTermInv) - b_cutoff*erfl(b_cutoff) - expl(-b_cutoff*b_cutoff)/sqrtl(PIL);
 
   /*Now do the central part of the sum, starting at the outside, and heading to the middle.*/
   for(int j=cutoff-1; j > 0; j--) {
     long double summand;
 
-    //calculate b_{j}
+    //calculate b_{j} and use it to get the summand.
     //Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
-    b_j = ((long double)j)*sigmaTermInv;
-    summand = SaarinenSummand(b_j, sigmaTermInv);
+    summand = SaarinenSummand(((long double)j)*sigmaTermInv, sigmaTermInv);
 
     if(summand >= LDBL_MIN) {
+      //This captures (in rough terms) both the jth term, along with parts of the the -(j-1) th term.
       sum += 2.0L*summand;
     } else {
       feclearexcept(FE_UNDERFLOW);

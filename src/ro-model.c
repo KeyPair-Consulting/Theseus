@@ -111,7 +111,8 @@ static long double JacksonModel(long double sigma) {
 
   if (sigma <= 0.0L) return 0.0L;
 
-  cutoff = (int)ceil(7.0L * sigma);
+  cutoff = (int)fmaxl(ceil(10.0L * sigma), 1.0L);
+  if(configVerbose > 0) fprintf(stderr, "Truncating Jackson model sum to %d terms\n", 2*cutoff+1);
 
   // This calculates \sum_{j=-cutoff}^cutoff F_j
   // We have a great deal of symmetry here that we can use to sum the F_j and F_{-j} terms at the same time.
@@ -122,7 +123,7 @@ static long double JacksonModel(long double sigma) {
     // Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
     summand = JacksonSummand(((long double)j) * sigmaTermInv, sigmaTermInv);
 
-    if (summand >= LDBL_MIN) {
+    if (isnormal(summand) && (summand >= LDBL_MIN)) {
       tuplePmax = tuplePmax + 2.0L * summand;
     } else {
       feclearexcept(FE_UNDERFLOW);
@@ -184,7 +185,9 @@ static long double SaarinenModel(long double sigma) {
 
   if (sigma <= 0.0L) return 0.0L;
 
-  cutoff = (int)ceil(7.0L * sigma);
+  cutoff = (int)fmaxl(ceil(10.0L * sigma), 1.0L);
+  if(configVerbose > 0) fprintf(stderr, "Truncating Saarinen model sum to %d terms\n", 2*cutoff+1);
+
 
   // calculate b_{cutoff}
   b_cutoff = ((long double)cutoff) / (sigma * sqrtl(2.0L));
@@ -200,7 +203,7 @@ static long double SaarinenModel(long double sigma) {
     // Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
     summand = SaarinenSummand(((long double)j) * sigmaTermInv, sigmaTermInv);
 
-    if (summand >= LDBL_MIN) {
+    if (isnormal(summand) && (summand >= LDBL_MIN)) {
       // This captures (in rough terms) both the jth term, along with parts of the the -(j-1) th term.
       sum += 2.0L * summand;
     } else {

@@ -29,27 +29,29 @@
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "ro-model [-v] [-J] [-B] [-S] [-g gaussian-prop] <sigma>\n");
+  fprintf(stderr, "ro-model [-v] [-J] [-B] [-S] [-K] [-W] [-g gaussian-prop] <sigma>\n");
   fprintf(stderr, "Produce a min entropy estimate using the selected stochastic model.\n");
   fprintf(stderr, "Sigma is the observed normalized (period length) jitter standard deviation (expressed as a proportion of the ring oscillator period).\n");
   fprintf(stderr, "-v\tVerbose mode (can be used up to 3 times for increased verbosity).\n");
   fprintf(stderr, "-J\tUse Jackson stochastic model.\n");
   fprintf(stderr, "-B\tUse BLMT stochastic model.\n");
   fprintf(stderr, "-S\tUse Saarinen stochastic model.\n");
+  fprintf(stderr, "-K\tUse the Killmann-Schindler stochastic model.\n");
+  fprintf(stderr, "-W\tUse the worst-case Killmann-Schindler stochastic model.\n");
   fprintf(stderr, "-g <r>\tOperate under the assumption that the unpredictable portion of the observed jitter is sigma*r (so reduce the observed jitter by the factor r).\n");
   exit(EX_USAGE);
 }
 
 /*This is the model that Ben Jackson presented at the CMUF Entropy WG meeting on 20190618*/
 /*Strengths of this model:
- * its outputs are well aligned with the results of 90B testing.
- * its outputs are consistent with a fairly powerful attacker
- * 	* It presumes that the attacker knows the initial state prior to each sample cycle.
- * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance)
+ * Its outputs are well aligned with the results of 90B testing.
+ * Its outputs are consistent with a fairly powerful attacker.
+ *  * It presumes that the attacker knows the initial state prior to each sample cycle (but cannot control it)
+ * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance).
  *
  *Weaknesses:
  * It presumes that the output of the RO is serially XORed in pairs.
- * 	* If this isn't true, then the produced estimate is an approximation.
+ *  * If this isn't true, then the produced estimate is an approximation.
  * It presents an average case (results are averaged over all initial phases).
  */
 /*Implementation notes:
@@ -63,30 +65,27 @@ noreturn static void useageExit(void) {
  *
  * Note that this implementation of the Jackson and the Saarinen models rely on some symmetry in the positive and
  * negative summands that make up their sums.
- * Note that
- * 	The modelGFunction(x,y)=x*erf(x) - y*erf(y) + (exp(-x*x)-exp(-y*y))/sqrt(Pi) is even in both x and y.
-                That is modelGFunction(x,y) = modelGFunction(-x,y) = modelGFunction(x,-y) = modelGFunction(-x,-y)
- * 	b_i = i/sqrt(2*sigma^2) is an odd function in i, as b_{-i} = - b_{i}.
- * 	a_i = (i+1/2)/sqrt(2*sigma^2) is "shifted odd", as a_{-(i+1)} = - a_{i}.
- * 	c_i = (i-1/2)/sqrt(2*sigma^2) is related to a_i, as a_{-i} = - c_{i} and c_{-i} = - a_{i}
+ * Note that:
+ *   The modelGFunction(x,y)=x*erf(x) - y*erf(y) + (exp(-x*x)-exp(-y*y))/sqrt(Pi) is even in both x and y.
+ *   That is modelGFunction(x,y) = modelGFunction(-x,y) = modelGFunction(x,-y) = modelGFunction(-x,-y)
+ *     b_i = i/sqrt(2*sigma^2) is an odd function in i, as b_{-i} = - b_{i}.
+ *     a_i = (i+1/2)/sqrt(2*sigma^2) is "shifted odd", as a_{-(i+1)} = - a_{i}.
+ *     c_i = (i-1/2)/sqrt(2*sigma^2) is related to a_i, as a_{-i} = - c_{i} and c_{-i} = - a_{i}
  * These allow for various groupings of the truncated sum, which runs \sum_{i=-cutoff}^{cutoff}, with the end result being that we
  * only need to sum over the positive terms, and then correct.
  */
 
-/*This function outputs a function that is in both the Jackson and Saarinens models*/
-/*We get a lot of symmetry as a result of this function; it is even in both x and y!*/
+/*This function represents a common term that arises when integrating the normal distribution CDF.
+ *This function is used in several models (the Jackson, Saarinen, and Killmann-Schindler models)*/
+/*We get a lot of symmetry as a result of this function; it is even in both x and y!
+ *That is modelGFunction(x,y) = modelGFunction(-x,y) = modelGFunction(x,-y) = modelGFunction(-x,-y)
+ */
 static long double modelGFunction(long double x, long double y) {
-  long double term1, term2, term3, result;
+  long double result;
 
-  term1 = x * erfl(x);
-  term2 = -y * erfl(y);
-  term3 = (expl(-x * x) - expl(-y * y)) * SQRTPIINVL;
-  if (configVerbose > 2) fprintf(stderr, "G summand term1 = %.22Lg\n", term1);
-  if (configVerbose > 2) fprintf(stderr, "G summand term2 = %.22Lg\n", term2);
-  if (configVerbose > 2) fprintf(stderr, "G summand term3 = %.22Lg\n", term3);
-  result = term1 + term2 + term3;
+  result = x * erfl(x) - y * erfl(y) + (expl(-x * x) - expl(-y * y)) * SQRTPIINVL;
 
-  if (configVerbose > 1) fprintf(stderr, "G(x=%.22Lg, y=%.22Lg) = %.22Lg\n", x, y, result);
+  if (configVerbose > 3) fprintf(stderr, "G(x=%.22Lg, y=%.22Lg) = %.22Lg\n", x, y, result);
   return result;
 }
 
@@ -97,7 +96,7 @@ static long double JacksonSummand(long double bn, long double delta) {
 
   result = modelGFunction(bn + 0.5L * delta, bn) + modelGFunction(bn - 0.5L * delta, bn);  // G(a_n, b_n) + G(c_n, b_n)
 
-  if (configVerbose > 1) fprintf(stderr, "Jackson F = %.22Lg\n", result);
+  if (configVerbose > 2) fprintf(stderr, "Jackson F = %.22Lg\n", result);
   return result;
 }
 
@@ -112,7 +111,7 @@ static long double JacksonModel(long double sigma) {
   if (sigma <= 0.0L) return 0.0L;
 
   cutoff = (int)fmaxl(ceil(10.0L * sigma), 1.0L);
-  if(configVerbose > 0) fprintf(stderr, "Truncating Jackson model sum to %d terms\n", 2*cutoff+1);
+  if (configVerbose > 1) fprintf(stderr, "Truncating Jackson model sum to %d terms\n", 2 * cutoff + 1);
 
   // This calculates \sum_{j=-cutoff}^cutoff F_j
   // We have a great deal of symmetry here that we can use to sum the F_j and F_{-j} terms at the same time.
@@ -137,13 +136,13 @@ static long double JacksonModel(long double sigma) {
   // Now apply the scalar for sigma
   tuplePmax *= sigmaTerm;
 
-  if (configVerbose > 0) fprintf(stderr, "Jackson tuplePmax=%.22Lg\n", tuplePmax);
+  if (configVerbose > 1) fprintf(stderr, "Jackson tuplePmax = %.22Lg\n", tuplePmax);
 
   perBitPmax = (1.0L + sqrtl(2.0L * tuplePmax - 1.0L)) / 2.0L;
-  if (configVerbose > 0) fprintf(stderr, "Jackson perBitPmax=%.22Lg\n", perBitPmax);
+  if (configVerbose > 1) fprintf(stderr, "Jackson perBitPmax = %.22Lg\n", perBitPmax);
 
   averageEntropy = -log2l(perBitPmax);
-  if (configVerbose > 1) fprintf(stderr, "Jackson Averaged Per-Bit Min Entropy = %.22Lg\n", averageEntropy);
+  if (configVerbose > 2) fprintf(stderr, "Jackson Averaged Per-Bit Min Entropy = %.22Lg\n", averageEntropy);
 
   return averageEntropy;
 }
@@ -151,10 +150,10 @@ static long double JacksonModel(long double sigma) {
 // This is from the paper "On Entropy and Bit Patterns of Ring Oscillator Jitter" by Markku-Juhani O. Saarinen
 // https://arxiv.org/abs/2102.02196
 /*Strengths of this model:
- * its outputs are well aligned with the results of 90B testing.
- * its outputs are consistent with a fairly powerful attacker
- * 	* It presumes that the attacker knows the initial state prior to each sample cycle.
- * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance)
+ * Its outputs are well aligned with the results of 90B testing.
+ * Its outputs are consistent with a fairly powerful attacker.
+ *  * It presumes that the attacker knows the initial state prior to each sample cycle (but cannot control it).
+ * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance).
  *
  *Weaknesses:
  * It presents an average case (results are averaged over all initial phases).
@@ -164,7 +163,7 @@ static long double SaarinenSummand(long double bn, long double delta) {
   long double result;
 
   result = modelGFunction(bn + 0.5L * delta, bn);
-  if (configVerbose > 1) fprintf(stderr, "SaarinenS(b_n=%.22Lg, 1/sqrt(2*sigma^2) = %.22Lg) = %.22Lg\n", bn, delta, result);
+  if (configVerbose > 2) fprintf(stderr, "SaarinenS(b_n=%.22Lg, 1/sqrt(2*sigma^2)=%.22Lg) = %.22Lg\n", bn, delta, result);
 
   return result;
 }
@@ -186,8 +185,7 @@ static long double SaarinenModel(long double sigma) {
   if (sigma <= 0.0L) return 0.0L;
 
   cutoff = (int)fmaxl(ceil(10.0L * sigma), 1.0L);
-  if(configVerbose > 0) fprintf(stderr, "Truncating Saarinen model sum to %d terms\n", 2*cutoff+1);
-
+  if (configVerbose > 1) fprintf(stderr, "Truncating Saarinen model sum to %d terms\n", 2 * cutoff + 1);
 
   // calculate b_{cutoff}
   b_cutoff = ((long double)cutoff) / (sigma * sqrtl(2.0L));
@@ -219,43 +217,36 @@ static long double SaarinenModel(long double sigma) {
   sum *= sigma * sqrtl(2.0L) / 2.0L;
 
   /*sum now contains S_1(1/2)*/
-  if (configVerbose > 0) {
-    fprintf(stderr, "Saarinen S_1(1/2; F=0, D=1/2)=%.22Lg\n", sum);
-  }
+  if (configVerbose > 1) fprintf(stderr, "Saarinen S_1(1/2; F=0, D=1/2) = %.22Lg\n", sum);
 
   pe = 4.0L * sum;
 
-  if (configVerbose > 0) fprintf(stderr, "Saarinen p_e = %.22Lg\n", pe);
+  if (configVerbose > 1) fprintf(stderr, "Saarinen p_e = %.22Lg\n", pe);
 
   entropy = -log2l(pe);
-  if (configVerbose > 1) fprintf(stderr, "Saarinen Per-Bit Min Entropy Lower Bound = %.22Lg\n", entropy);
+  if (configVerbose > 2) fprintf(stderr, "Saarinen Per-Bit Min Entropy Lower Bound = %.22Lg\n", entropy);
 
   return entropy;
 }
 
-/*This is from the paper "On the Security of Oscillator-Based Random Number Generators, by Baudet, Lubicz, Micolod, and Tassiaux
- *This model produces Shannon Entropy. We wave our hands, and interpret this value as a per-bit value (this is not really quite
- *true, as this value reflects an average value). Given the Shannon entropy for a specific bit, we can determine what p_max
- *must have been in order to get this Shannon Entropy, and then we use this to calculate a min entropy.
+/*This is from the paper "On the Security of Oscillator-Based Random Number Generators, by Baudet, Lubicz, Micolod, and Tassiaux.
+ *This model produces Shannon Entropy. We interpret this value as a per-bit value (which for this bound, is reasonable, but would
+ *not work out for other bounds in that paper.
+ *Given the Shannon entropy for a specific bit, we can determine what p_max must have been in order to get this Shannon Entropy,
+ *and then we use this to calculate a min entropy.
  */
 /*Strengths of this model:
  * It is the basis of much of the work in this area.
  * It seems to be generally accepted in AIS-31.
- * 	See Petura, Mureddu, Bochard, Fischer, Bossuet "A Survey of AIS-20/31 Compliant TRNG Cores Suitable for FPGA Devices".
+ *  See Petura, Mureddu, Bochard, Fischer, Bossuet "A Survey of AIS-20/31 Compliant TRNG Cores Suitable for FPGA Devices".
  *
  *Weaknesses:
- * It assumes an initial uniform distribution of phases, and presumes that an attacker can never do better than this when starting.
- * 	* It assumes that the attack does not know the starting phase.
- *  * It assumes that between calls there is sufficient time to allow this uniform distribution to be the best an attacker can do.
- *    * As a practical matter, most sources don't enforce this sort of entropy accumulation "black out" period beyond the sampling frequency.
- * 	* In this model much of the produced entropy is actually due to solely this initial state.
- * 		* (n.b. the long term bias accumulates without bound with the number of outputs! For jittery ring oscillators, this can't be true).
- * This model presumes that between calls there is sufficient time to allow this uniform distribution
  * This model uses a truncated series to create these estimates, but truncating at the first two terms provides only the dominant
  * effects jitter. (I suspect that this is a major reason for bias accumulation in a high-jitter oscillator).
  * This model cannot produce a value lower than 0.415298 for Shannon Entropy, which translates to approximately 0.12 bits of min entropy.
- * 	* This really highlights how this model isn't a good fit for most deployed systems. A wholly deterministic ring oscillator that is 
+ *      * This really highlights how this model isn't a good fit for most deployed systems. A wholly deterministic ring oscillator that is
  *        regularly sampled ought to be credited with 0 entropy.
+ * Examining the results from this model, it seems that this model breaks down when sigma<0.1 (Q<0.01).
  */
 
 #pragma GCC diagnostic push
@@ -279,6 +270,8 @@ static long double BLMTModel(long double sigma) {
     sigmasq = 0.0L;
   }
 
+  if (sigma <= 0.1L) fprintf(stderr, "The BLMT model returns inaccurate results when sigma < 0.1. It would be better to use some other model for this parameter.\n");
+
   shannonEntropy = 1.0L - 4.0L / (pisq * logl(2.0L)) * expl(-4.0L * pisq * sigmasq);
   if (shannonEntropy < 0.0L) {
     fprintf(stderr, "BLMT Assessment of Shannon Entropy is lower than possible.\n");
@@ -290,15 +283,193 @@ static long double BLMTModel(long double sigma) {
     return 1.0L;
   }
 
-  if (configVerbose > 0) fprintf(stderr, "BLMT Model predicts a Shannon Entropy of %.22Lg\n", shannonEntropy);
+  if (configVerbose > 1) fprintf(stderr, "BLMT Model predicts a Shannon Entropy of %.22Lg\n", shannonEntropy);
 
   foundPmax = monotonicBinarySearch(ShannonEst, 0.5, 1.0, (double)shannonEntropy, NULL, true);
-  if (configVerbose > 0) fprintf(stderr, "BLMT inferred p_max = %.17g\n", foundPmax);
+  if (configVerbose > 1) fprintf(stderr, "BLMT inferred p_max = %.17g\n", foundPmax);
 
   minEntropy = -log2(foundPmax);
-  if (configVerbose > 1) fprintf(stderr, "BLMT inferred average min entropy %.17g\n", minEntropy);
 
   return (long double)minEntropy;
+}
+
+/* A support function for the models arising from the Killmann-Schindler paper, and its direct descendants.
+ * This requires a function that (for the given parameter) can calculate the probability of a
+ * certain number of flips (or "flops" if you are reading the Ma-Lin-Chen-Xu-Liu-Jing paper) having occurred in a
+ * certain amount of time. It then groups the values by the least significant bit of the flip count
+ * (which establishes the output symbol), and uses this to calculate the min entropy of the source.
+ */
+static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long double (*cycleProbFunction)(uint64_t, long double)) {
+  const uint64_t expectedCycles = 2000;
+  uint64_t delta = (uint64_t)ceil(fmax(sqrtl((long double)expectedCycles) * flipSigma * 10, 1.0L));
+  long double evenP = 0.0L;
+  long double oddP = 0.0L;
+  long double extraP = 0.0L;
+  long double centerProb;
+  long double lastMaxValue = 0.0L;
+
+  // The cycle count distribution is asymptotically normal, but the standard deviation isn't that easy to compute
+  //(See equation 28 for details)
+  // This re-computes some of the same terms more than once (which makes me feel bad about myself), but it 
+  // doesn't take that long to re-compute them.
+  // We use DBL_EPSILON here because, in testing, the accumulated floating point error was well above LDBL_EPSILON,
+  // And waiting until we found numbers that small ended up producing some rather strange behavior that triggered
+  // some asserts. By being somewhat less ambitious on our accuracy goal, we avoid a bunch of bad behavior.
+  // We also ultimately only print out results using a double's accuracy.
+  while (cycleProbFunction(expectedCycles + delta, flipSigma) > (long double)DBL_EPSILON) delta++;
+  while (cycleProbFunction(expectedCycles - delta, flipSigma) > (long double)DBL_EPSILON) delta++;
+  if (configVerbose > 2) fprintf(stderr, "Final delta: %" PRIu64 "\n", delta);
+
+  // We don't expect strict symmetry, but the distribution is vaguely symmetric, distributed around its center bin.
+  // Sum the values from smallest to largest in absolute magnitude.
+  // This should help reduce floating point accumulation error.
+  for (uint64_t j = delta; j > 0; j--) {
+    long double roundPHigh = cycleProbFunction(expectedCycles + j, flipSigma);
+    long double roundPLow = cycleProbFunction(expectedCycles - j, flipSigma);
+    long double roundCombined;
+    long double curMaxValue;
+
+    //Note that (expectedCycles + j) and (expectedCycles - j) have the same lsb
+    //That is, they are both even or both odd.
+    roundCombined = roundPHigh + roundPLow;
+
+    curMaxValue = fmax(roundPHigh, roundPLow);
+    assert(lastMaxValue <= curMaxValue);  // Verify that we're generally increasing
+    lastMaxValue = curMaxValue;
+
+    if (((expectedCycles + j) & 1) == 0) {
+      evenP += roundCombined;
+    } else {
+      oddP += roundCombined;
+    }
+  }
+
+  // Now add in the probability for the center bin
+  centerProb = cycleProbFunction(expectedCycles, flipSigma);
+
+  assert(lastMaxValue <= centerProb);  // Verify that we're generally increasing
+
+  if ((expectedCycles & 1) == 0) {
+    evenP += centerProb;
+  } else {
+    oddP += centerProb;
+  }
+
+  extraP = 1.0L - evenP - oddP;
+  if (configVerbose > 1) fprintf(stderr, "evenP: %.22Lg, oddP: %.22Lg, extraP: %.22Lg\n", evenP, oddP, extraP);
+
+  return -log2l(fmax(evenP, oddP) + extraP);
+}
+
+/* This follows Killmann-Schindler "A Design for a Physical RNG with Robust Entropy Estimators".
+ * The model presented is very general, and can easily be converted into a min entropy estimate naturally.
+ */
+/*Strengths of this model:
+ * It assumes a fairly powerful attacker.
+ *  * It presumes that the attacker knows the initial state prior to each sample cycle (but cannot control it).
+ * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance).
+ *
+ *Weaknesses:
+ * It presents an average case (results are averaged over all initial phases).
+ *
+ * Note: All the formulas in this implementation use notation and conventions as specified in the Killmann-Schindler
+ * paper, but this paper is counting full cycles (0->1 crossings). This isn't exactly what we want, as the output
+ * of the periodically sampled ring oscillator isn't the lsb of the cycle count, it is the lsb of the
+ * flip count (half cycles). As such, when these formulas are actually used, everything needs to be converted to
+ * the corresponding flipping statistics.
+ */
+
+/*
+ * This is a function that is provided to cycleCountLsbNormalizedMinEnt.
+ *
+ * This function is essentially equation (22) from that paper, but after applying a estimate noted in
+ * Ma-Lin-Chen-Xu-Lie-Jing "Entropy Evaluation for Oscillator-based True Random Number Generators",
+ * equation (7). Note that this function's derivative has a non-zero value only when its argument is
+ * less than mu, so the Riemann-Stieltjes integral's bounds can be adjusted to 0 to mu.
+ * We also note that for large k, sqrt(k) is approximately equal to sqrt(k+1).
+ * We're normalizing everything so that mu=1/2 (remember, this is the average flipping time) and s=1000.
+ * The result of symbolically integrating this expression can be written in closed form (using special functions) 
+ * in terms of our G function.
+ */
+static long double KillmannSchindlerNormalizedCycleProb(uint64_t kin, long double sigma) {
+  long double result;
+  long double k = (long double)kin;
+
+  assert(kin > 1);
+
+  result = 2.0L * sqrtl((k - 1.0L)) * sigma / sqrtl(2.0L) *
+           (modelGFunction((k - 2001.0L) / (2.0L * sqrtl(2.0L * (k - 1.0L)) * sigma), (k - 2000.0L) / (2.0L * sqrtl(2.0L * (k - 1.0L)) * sigma)) +
+            modelGFunction((k - 1999.0L) / (2.0L * sqrtl(2.0L * (k - 1.0L)) * sigma), (k - 2000.0L) / (2.0L * sqrtl(2.0L * (k - 1.0L)) * sigma)));
+
+  if (!isnormal(result) || (result < 0.0L)) result = 0.0L;
+  if (result > 1.0L) result = 1.0L;
+
+  if (configVerbose > 2) fprintf(stderr, "KSCycleProb(k=%" PRIu64 ", sigma=%.22Lg) = %.22Lg\n", kin, sigma, result);
+  return result;
+}
+
+static long double KillmannSchindlerModel(long double sigma) {
+  return cycleCountLsbNormalizedMinEnt(sigma / sqrtl(2000.0L), KillmannSchindlerNormalizedCycleProb);
+}
+
+/* This model is adapted from Killmann-Schindler "A Design for a Physical RNG with Robust Entropy Estimators"
+ * This is intended to model the case where an attacker is able to set the initial phase for their maximum
+ * benefit. It is, in some sense, a worst-case entropy for a functioning ideal ring oscillator.
+ */
+/*Strengths of this model:
+ * It is very conservative.
+ * it assumes a profoundly powerful attacker
+ *    * It assumes that the attacker can _set_ the initial state prior to each sample cycle,
+ *     and that they set it to the worst-case initial phase.
+ * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance).
+ *
+ *Weaknesses:
+ * The results are likely artificially low with respect to most attackers.
+ *
+ * Note: All the formulas in this implementation use notation and conventions as specified in the Killmann-Schindler
+ * paper, but this paper is counting full cycles (0->1 crossings). This isn't exactly what we want, as the output
+ * of the periodically sampled ring oscillator isn't the lsb of the cycle count, it is the lsb of the
+ * flip count (half cycles). As such, when these formulas are actually used, everything needs to be converted to
+ * the corresponding flipping statistics.
+ */
+
+/*
+ * This function is equation (17) from Killmann-Schindler, where x=v*mu.
+ * Note that for large k, sqrt(k) is approximately equal to sqrt(k+1).
+ */
+static long double KillmannSchindlerResetCycleProb(long double x, uint64_t kin, long double mu, long double sigma) {
+  long double k = (long double)kin;
+  long double result;
+
+  result = 0.5L * erfcl(-((x - k * mu) / (sqrtl(2.0L) * sqrtl(k) * sigma))) - 0.5L * erfcl(-((x - (1.0L + k) * mu) / (sqrtl(2.0L) * sqrtl(k) * sigma)));
+
+  if (!isnormal(result) || (result < 0.0L)) result = 0.0L;
+  if (result > 1.0L) result = 1.0L;
+
+  if (configVerbose > 2) fprintf(stderr, "KSResetCycleProb(x=%.22Lg, k=%" PRIu64 ", mu=%.22Lg, sigma=%.22Lg) = %.22Lg\n", x, kin, mu, sigma, result);
+  return result;
+}
+
+/*
+ * This is a function that is provided to cycleCountLsbNormalizedMinEnt.
+ *
+ * Constructs the "worst-case" (lowest entropy) situation, given the parameters input yeild
+ * a situation where it is maximally likely that the deterministic output is produced.
+ * We're normalizing everything so that mu=1/2 (remember, this is the average flipping time) and s=1000.
+ */
+static long double KillmannSchindlerLowerBoundNormalizedCycleProb(uint64_t k, long double sigma) {
+  assert(k > 1);
+  const long double s = 1000.0L;
+  const long double mu = 0.5L; //Each cycle has mean unit length, but the flipping time is 1/2
+  const long double nu = 0.5L; //Target flipping phase 1/2 (which corresponds to cycle phase of 1/4 or 3/4)
+
+  // Adjust the sample period so that the deterministic outcome is the worst-case (i.e., the furthest from any transition).
+  // This occurs at the normalized phase (where the flips occur at integers) of 0.5 (0.25 for the full period)
+  return KillmannSchindlerResetCycleProb(floor(s / mu) * mu + nu * mu, k, mu, sigma);
+}
+
+static long double KillmannSchindlerLowerBoundModel(long double sigma) {
+  return cycleCountLsbNormalizedMinEnt(sigma / sqrtl(2000.0L), KillmannSchindlerLowerBoundNormalizedCycleProb);
 }
 
 int main(int argc, char *argv[]) {
@@ -306,6 +477,8 @@ int main(int argc, char *argv[]) {
   bool configJackson = false;
   bool configBLMT = false;
   bool configSaarinen = false;
+  bool configKillmannSchindler = false;
+  bool configKillmannSchindlerLowerBound = false;
   long double sigma;
   long double gaussianProp = 1.0L;
   char *nextArgument;
@@ -317,14 +490,14 @@ int main(int argc, char *argv[]) {
   }
 
   sigma = strtold(argv[argc - 1], &nextArgument);
-  if ((errno == ERANGE) || !isfinite(sigma) || (sigma < 0.0L) || (nextArgument == argv[0])) {
+  if ((errno == ERANGE) || !isfinite(sigma) || (sigma < 0.0L) || (nextArgument == argv[argc - 1])) {
     fprintf(stderr, "Provided argument is invalid or out of range.\n");
-    exit(EX_DATAERR);
+    useageExit();
   }
 
   argc--;
 
-  while ((opt = getopt(argc, argv, "vJBSg:")) != -1) {
+  while ((opt = getopt(argc, argv, "vJBSKWg:")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -337,6 +510,12 @@ int main(int argc, char *argv[]) {
         break;
       case 'S':
         configSaarinen = true;
+        break;
+      case 'K':
+        configKillmannSchindler = true;
+        break;
+      case 'W':
+        configKillmannSchindlerLowerBound = true;
         break;
       case 'g':
         gaussianProp = strtold(optarg, &nextArgument);
@@ -354,21 +533,28 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  if (configVerbose > 0) {
-    fprintf(stderr, "Provided observed jitter standard deviation %.22Lg\n", sigma);
+  if (!(configJackson || configBLMT || configSaarinen || configKillmannSchindler || configKillmannSchindlerLowerBound)) {
+    useageExit();
   }
+
+  if (configVerbose > 0) fprintf(stderr, "Provided observed jitter standard deviation %.17Lg\n", sigma);
 
   if (gaussianProp < 1.0L) {
     sigma = sigma * gaussianProp;
-    if (configVerbose > 0) {
-      fprintf(stderr, "Presumed proportion of observed jitter due to local Gaussian noise: %.22Lg\n", gaussianProp);
-      fprintf(stderr, "Looking for entropy for a normalized jitter standard deviation of %.22Lg\n", sigma);
-    }
+    if (configVerbose > 0) fprintf(stderr, "Presumed proportion of observed jitter due to local Gaussian noise: %.17Lg\n", gaussianProp);
+    if (configVerbose > 1) fprintf(stderr, "Looking for entropy for a normalized jitter standard deviation of %.17Lg\n", sigma);
   }
 
-  if (configJackson) printf("Min entropy assessment (Ben Jackson's XORed Average): %.22Lg\n", JacksonModel(sigma));
-  if (configBLMT) printf("Min entropy assessment (BLMT): %.22Lg\n", BLMTModel(sigma));
-  if (configSaarinen) printf("Min entropy assessment (Markku-Juhani Saarinen's Lower Bound): %.22Lg\n", SaarinenModel(sigma));
+  if (configJackson) printf("Min entropy assessment (Ben Jackson's XORed Average): %.17Lg\n", JacksonModel(sigma));
+  if (configBLMT) {
+    if (sigma < 0.10L) {
+      printf("Overestimate for ");
+    }
+    printf("Min entropy assessment (BLMT): %.17Lg\n", BLMTModel(sigma));
+  }
+  if (configSaarinen) printf("Min entropy assessment (Markku-Juhani Saarinen's Lower Bound): %.17Lg\n", SaarinenModel(sigma));
+  if (configKillmannSchindler) printf("Min entropy assessment (Killmann-Schindler Average): %.17Lg\n", KillmannSchindlerModel(sigma));
+  if (configKillmannSchindlerLowerBound) printf("Min entropy assessment (Killmann-Schindler Lower Bound): %.17Lg\n", KillmannSchindlerLowerBoundModel(sigma));
 
   return (EX_OK);
 }

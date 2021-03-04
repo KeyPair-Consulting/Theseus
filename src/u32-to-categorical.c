@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -31,9 +31,10 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "u32-to-categorical [-v] [-m] [-t <value>] <infile>\n");
   fprintf(stderr, "Produces categorical summary of data.\n");
-  fprintf(stderr, "-v Increse verbosity. Can be used multiple times.\n");
+  fprintf(stderr, "-v Increase verbosity. Can be used multiple times.\n");
   fprintf(stderr, "-m Output in Mathematica-friendly format.\n");
-  fprintf(stderr, "-t <value>\tTrim any value that is prior to the first symbol with <value> occurances or more or after the last symbol with <value> occurances or more.\n");
+  fprintf(stderr, "-t <value>\tTrim any value that is prior to the first symbol with <value> occurrences or more or after the last symbol with <value> occurrences or more.\n");
+  fprintf(stderr, "-z\tDon't output zero categories.\n");
   fprintf(stderr, "The values are expected to be provided via stdin.\n");
   exit(EX_USAGE);
 }
@@ -43,6 +44,7 @@ int main(int argc, char *argv[]) {
   size_t datalen;
   uint32_t *data = NULL;
   bool configMathematica;
+  bool configOutputZeros;
   size_t configCountCutoff;
   size_t categoryCount;
   size_t *categoryTable;
@@ -52,18 +54,22 @@ int main(int argc, char *argv[]) {
   size_t firstDataIndex, lastDataIndex;
 
   configMathematica = false;
+  configOutputZeros = true;
   configCountCutoff = 0;
   configVerbose = 0;
 
   assert(UINT32_MAX <= SIZE_MAX);
 
-  while ((opt = getopt(argc, argv, "vmt:")) != -1) {
+  while ((opt = getopt(argc, argv, "zvmt:")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
         break;
       case 'm':
         configMathematica = true;
+        break;
+      case 'z':
+        configOutputZeros = false;
         break;
       case 't':
         inint = strtoull(optarg, NULL, 0);
@@ -138,7 +144,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  for (size_t i = categoryCount; i > 0; i++) {
+  for (size_t i = categoryCount; i > 0; i--) {
     if (categoryTable[i - 1] >= configCountCutoff) {
       lastDataIndex = i - 1;
       break;
@@ -158,12 +164,17 @@ int main(int argc, char *argv[]) {
 
   for (size_t i = firstDataIndex; i <= lastDataIndex; i++) {
     if (configMathematica) {
-      if (i < lastDataIndex)
-        printf("{%u, %zu},", (uint32_t)i + mindata, categoryTable[i]);
-      else
+      if (i < lastDataIndex) {
+        if (configOutputZeros || (categoryTable[i] > 0)) {
+          printf("{%u, %zu},", (uint32_t)i + mindata, categoryTable[i]);
+        }
+      } else {
         printf("{%u, %zu}};\n", (uint32_t)i + mindata, categoryTable[i]);
+      }
     } else {
-      printf("%u: %zu\n", (uint32_t)i + mindata, categoryTable[i]);
+      if (configOutputZeros || (categoryTable[i] > 0)) {
+        printf("%u: %zu\n", (uint32_t)i + mindata, categoryTable[i]);
+      }
     }
   }
 

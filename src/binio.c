@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -8,15 +8,15 @@
  * Joshua E. Hill, KeyPair Consulting, Inc.  <josh@keypair.us>
  */
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
 #include <unistd.h>
-#include <errno.h>
-#include <math.h>
 
 #if defined(__x86_64) || defined(__x86_64__)
 #include <x86intrin.h>
@@ -320,7 +320,7 @@ size_t readasciidoublepoints(FILE *input, double **buffer) {
 
     if (fgets(curline, sizeof(curline), input) != NULL) {
       curloc = curline;
-      if((*curloc == '(') || (*curloc == '[') || (*curloc == '{')) curloc++;
+      if ((*curloc == '(') || (*curloc == '[') || (*curloc == '{')) curloc++;
       indouble = strtod(curloc, &afterDouble);
       if ((*afterDouble != ',') || (errno == ERANGE)) {
         fprintf(stderr, "First place data error\n");
@@ -328,7 +328,7 @@ size_t readasciidoublepoints(FILE *input, double **buffer) {
       }
       (*buffer)[readdoubles++] = indouble;
 
-      curloc = afterDouble+1;
+      curloc = afterDouble + 1;
       indouble = strtod(curloc, &afterDouble);
 
       if (((*afterDouble != '\r') && (*afterDouble != '\n') && (*afterDouble != '\0') && (*afterDouble != ')') && (*afterDouble != ']') && (*afterDouble != '}')) || (errno == ERANGE) || !isfinite(indouble)) {
@@ -344,5 +344,5 @@ size_t readasciidoublepoints(FILE *input, double **buffer) {
     }
   }
 
-  return readdoubles/2;
+  return readdoubles / 2;
 }

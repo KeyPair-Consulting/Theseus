@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -738,11 +738,10 @@ uint64_t selectionsForBirthdayCollisionBound(size_t n, uint32_t bExp) {
 // F(k;n,p) = I_{1-p} (n-k, k+1)
 // See https://en.wikipedia.org/wiki/Binomial_distribution#Cumulative_distribution_function
 double binomialCDF(size_t k, size_t n, double p) {
-  assert(n >= k);
   assert(p >= DBL_MIN);
   assert(p <= 1.0);
 
-  if (k == n) return 1.0;
+  if (k >= n) return 1.0;
   if (p < DBL_MIN) return 1.0;
   if (p > 1.0 - DBL_EPSILON) return 0.0;
 

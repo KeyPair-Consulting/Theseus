@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -22,8 +22,8 @@
 #include <bzlib.h>
 #include <pthread.h>
 #include <semaphore.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <inttypes.h>
 #include <stdint.h>
@@ -716,13 +716,12 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
       inData->finishedCycle = curState->index;
     }
 
-    if(inData->excursionTestingPassed) testsPassed |= EXCURSIONTESTS;
-    if(inData->dirRunsTestingPassed) testsPassed |= DIRRUNTESTS;
-    if(inData->runsTestingPassed) testsPassed |= RUNSTESTS;
-    if(inData->collisionTestingPassed) testsPassed |= COLLISIONSTESTS;
-    if(inData->periodicityTestingPassed) testsPassed |= PERODICITYTESTS;
-    if(inData->compressionTestingPassed) testsPassed |= COMPRESSIONTESTS;
-
+    if (inData->excursionTestingPassed) testsPassed |= EXCURSIONTESTS;
+    if (inData->dirRunsTestingPassed) testsPassed |= DIRRUNTESTS;
+    if (inData->runsTestingPassed) testsPassed |= RUNSTESTS;
+    if (inData->collisionTestingPassed) testsPassed |= COLLISIONSTESTS;
+    if (inData->periodicityTestingPassed) testsPassed |= PERODICITYTESTS;
+    if (inData->compressionTestingPassed) testsPassed |= COMPRESSIONTESTS;
 
     if (pthread_mutex_unlock(&(inData->resultsMutex)) != 0) {
       perror("Can't unlock resultsMutex");
@@ -740,20 +739,20 @@ static bool doPermTesting(struct curData *inData, struct testState *curState) {
 
 static void printResults(FILE *outfp, struct permResults *results) {
   uint32_t i;
-/*
-  struct permResults {
-    double excursionResults;  // 5.1.1
-    int64_t numOfDirRuns;  // 5.1.2
-    int64_t longestDirRun;  // 5.1.3
-    int64_t maxChanges;  // 5.1.4
-    int64_t numOfRuns;  // 5.1.5
-    int64_t longestRun;  // 5.1.6
-    double meanCollisionDist;  // 5.1.7
-    int64_t longestCollisionDist;  // 5.1.8
-    int64_t periodicity[NUMOFOFFSETS];  // 5.1.9
-    int64_t covariance[NUMOFOFFSETS];  // 5.1.10
-    int64_t compressionResults;  // 5.1.11
-  };*/
+  /*
+    struct permResults {
+      double excursionResults;  // 5.1.1
+      int64_t numOfDirRuns;  // 5.1.2
+      int64_t longestDirRun;  // 5.1.3
+      int64_t maxChanges;  // 5.1.4
+      int64_t numOfRuns;  // 5.1.5
+      int64_t longestRun;  // 5.1.6
+      double meanCollisionDist;  // 5.1.7
+      int64_t longestCollisionDist;  // 5.1.8
+      int64_t periodicity[NUMOFOFFSETS];  // 5.1.9
+      int64_t covariance[NUMOFOFFSETS];  // 5.1.10
+      int64_t compressionResults;  // 5.1.11
+    };*/
 
   if (results->excursionResults >= 0) fprintf(outfp, "\t Max excursion: %.17g\n", results->excursionResults);
   if (results->numOfDirRuns >= 0) fprintf(outfp, "\t Number of directional runs: %" PRId64 "\n", results->numOfDirRuns);
@@ -873,19 +872,19 @@ static uint32_t getassignment(void) {
     nextToDo++;
 
     // do the print within the mutex protected area to order the outputs
-    if ((configVerbose > 1) || ((configVerbose == 1) && (((assignment % REPORTROUNDS)==0) || (testsPassed != lastReportedPassed)))) {
+    if ((configVerbose > 1) || ((configVerbose == 1) && (((assignment % REPORTROUNDS) == 0) || (testsPassed != lastReportedPassed)))) {
       lastReportedPassed = testsPassed;
       fprintf(stderr, "%jd Assigned Round: %u / %u.", (intmax_t)time(NULL), assignment, PERMROUNDS);
-      if(testsPassed == 0x00) {
+      if (testsPassed == 0x00) {
         fprintf(stderr, " No tests passed.\n");
       } else {
         fprintf(stderr, " Finished tests: ");
-        if(testsPassed & EXCURSIONTESTS) fprintf(stderr, "Excursion ");
-        if(testsPassed & DIRRUNTESTS) fprintf(stderr, "DirectedRuns ");
-        if(testsPassed & RUNSTESTS) fprintf(stderr, "Runs ");
-        if(testsPassed & COLLISIONSTESTS) fprintf(stderr, "Collision ");
-        if(testsPassed & PERODICITYTESTS) fprintf(stderr, "Perodicity ");
-        if(testsPassed & COMPRESSIONTESTS) fprintf(stderr, "Compression ");
+        if (testsPassed & EXCURSIONTESTS) fprintf(stderr, "Excursion ");
+        if (testsPassed & DIRRUNTESTS) fprintf(stderr, "DirectedRuns ");
+        if (testsPassed & RUNSTESTS) fprintf(stderr, "Runs ");
+        if (testsPassed & COLLISIONSTESTS) fprintf(stderr, "Collision ");
+        if (testsPassed & PERODICITYTESTS) fprintf(stderr, "Perodicity ");
+        if (testsPassed & COMPRESSIONTESTS) fprintf(stderr, "Compression ");
         fprintf(stderr, "\n");
       }
     }

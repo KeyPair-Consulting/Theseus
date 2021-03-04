@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -255,14 +255,14 @@ double shannonEntropyEstimate(const statData_t *S, size_t L, size_t k) {
   // L comparisons, whereas this approach uses k comparisons, and k<<L.
   for (size_t i = 0; i < k; i++) {
     if (count[i] > 0) {
-      double p = (double)count[i]/(double)L;
-      if(configVerbose > 2) fprintf(stderr, "p[ X = %zu ] = %.17g\n", i, p);
+      double p = (double)count[i] / (double)L;
+      if (configVerbose > 2) fprintf(stderr, "p[ X = %zu ] = %.17g\n", i, p);
       compensatedSum(&entropyAccumulator, p * log2(p));
     }
   }
 
- entropy = compensatedSumResult(&entropyAccumulator);
- delCompensatedSum(&entropyAccumulator);
+  entropy = compensatedSumResult(&entropyAccumulator);
+  delCompensatedSum(&entropyAccumulator);
 #if STATDATA_BITS > 8
   free(count);
 #endif
@@ -464,6 +464,7 @@ double markovEstimate(const statData_t *S, size_t L, struct markovResult *result
   feclearexcept(FE_ALL_EXCEPT);
 
   if (L < 2) {
+    fprintf(stderr, "Markov Estimate only defined for data samples larger than 1 sample.\n");
     return -1.0;
   }
 
@@ -1469,8 +1470,8 @@ double calcPlocal(size_t N, size_t r, size_t k, double runningMax, size_t rounds
   params[0] = N;
   params[1] = r;
 
-  if(noSkip) {
-      Plocal = monotonicBinarySearch(predictionEstFct, 1.0 / ((double)k), 1.0, log(0.99) / ((double)rounds), params, true);
+  if (noSkip) {
+    Plocal = monotonicBinarySearch(predictionEstFct, 1.0 / ((double)k), 1.0, log(0.99) / ((double)rounds), params, true);
   } else {
     // The function is monotonic down in Plocal. The final runningMax is max(PglobalBound,Plocal,1/k).
     // At this point runningMax = max(PglobalBound,1/k), so we don't care if Plocal <= runningMax (this can't affect the result)
@@ -1563,7 +1564,10 @@ double multiMCWPredictionEstimate(const statData_t *S, size_t L, size_t k, struc
   size_t j, i;
   statData_t fallingOff;
 
-  assert(L > 63);
+  if (L <= 4095) {
+    fprintf(stderr, "MultiMCW only defined for data samples larger than 4095 samples.\n");
+    return -1.0;
+  }
 
   // Initialize the predictors
   predictor[0] = initMCWPredictor(S, L, k, 63);
@@ -2411,7 +2415,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
   double alpha = 0.99;
   double epsilon_term = 0.0;
   double epsilon = 0.0;
-  double maxEpsilon=-1.0;
+  double maxEpsilon = -1.0;
   size_t countCutoff;
   bool isStable;
   bool reducedTrailingSymbolCount;
@@ -2422,6 +2426,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
   assert(fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW) == 0);
   assert(S != NULL);
   if (L <= 2) {
+    fprintf(stderr, "Markov Estimate only defined for data samples larger than 1 sample.\n");
     return -1.0;
   }
 
@@ -2445,7 +2450,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
   }
 
   countCutoff = (size_t)floor(probCutoff * (double)L);
-  
+
   if (configVerbose > 0) {
     fprintf(stderr, "%s NSA Markov Estimate: Symbol cutoff probability is %.17g.\n", label, probCutoff);
     fprintf(stderr, "%s NSA Markov Estimate: Symbol cutoff count is %zu.\n", label, countCutoff);
@@ -2469,7 +2474,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
 
   // We don't a priori know how many symbols are ultimately going to be excluded. Loop until all the
   // number of transitions from each symbol to a valid symbol stabilizes.
-  while(!isStable) {
+  while (!isStable) {
     size_t validSymbolCount = 0;
     size_t localk = 0;
     bool hasNotIterateInformed = true;
@@ -2568,10 +2573,10 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
 
     /*# 3. Remove one count from the last symbol.
      *     o_{S_L} -- (where, in the specification, S is not zero-indexed...)
-    */
-    if(count[S[L-1]] > 0) {
+     */
+    if (count[S[L - 1]] > 0) {
       reducedTrailingSymbolCount = true;
-      count[S[L-1]]--;
+      count[S[L - 1]]--;
     } else {
       reducedTrailingSymbolCount = false;
     }
@@ -2581,7 +2586,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
      *           min(1, o_{i,j}/o_i + eps_i) otherwise
      */
 
-    if((configVerbose > 0) && (countCutoff > 0)) fprintf(stderr, "Determining which symbols to populate within the transition matrix.\n");
+    if ((configVerbose > 0) && (countCutoff > 0)) fprintf(stderr, "Determining which symbols to populate within the transition matrix.\n");
 
     // Populate the transition matrix, a row at a time
     for (i = 0; i < k; i++) {
@@ -2589,26 +2594,26 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
         double epsilon_i = 0.0;  // the epsilon_i value
         size_t curRowPop = 0;
 
-        //Count how many transitions from this state to valid symbols there are.
-        //This is the total number of counted instances of this current symbol.
+        // Count how many transitions from this state to valid symbols there are.
+        // This is the total number of counted instances of this current symbol.
         for (j = 0; j < k; j++) {
           if (count[j] >= countCutoff) {
-            //The symbol we are transitioning to 
+            // The symbol we are transitioning to
             curRowPop += oij[i * k + j];
           }
         }
 
-        if(count[i] != curRowPop) {
-          //We aparently changed the acceptable target states, so the current count needs to be updated, and we'll need to redo the matrix construction.
+        if (count[i] != curRowPop) {
+          // We apparently changed the acceptable target states, so the current count needs to be updated, and we'll need to redo the matrix construction.
           count[i] = curRowPop;
           isStable = false;
-          if(hasNotIterateInformed && (configVerbose > 0)) {
+          if (hasNotIterateInformed && (configVerbose > 0)) {
             fprintf(stderr, "A symbol transitioned to an uncommon symbol. Iterating...\n");
             hasNotIterateInformed = false;
           }
         }
 
-        if((curRowPop > 0) && (curRowPop >= countCutoff)) {
+        if ((curRowPop > 0) && (curRowPop >= countCutoff)) {
           if (conservative) {
             /*We first populate the epsilon_i value.
              * Note that if o_i is 0, the value of epsilon_i doesn't matter, so our choice of 0.0 was arbitrary.
@@ -2630,7 +2635,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
                 curprob = 1.0;
               }
 
-              if(curprob > 0.0) {
+              if (curprob > 0.0) {
                 T[i * k + j] = -log2(curprob);
               } else {
                 T[i * k + j] = DBL_INFINITY;
@@ -2646,10 +2651,10 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
       } else {
         for (j = 0; j < k; j++) T[i * k + j] = DBL_INFINITY;
       }
-    } //for, iterating over rows
+    }  // for, iterating over rows
 
-    //If the trailing symbol was reduced, put it back in for the loop.
-    if(reducedTrailingSymbolCount) count[S[L-1]]++;
+    // If the trailing symbol was reduced, put it back in for the loop.
+    if (reducedTrailingSymbolCount) count[S[L - 1]]++;
 
     if (isStable && conservative && (configVerbose > 2)) {
       fprintf(stderr, "%s NSA Markov Estimate: Maximum Epsilon_i is %.17g.\n", label, maxEpsilon);
@@ -2657,7 +2662,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
         fprintf(stderr, "%s NSA Markov Estimate: Consider setting cutoff to at least %.17g.\n", label, epsilon_term / (DESIRABLE_MAX_EPSILON * DESIRABLE_MAX_EPSILON * (double)validSymbolCount));
       }
     }
-  } // while; iterate until stable
+  }  // while; iterate until stable
 
   // Now the transition matrix includes only transitions from suitably numerous symbols to
   // suitably numerous symbols.

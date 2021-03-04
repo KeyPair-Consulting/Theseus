@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -182,7 +182,7 @@ static double doAssessment(const statData_t *data, size_t datalen, size_t k, uin
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &startTime);
     curminent = multiMCWPredictionEstimate(data, datalen, k, &(result->mcw));
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &endTime);
-    if (curminent < minminent) {
+    if ((curminent >= 0.0) && (curminent < minminent)) {
       minminent = curminent;
     }
     result->mcw.runTime = ((double)endTime.tv_sec + (double)endTime.tv_nsec * 1.0e-9) - ((double)startTime.tv_sec + (double)startTime.tv_nsec * 1.0e-9);
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Read in %zu integers\n", datalen);
     }
 
-    if(datalen == 0) {
+    if (datalen == 0) {
       fprintf(stderr, "No data found.\n");
       useageExit();
     }
@@ -479,10 +479,10 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  //There are two ways for Nu to vary, if it is random.
-  //If configRONu < 0, then this Nu value is generated randomly.
-  //If configFixedRandomNu is true, then we want it to be a fixed randomly selected value (fixed for any number of generation blocks and rounds for a single invocatation of this program).
-  //If configFixedRandomNu is false, then Nu is reset for each generation Block.
+  // There are two ways for Nu to vary, if it is random.
+  // If configRONu < 0, then this Nu value is generated randomly.
+  // If configFixedRandomNu is true, then we want it to be a fixed randomly selected value (fixed for any number of generation blocks and rounds for a single invocation of this program).
+  // If configFixedRandomNu is false, then Nu is reset for each generation Block.
   if (configFixedRandomNu) {
     if (!configRingOscillator) {
       fprintf(stderr, "Can only use random nu values when ring oscillator generation is selected.\n");
@@ -570,48 +570,56 @@ int main(int argc, char *argv[]) {
   }
 
   if (configEvaluationBlockSize > 0) {
-    if(datalen >= configEvaluationBlockSize) {
+    // We are a block size, but there may well be several of these split across several random rounds.
+    if (datalen > configEvaluationBlockSize) {
       evaluationBlockSize = configEvaluationBlockSize;
       blockCount = datalen / evaluationBlockSize;
     } else {
-      //In this instance, there is one partial block and no LBA.
+      // In this instance, there is one partial block and no LBA.
       fprintf(stderr, "Not enough data for a single block. Performing the test on the partial block.\n");
       blockCount = 1;
       evaluationBlockSize = datalen;
+      configLargeBlockAssessment = false;
     }
 
-    // "At least 139 data elements" is to make it so that we expect at least 1 sample to be more extreme than the 0.5% percentile.
-    // This is calculated using the binomial CDF; in particular, note that F(0; 138, 0.005) = 0.500709 and
-    // F(0; 139, 0.005) = 0.498205, so we expect at least 1 element to be more extreme so long as we have at least 139 samples.
-    if (configBootstrapParams && (configRandomRounds * blockCount < 139)) {
-      fprintf(stderr, "Can't bootstrap parameters with less than 139 blocks. Skipping parameter bootstrap.\n");
-      configBootstrapParams = false;
-    }
-
-    if (configVerbose > 0) {
-      fprintf(stderr, "Performing ");
-      if (configRandomRounds > 1) fprintf(stderr, "%zu rounds of ", configRandomRounds);
-      if (blockCount > 1) {
-        fprintf(stderr, "%zu assessments each ", blockCount);
-      } else {
-        fprintf(stderr, "an assessment ");
-      }
-      fprintf(stderr, "of size %zu symbols\n", evaluationBlockSize);
-    }
   } else {
-    //datalen > 0
+    // datalen > 0
     blockCount = 1;
     evaluationBlockSize = datalen;
   }
+  bitBlockSize = evaluationBlockSize * bitWidth;
 
-  if ((configRandomRounds * blockCount <= 1) && (configLargeBlockAssessment || configBootstrapParams || configBootstrapAssessments)) {
-    fprintf(stderr, "Assessment strategies are only compatible with multiple blocks of testing. Reverting to a single round of testing.\n");
-    configLargeBlockAssessment = false;
+  // Print message summarizing the calculation.
+  if (configVerbose > 0) {
+    fprintf(stderr, "Performing ");
+    if (configRandomRounds > 1) fprintf(stderr, "%zu rounds of ", configRandomRounds);
+    if (blockCount > 1) {
+      fprintf(stderr, "%zu assessments each ", blockCount);
+    } else {
+      fprintf(stderr, "an assessment ");
+    }
+    fprintf(stderr, "of size %zu symbols\n", evaluationBlockSize);
+  }
+
+  // Now perform some sanity checks to see if we should actually run the multi-block tests.
+  if ((configRandomRounds * blockCount <= 1) && (configBootstrapParams || configBootstrapAssessments)) {
+    fprintf(stderr, "Multi-block assessment strategies are only compatible with multiple blocks of testing. Reverting to a single round of testing.\n");
     configBootstrapParams = false;
     configBootstrapAssessments = false;
   }
 
-  bitBlockSize = evaluationBlockSize * bitWidth;
+  if ((datalen <= evaluationBlockSize) && configLargeBlockAssessment) {
+    fprintf(stderr, "Large block assessment is only compatible with data sizes larger than a single block. Disabling LBA testing.\n");
+    configLargeBlockAssessment = false;
+  }
+
+  // "At least 139 data elements" is to make it so that we expect at least 1 sample to be more extreme than the 0.5% percentile.
+  // This is calculated using the binomial CDF; in particular, note that F(0; 138, 0.005) = 0.500709 and
+  // F(0; 139, 0.005) = 0.498205, so we expect at least 1 element to be more extreme so long as we have at least 139 samples.
+  if (configBootstrapParams && (configRandomRounds * blockCount < 139)) {
+    fprintf(stderr, "Can't bootstrap parameters with less than 139 blocks. Skipping parameter bootstrap.\n");
+    configBootstrapParams = false;
+  }
 
   if (configEval != bitstring) {
     if ((rawResults = calloc(configRandomRounds * blockCount + 1, sizeof(struct entropyTestingResult))) == NULL) {
@@ -623,7 +631,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (configEval != raw) {
-    //Note that, in non-raw modes, non-binary data is still evaluated as binary data (to calculate H_bitstring). 
+    // Note that, in non-raw modes, non-binary data is still evaluated as binary data (to calculate H_bitstring).
     // For consistency with the NIST tools, we evaluate the same number of blocks of data, but the size of the block is multiplied by (floor(log(k-1))+1)
     if ((binaryResults = calloc(configRandomRounds * blockCount + 1, sizeof(struct entropyTestingResult))) == NULL) {
       perror("Can't allocate buffer for binary results");
@@ -648,13 +656,12 @@ int main(int argc, char *argv[]) {
         double oscFreq = 1000000000;  // Reference RO design is 1GHz
         double oscJitter = (1.0 / oscFreq) * (configJitterPercentage / 100.0);  // Jitter was entered as a percentage per-RO-period.
 
-
         assert(oscJitter <= 1 / oscFreq);
 
         if (configVerbose > 0) {
           if (i == 0) {
             fprintf(stderr, "oscFreq: %.17g\n", oscFreq);
-            fprintf(stderr, "Per-sample osc jitter percentage: %.17g\n", configJitterPercentage*sqrt(1000.0));
+            fprintf(stderr, "Per-sample osc jitter percentage: %.17g\n", configJitterPercentage * sqrt(1000.0));
             fprintf(stderr, "oscJitter: %.17g\n", oscJitter);
             if (configRONu >= 0.0) {
               fprintf(stderr, "sampleFreq: %.17g\n", oscFreq / (1000.0 + configRONu));
@@ -685,7 +692,7 @@ int main(int argc, char *argv[]) {
               // For modeling, we want the entire phase space [0,.25) explored.
               // Note that divide by 4 only changes the exponent!
               randNu = randomUnit(&threadrstate) / 4.0;
-              localSampleFreq = oscFreq / (1000.0 + randNu); // Reference RO design is sampled near 1MHz.
+              localSampleFreq = oscFreq / (1000.0 + randNu);  // Reference RO design is sampled near 1MHz.
             } else {
               localSampleFreq = oscFreq / (1000.0 + configRONu);  // Reference RO design is sampled near 1MHz.
             }
@@ -752,10 +759,11 @@ int main(int argc, char *argv[]) {
   for (size_t j = 1; j <= configRandomRounds * blockCount; j++) {
     double minminent = DBL_INFINITY;
 
-    if (configRandomRounds * blockCount > 1)
+    if ((configRandomRounds * blockCount > 1) || configLargeBlockAssessment)
       fprintf(stderr, "Results for block %zu\n", j);
     else
       fprintf(stderr, "Results for sole block\n");
+
     if (configEval != bitstring) {
       printEntropyTestingResult(rawResults + j);
       minminent = rawResults[j].assessedEntropy;
@@ -775,10 +783,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Find a final assessment (if applicable)
-  if ((configLargeBlockAssessment && (evaluationBlockSize != datalen)) || ((configRandomRounds * blockCount > 1) && (configBootstrapParams || configBootstrapAssessments))) {
+  if (configLargeBlockAssessment || configBootstrapParams || configBootstrapAssessments) {
     double minminent = DBL_INFINITY;
 
-    if (configLargeBlockAssessment && (evaluationBlockSize != datalen)) {
+    if (configLargeBlockAssessment) {
       double localMinminent = DBL_INFINITY;
       fprintf(stderr, "Results for Large Block Assessment\n");
       if (configEval != bitstring) {
@@ -800,7 +808,7 @@ int main(int argc, char *argv[]) {
       minminent = fmin(minminent, localMinminent);
     }
 
-    if (configBootstrapAssessments && (configRandomRounds * blockCount > 1)) {
+    if (configBootstrapAssessments) {
       double localMinminent = DBL_INFINITY;
       fprintf(stderr, "Starting Assessment Bootstrap\n");
       if (configEval != bitstring) {
@@ -826,7 +834,7 @@ int main(int argc, char *argv[]) {
       minminent = fmin(minminent, localMinminent);
     }
 
-    if (configBootstrapParams && (configRandomRounds * blockCount > 1)) {
+    if (configBootstrapParams) {
       double localMinminent = DBL_INFINITY;
       fprintf(stderr, "Starting Parameter Bootstrap\n");
       if (configEval != bitstring) {

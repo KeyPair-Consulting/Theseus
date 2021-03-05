@@ -458,10 +458,11 @@ static long double KillmannSchindlerResetCycleProb(long double x, uint64_t kin, 
  * We're normalizing everything so that mu=1/2 (remember, this is the average flipping time) and s=1000.
  */
 static long double KillmannSchindlerLowerBoundNormalizedCycleProb(uint64_t k, long double sigma) {
-  assert(k > 1);
   const long double s = 1000.0L;
   const long double mu = 0.5L; //Each cycle has mean unit length, but the flipping time is 1/2
   const long double nu = 0.5L; //Target flipping phase 1/2 (which corresponds to cycle phase of 1/4 or 3/4)
+
+  assert(k > 1);
 
   // Adjust the sample period so that the deterministic outcome is the worst-case (i.e., the furthest from any transition).
   // This occurs at the normalized phase (where the flips occur at integers) of 0.5 (0.25 for the full period)

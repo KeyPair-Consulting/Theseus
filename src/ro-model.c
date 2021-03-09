@@ -33,9 +33,9 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "Produce a min entropy estimate using the selected stochastic model.\n");
   fprintf(stderr, "Sigma is the observed normalized (period length) jitter standard deviation (expressed as a proportion of the ring oscillator period).\n");
   fprintf(stderr, "-v\tVerbose mode (can be used up to 3 times for increased verbosity).\n");
-  fprintf(stderr, "-J\tUse Jackson stochastic model.\n");
-  fprintf(stderr, "-B\tUse BLMT stochastic model.\n");
-  fprintf(stderr, "-S\tUse Saarinen stochastic model.\n");
+  fprintf(stderr, "-J\tUse the Jackson stochastic model.\n");
+  fprintf(stderr, "-B\tUse the BLMT stochastic model.\n");
+  fprintf(stderr, "-S\tUse the Saarinen stochastic model.\n");
   fprintf(stderr, "-K\tUse the Killmann-Schindler stochastic model.\n");
   fprintf(stderr, "-W\tUse the worst-case Killmann-Schindler stochastic model.\n");
   fprintf(stderr, "-g <r>\tOperate under the assumption that the unpredictable portion of the observed jitter is sigma*r (so reduce the observed jitter by the factor r).\n");
@@ -53,6 +53,7 @@ noreturn static void useageExit(void) {
  * It presumes that the output of the RO is serially XORed in pairs.
  *  * If this isn't true, then the produced estimate is an approximation.
  * It presents an average case (results are averaged over all initial phases).
+ *   Assumption is that the per-sample starting phase is uniformly distributed.
  */
 /*Implementation notes:
  * After the Saarinen model was published, I noticed that a bunch of the terms from that model occur in the
@@ -157,6 +158,7 @@ static long double JacksonModel(long double sigma) {
  *
  *Weaknesses:
  * It presents an average case (results are averaged over all initial phases).
+ *   Assumption is that the per-sample starting phase is uniformly distributed.
  */
 static long double SaarinenSummand(long double bn, long double delta) {
   // const long double an = bn + 0.5L*delta;
@@ -202,7 +204,7 @@ static long double SaarinenModel(long double sigma) {
     summand = SaarinenSummand(((long double)j) * sigmaTermInv, sigmaTermInv);
 
     if (isnormal(summand) && (summand >= LDBL_MIN)) {
-      // This captures (in rough terms) both the jth term, along with parts of the the -(j-1) th term.
+      // This captures (in rough terms) both the jth term, along with parts of the the -(j-1)th term.
       sum += 2.0L * summand;
     } else {
       feclearexcept(FE_UNDERFLOW);
@@ -371,6 +373,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
  *
  *Weaknesses:
  * It presents an average case (results are averaged over all initial phases).
+ *   Assumption is that the per-sample starting phase is uniformly distributed.
  *
  * Note: All the formulas in this implementation use notation and conventions as specified in the Killmann-Schindler
  * paper, but this paper is counting full cycles (0->1 crossings). This isn't exactly what we want, as the output
@@ -420,7 +423,8 @@ static long double KillmannSchindlerModel(long double sigma) {
  * It is very conservative.
  * it assumes a profoundly powerful attacker
  *    * It assumes that the attacker can _set_ the initial state prior to each sample cycle,
- *     and that they set it to the worst-case initial phase.
+ *      and that they set it to the worst-case initial phase (that is a phase that makes the resulting
+ *      output the most predictable).
  * Its large-scale characteristics are consistent with our expectations (it produces 0 for deterministic ROs, for instance).
  *
  *Weaknesses:
@@ -453,7 +457,7 @@ static long double KillmannSchindlerResetCycleProb(long double x, uint64_t kin, 
 /*
  * This is a function that is provided to cycleCountLsbNormalizedMinEnt.
  *
- * Constructs the "worst-case" (lowest entropy) situation, given the parameters input yeild
+ * Constructs the "worst-case" (lowest entropy) situation, given the parameters input yield
  * a situation where it is maximally likely that the deterministic output is produced.
  * We're normalizing everything so that mu=1/2 (remember, this is the average flipping time) and s=1000.
  */

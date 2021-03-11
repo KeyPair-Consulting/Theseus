@@ -200,7 +200,7 @@ double-merge
 
 ### Utilities to help produce H\_submitter
 
-#### ./ro-model
+#### `ro-model`
 Usage:
 	`ro-model [-v] [-J] [-B] [-S] [-K] [-W] [-g gaussian-prop] <sigma>` <br />
 * Produce a min entropy estimate using the selected stochastic model.
@@ -218,7 +218,9 @@ Some example results are contained within the following graphs: <br />
 
 ![Zoomed In Ring Oscillator Stochastic Model Results](ro-model-zoom.png)
 
-#### linear-interpolate
+Note that the Killmann-Schindler stochastic model and the Saarinen stochastic model produce effectively equivalent results.
+
+#### `linear-interpolate`
 Usage:
 	`linear-interpolate [-v] [-i] [-x] <value>`
 * Takes a set of points (`x\_1`, `y\_1`), ... (`x\_n`, `y\_n`), one point per line, from stdin and treats the points as a relation.
@@ -230,6 +232,7 @@ Usage:
 * `-i`:      After the described relation is turned into a function, the relation's coordinates are exchanged, and points are discarded from the resulting relation until it is again a function (this is in some sense an inverse function).
 *`-x`:      If we encounter a relation with multiple equal arguments, keep the one with the largest value (y-value).
 
+This tool can be used to infer parameters from the statistical results.
 
 ### Utilities to Produce Test Data
 randomfile

@@ -223,10 +223,10 @@ Note that the Killmann-Schindler stochastic model and the Saarinen stochastic mo
 #### `linear-interpolate`
 Usage:
 	`linear-interpolate [-v] [-i] [-x] <value>`
-* Takes a set of points (`x\_1`, `y\_1`), ... (`x\_n`, `y\_n`), one point per line, from stdin and treats the points as a relation.
+* Takes a set of points (`x_1`, `y_1`), ... (`x_n`, `y_n`), one point per line, from stdin and treats the points as a relation.
 * The relation is then forced to be functional by discarding point; by default, the point with the lowest value (y-value) is retained for each distinct argument (x-value), unless otherwise directed.
-* The points in the resulting function are then used to define and extension function f: `[x\_1, x\_n] -> R`, where the values are established through linear interpolation.
-* The reference data may include the arguments (x-values) INFINITY (or INF) and -INFINITY (or -INF) as end arguments (`x\_1` or `x\_n`). These are a flag that the function should be extended as a constant function.
+* The points in the resulting function are then used to define and extension function f: `[x_1, x_n] -> R`, where the values are established through linear interpolation.
+* The reference data may include the arguments (x-values) INFINITY (or INF) and -INFINITY (or -INF) as end arguments (`x_1` or `x_n`). These are a flag that the function should be extended as a constant function.
 * The value of such points must be equal to the nearest argument (x-value).
 * `-v`:      Verbose mode (can be used up to 3 times for increased verbosity).
 * `-i`:      After the described relation is turned into a function, the relation's coordinates are exchanged, and points are discarded from the resulting relation until it is again a function (this is in some sense an inverse function).

@@ -175,28 +175,138 @@ Usage:
 * `-c`: Disable the creation of confidence intervals.
 
 
-#### Others
-u32-selectdata
-u32-selectrange
-u32-xor-diff
-u128-bit-select
-u32-discard-fixed-bits
-extractbits
-u32-anddata
-double-sort
-u32-bit-select
-u32-xor
-hweight
-bits-in-use
-u32-bit-permute
-discard-fixed-bits
-downsample
-u128-discard-fixed-bits
-u32-gcd
-u32-manbin
-u32-regress-to-mean
-double-minmaxdelta
-double-merge
+### Others
+#### `u32-selectdata`
+Usage:
+	`u32-selectdata inputfile trimLowPercent trimHighPercent`
+* Attempt to keep the percentages noted.
+* inputfile is assumed to be a stream of uint32\_ts
+* output is to stdout, and is u32 ints
+
+#### `u32-selectrange`
+Usage:
+	`u32-selectrange inputfile low high`
+* Extracts all values between low and high (inclusive).
+* inputfile is assumed to be a stream of uint32\_ts
+* output is to stdout, and is u32 ints
+
+#### `u32-xor-diff`
+Usage:
+	`u32-xor-diff`
+* Output the running XOR of adjacent values. 
+* The values are expected to be provided via stdin.
+
+#### `u128-bit-select`
+Usage:
+	`bit-select-u128 (bit)`
+* The 128-bit values are expected to be provided via stdin.
+* output is uint8_t via stdout.
+
+#### `u32-discard-fixed-bits`
+Usage:
+	`u32-discard-fixed-bits <inputfile>`
+* inputfile is assumed to be a stream of uint32\_ts
+* output sent to stdout are uint32\_t integers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+
+#### `extractbits`
+Usage:
+	`extractbits <inputfile> <bitmask>`
+* inputfile is assumed to be a stream of uint32\_ts
+* output is sent to stdout is in uint8\_t format
+
+#### `u32-anddata`
+Usage:
+	`u32-anddata [inputfile] <bitmask>`
+* Takes the uint32\_t symbols in (machine format) and bitwise ANDs each symbol with <bitmask>.
+* inputfile is assumed to be a stream of uint32\_ts
+* Outputs uint32\_ts to stdout
+* The result is the data bitwise anded with the provided bitmask output to stdout
+
+#### `double-sort`
+Usage:
+	`double-sort <filename>`
+* Takes doubles from the file and sorts them.
+
+#### `u32-bit-select`
+Usage:
+	`u32-bit-select [-r] (bit)`
+* `-r`: Reverse the endianness of the u32 inputs before selecting the bit.
+* Outputs only the selected bit (0 is the lsb, 31 is msb).
+* The 32-bit values are expected to be provided via stdin.
+* output is uint8\_t via stdout.
+
+#### `hweight`
+Usage:
+	`hweight bitmask`
+* output is the hamming weight of the bitmask
+
+#### `bits-in-use`
+Usage:
+	`bits-in-use <inputfile>`
+* inputfile is assumed to consist of uint32\_ts
+* outputs the number of bits required to represent data after removing stuck and superfluous bits.
+
+#### `u32-bit-permute`
+Usage:
+	`u32-bit-permute [-r] <bit specification>`
+* `-r`: Reverse the endianness of the u32 inputs before permuting.
+* Bit ordering is in the LSB 0 format (that is, bit 0 is the LSB, bit 31 is the MSB)
+* Ordering of the bit specification is left to right, MSB to LSB, so the specification "31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0" is the identity permutation.
+* If fewer than 32 output bits are within the specification, the unspecified high order bits are set to 0
+* Each bit position can be present at most once.
+* The 32-bit values are expected to be provided via stdin.
+* output is u32 values via stdout in machine native format.
+
+#### `discard-fixed-bits`
+Usage:
+	`discard-fixed-bits inputfile`
+* inputfile is assumed to be a stream of uint8\_t
+* output sent to stdout are uint8\_t, with all fixed bits removed and the non-fixed bits moved to the lsb of the output.
+
+#### `downsample`
+Usage:
+	`downsample [-b <block size>] <rate> <data file>`
+* Groups data by index into modular classes mod <rate> evenly into the block size.
+* `<rate>`: Number of input samples per output samples
+* `-b`: Samples per output block (default 1000000)
+* The uint8\_t values are output via stdout.
+
+#### `u128-discard-fixed-bits`
+Usage:
+	`discard-fixed-bits-u128 inputfile output`
+* inputfile is assumed to be a stream of uint128\_t
+* output sent to stdout are uint32\_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+
+#### `u32-gcd`
+Usage:
+	`u32-gcd <filename>`
+* Find common divisors, and remove these factors.
+* The values are output to stdout.
+
+#### `u32-manbin`
+Usage:
+	`u32-manbin inputfile cutoff_1 ... cutoff_{n-1}`
+* convert data to one of the n bin numbers (0, ..., n-1).
+* The cutoffs specify the first value in the next bin (so the first bin is `[0, cutoff_1)`, the second bin is `[cutoff_1, cutoff_2)`, the last bin is `[cutoff_{n-1}, UINT32_MAX ]` etc.)
+* inputfile is assumed to be a stream of uint32\_ts
+* output is to stdout, and is uint8\_t values
+
+#### `u32-regress-to-mean`
+Usage:
+	`u32-regress-to-mean <filename> <k>`
+* Calculate the mean, and then force each `k`-block to have this mean, and then round the resulting values.
+
+#### `double-minmaxdelta`
+Usage:
+	`double-minmaxdelta [-v] [-0] [filename]`
+* Takes doubles from the file (if provided) or stdin (by default) (1 per line in ascii mode) and gives the mean.
+* Verbose mode (can be used up to 3 times for increased verbosity).
+* `-0`: Read in doubles in machine-specific format.
+
+#### `double-merge`
+Usage:
+	`double-merge <file1> <file2> <outfile>`
+* Merges two sorted lists into a single merged sorted list.
 
 ### Utilities to help produce H\_submitter
 
@@ -235,37 +345,215 @@ Usage:
 This tool can be used to infer parameters from the statistical results.
 
 ### Utilities to Produce Test Data
-randomfile
-simulate-osc
-mementsource
+#### `randomfile`
+Usage:
+	`randomfile [-v] [-b <p>,<bits>] [-s <m>] [-d] [-a <andmask>] [-n <mean>,<stddev>]`
+* `-d`: Make any RNG input deterministic.
+* `-b <p>,<b>`: Produce b-bit symbols with Pr(0) = p, of each other symbol is (1-p)/(2^b - 1).
+* `-c <c>`: Produce 1-bit symbols with correlation c, that is Pr(X_j = a| X_{j-1} = a) = (c+1)/2 (so -1 <= c <= 1).
+* `-n <mean>,<stddev>,<bits>`: Produce truncated normally distributed samples, with the provided mean and standard deviation, fitting into <bits> bits.
+* `-u <startBias>,<serialCoefficient>,<stepNoiseMean>,<stepNoiseStdDev>,<leftStepSize>,<rightStepSize>`: Produce bitwise data using the SUMS model.
+* `-p <magnitude>,<period>`: Sinusoidal bias, with <magnitude> and <period> listed (each sample takes 1 time unit).
+* `-s <m>`: Use a sample set of <m> values. (default m=1000000)
+* `-f <b>,<p>`: Output <b> bits from an output filtered via a LFSR (<p> is the LFSR)
+* `-a <andmask>`: AND the output with andmask
+* `-l <len>`: length of the averaging block.
+* `-v`: verbose mode.
+* `-t`: Output uint8_t integers.
+* outputs random uint32_t (uint8_t when "-t" option is used) integers to stdout
+
+#### `simulate-osc`
+Usage:
+	`simulate-osc [-v] [-n <samples>] [-p <phase>] [-f] [-u] <ringOscFreq> <ringOscJitterSD> <sampleFreq>`
+*`<sampleFreq>` Is either the sampling frequency or "*" followed by the number of nominal ring oscillations per sample cycle.
+* `-v`: Enable verbose mode.
+* `-s`: Send verbose mode output to stdout.
+* `-n <samples>`: Number of samples to generate (default: 1000000)
+* `-p <phase>`:  Specify the initial phase of the ring oscillator from the interval [0,1) (relative to the sample clock). Default: generate randomly.
+* `-d`: Make any RNG input deterministic.
+* `-o`: Output deviation from deterministic output in addition to the actual output.
+* `-f`: Fudge the ringOscFreq using a normal distribution.
+* `-u`:  Fudge the average intra-sample phase change. (Fix the number of cycles per sample, and select the ISP fractional part uniformly from [0, 0.25]).
+* Frequency values are in Hz.
+* Jitter Standard Deviation is in seconds (e.g. 1E-15) or a percentage of the ring oscillator period (ending with %, e.g., 0.001%).
+* Output is uint8\_t integers; lsb is oscillator output. next bit (if enabled) tracks deviations from the deterministic value.
 
 ### Utilities to Help Interpret Results.
-percentile
-mean
-failrate
+#### `percentile`
+Usage:
+	`percentile [-l] [-v] [-d] [-o] [-0] [-b <low>,<high>] <p> [filename]`
+* Takes doubles from the file (if provided) or stdin (by default), 1 per line, and gives the pth percentile
+* percentile estimated using the recommended NIST method (Hyndman and Fan's R6).
+* See: http://www.itl.nist.gov/div898/handbook/prc/section2/prc262.htm
+* data is presumed to be passed in via stdin, consisting of a series of lines of doubles.
+* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+* `-d`: Make any RNG deterministic.
+* `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
+* `-l`: Treat the last value as an upper bound, rather than a data element. Report a single value, the min of the upper bound and the assessed value or smallest value in the confidence interval.
+* `-b <c>,<rounds>`:  Produce <c>-BCa bootstrap confidence intervals using <rounds> of bootstrapping.
+* `-u <low>,<high>`: Discard samples that are not in the range [low, high].
+* `-0`: Read in doubles in machine-specific format.
+* `<p>`: Return the pth percentile p in [0, 1]
+
+#### `mean`
+Usage:
+	`mean [-v] [-d] [-o] [-0] [-b <c>,<rounds>] [-u <low>,<high>] [filename]`
+* Takes doubles from the file (if provided) or stdin (by default), 1 per line, and gives the mean.
+* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+* `-d`: Make any RNG deterministic.
+* `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
+* `-b <c>,<rounds>`: Produce <c>-BCa bootstrap confidence intervals using <rounds> of bootstrapping.
+* `-u <low>,<high>`: Discard samples that are not in the range [low, high].
+* `-0`: Read in doubles in machine-specific format.
+
+#### `failrate`
+Usage:
+	`failrate [-v] [-d] [-0] <p> <q> [filename]`
+* Takes doubles from the file (if provided) or stdin (by default), 1 per line or in binary format, and gives the proportion that are less than or equal to p or greater than or equal to q.
+* Useful to characterize false positive rates for statistical tests with inclusive failure bounds.
+* data is presumed to be passed in via stdin, consisting of a series of lines of doubles.
+* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+* `-s`: Assume that the data is sorted.
+* `-0`: Read in doubles in machine-specific format.
+* `<p>`: Lower bound
+* `<q>`: Upper bound
 
 ### Data Conversion Utilities
-u64-to-u32
-u64-counter-raw
-u8-to-sd
-u16-to-u32
-u64-to-ascii
-u32-to-sd
-u16-to-sd
-u64-jent-to-delta
-u32-to-categorical
-dec-to-u32
-u32-expand-bitwidth
-u32-to-ascii
-sd-to-hex
-u8-to-u32
-hex-to-u32
-blocks-to-sd
-u32-counter-endian
-u32-delta
-u32-counter-bitwidth
-u32-counter-raw
-u64-counter-endian
+#### `u64-to-u32`
+Usage:
+	`u64-to-u32 [-r] [-t]`
+* `-r`: Switch endianness of input values.
+* `-t`: Truncate input values.
+* The values are expected to be provided via stdin and the output via stdout.
+
+#### `u64-counter-raw`
+Usage:
+	`u64-counter-raw <filename>`
+* Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
+
+#### `u8-to-sd`
+Usage:
+	`u8-to-u32`
+* The values are expected to be provided via stdin.
+
+#### `u16-to-u32`
+Usage:
+	`u16-to-u32 [-d]`
+* `-d`: output differences between adjacent values.
+* The values are expected to be provided via stdin.
+
+#### `u64-to-ascii`
+Usage:
+	`u64-to-ascii`
+* The values are expected to be provided via stdin.
+
+#### `u32-to-sd`
+Usage:
+	`u16-to-sd [-l] [-b]`
+* Expand packed bits that are stored in u16 values.
+* `-l`  extract bits from low bit to high bit
+* `-b`  16 bit values are in big endian format.
+* The values are expected to be provided via stdin.
+
+#### `u16-to-sd`
+Usage:
+	`u16-to-sd [-l] [-b]`
+* Expand packed bits that are stored in u16 values.
+* `-l`: extract bits from low bit to high bit
+* `-b`: 16 bit values are in big endian format.
+* The values are expected to be provided via stdin.
+
+#### `u64-jent-to-delta`
+Usage:
+	`u64-jent-to-delta`
+* input comes from stdin are in uint64\_t, in the default jent delta format.
+* output sent to stdout is the number of nanoseconds represented by the delta.
+
+#### `u32-to-categorical`
+Usage:
+	`u32-to-categorical [-v] [-m] [-t <value>] <infile>`
+* Produces categorical summary of data.
+* `-v`: Increase verbosity. Can be used multiple times.
+* `-m`: Output in Mathematica-friendly format.
+* `-t <value>`: Trim any value that is prior to the first symbol with <value> occurrences or more or after the last symbol with <value> occurrences or more.
+* `-z`: Don't output zero categories.
+* The values are expected to be provided via stdin.
+
+#### `dec-to-u32`
+Usage:
+	`dec-to-u32`
+* The values are expected to be provided via stdin, one per line.
+
+#### `u32-expand-bitwidth`
+Usage:
+	`u32-expand-bitwidth <filename>`
+* Extract inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.
+* The values are expected to be provided via stdin.
+
+#### `u32-to-ascii`
+Usage:
+	`u32-to-ascii`
+* Prints the provided binary data as human-readable decimal values.
+* The values are expected to be provided via stdin.
+* The values are output by stdout.
+
+#### `sd-to-hex`
+Usage:
+	`sd-to-hex`
+* Output the bytes in hex format.
+* The values are expected to be provided via stdin.
+* The output values are sent to stdout.
+
+#### `u8-to-u32`
+Usage:
+	`u8-to-u32`
+* The values are expected to be provided via stdin.
+
+#### `hex-to-u32`
+Usage:
+	`hex-to-u32`
+* The values are expected to be provided via stdin, one per line.
+
+#### `blocks-to-sd`
+Usage:
+	`blocks-to-sd [-l] <blocksize> <ordering>`
+* Extract bits from a blocksize-sized block a byte at a time, in the specified byte ordering.
+* blocksize        is the number of bytes per block
+* ordering         is the indexing order for bytes (zero indexed decimal, separated by colons)
+* -l  Extract bits from least to most significant within each byte.
+* The values are expected to be provided via stdin.
+* output is single bits stored in uint8\_t sent to stdout.
+* example, standard little endian 32 bit integers, data stored least to most significant: `blocks-to-sd -l 4 0:1:2:3`
+
+#### `u32-counter-endian`
+Usage:
+	`u32-counter-endian [-d] <infile>`
+* Trys to guess counter endianness, and translates to the local platform.
+* `-d`: output differences between adjacent values (when viewing the data as a 32-bit unsigned counter with rollover).
+
+#### `u32-delta`
+Usage:
+	`u32-delta <filename>`
+* Extract deltas and then translate the result to a positive value.
+* The values are output via stdout.
+
+#### `u32-counter-bitwidth`
+Usage:
+	`u32-counter-bitwidth <filename>`
+* Extract deltas under the assumption that the data is an increasing counter of some inferred bitwidth.
+
+
+#### `u32-counter-raw`
+Usage:
+	`u32-counter-raw <filename>`
+* Extract deltas treated as 32-bit unsigned counters (that roll may roll over).
+
+#### `u64-counter-endian`
+Usage:
+	`u64-counter-endian <filename>`
+* Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
+* Attempt to determine the endianness.
+* The values are expected to be provided via stdin.
 
 ## Make
 

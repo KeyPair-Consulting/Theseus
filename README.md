@@ -122,10 +122,10 @@ Usage:
 * Perform the LRS IID test on the supplied data.
 * `<inputfile>` is assumed to be a sequence of `statData_t`
 * `-v`: Verbose mode.
-* `-l <index>,<samples>`: Read the <index> substring of length <samples>.
+* `-l <index>,<samples>`: Read the `<index>` substring of length `<samples>`.
 * `-r`: instead of doing testing on provided data use a random IID variable.
-* `-k <k>`:  Use an alphabet of <k> values (default `k`=2).
-* `-s <m>`:  Use a sample set of <m> values (default `m`=1000000).
+* `-k <k>`:  Use an alphabet of `<k>` values (default `k`=2).
+* `-s <m>`:  Use a sample set of `<m>` values (default `m`=1000000).
 
 
 ### Utilities for Performing Interpretation and Processing
@@ -217,7 +217,7 @@ Usage:
 #### `u32-anddata`
 Usage:
 	`u32-anddata [inputfile] <bitmask>`
-* Takes the uint32\_t symbols in (machine format) and bitwise ANDs each symbol with <bitmask>.
+* Takes the uint32\_t symbols in (machine format) and bitwise ANDs each symbol with `<bitmask>`.
 * inputfile is assumed to be a stream of uint32\_ts
 * Outputs uint32\_ts to stdout
 * The result is the data bitwise anded with the provided bitmask output to stdout
@@ -266,7 +266,7 @@ Usage:
 #### `downsample`
 Usage:
 	`downsample [-b <block size>] <rate> <data file>`
-* Groups data by index into modular classes mod <rate> evenly into the block size.
+* Groups data by index into modular classes mod `<rate>` evenly into the block size.
 * `<rate>`: Number of input samples per output samples
 * `-b`: Samples per output block (default 1000000)
 * The uint8\_t values are output via stdout.
@@ -351,11 +351,11 @@ Usage:
 * `-d`: Make any RNG input deterministic.
 * `-b <p>,<b>`: Produce b-bit symbols with Pr(0) = p, of each other symbol is (1-p)/(2^b - 1).
 * `-c <c>`: Produce 1-bit symbols with correlation c, that is Pr(X_j = a| X_{j-1} = a) = (c+1)/2 (so -1 <= c <= 1).
-* `-n <mean>,<stddev>,<bits>`: Produce truncated normally distributed samples, with the provided mean and standard deviation, fitting into <bits> bits.
+* `-n <mean>,<stddev>,<bits>`: Produce truncated normally distributed samples, with the provided mean and standard deviation, fitting into `<bits>` bits.
 * `-u <startBias>,<serialCoefficient>,<stepNoiseMean>,<stepNoiseStdDev>,<leftStepSize>,<rightStepSize>`: Produce bitwise data using the SUMS model.
-* `-p <magnitude>,<period>`: Sinusoidal bias, with <magnitude> and <period> listed (each sample takes 1 time unit).
-* `-s <m>`: Use a sample set of <m> values. (default m=1000000)
-* `-f <b>,<p>`: Output <b> bits from an output filtered via a LFSR (<p> is the LFSR)
+* `-p <magnitude>,<period>`: Sinusoidal bias, with `<magnitude>` and `<period>` listed (each sample takes 1 time unit).
+* `-s <m>`: Use a sample set of `<m>` values. (default m=1000000)
+* `-f <b>,<p>`: Output `<b>` bits from an output filtered via a LFSR (`<p>` is the LFSR)
 * `-a <andmask>`: AND the output with andmask
 * `-l <len>`: length of the averaging block.
 * `-v`: verbose mode.
@@ -390,7 +390,7 @@ Usage:
 * `-d`: Make any RNG deterministic.
 * `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
 * `-l`: Treat the last value as an upper bound, rather than a data element. Report a single value, the min of the upper bound and the assessed value or smallest value in the confidence interval.
-* `-b <c>,<rounds>`:  Produce <c>-BCa bootstrap confidence intervals using <rounds> of bootstrapping.
+* `-b <c>,<rounds>`:  Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
 * `-u <low>,<high>`: Discard samples that are not in the range [low, high].
 * `-0`: Read in doubles in machine-specific format.
 * `<p>`: Return the pth percentile p in [0, 1]
@@ -402,7 +402,7 @@ Usage:
 * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
 * `-d`: Make any RNG deterministic.
 * `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
-* `-b <c>,<rounds>`: Produce <c>-BCa bootstrap confidence intervals using <rounds> of bootstrapping.
+* `-b <c>,<rounds>`: Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
 * `-u <low>,<high>`: Discard samples that are not in the range [low, high].
 * `-0`: Read in doubles in machine-specific format.
 
@@ -475,7 +475,7 @@ Usage:
 * Produces categorical summary of data.
 * `-v`: Increase verbosity. Can be used multiple times.
 * `-m`: Output in Mathematica-friendly format.
-* `-t <value>`: Trim any value that is prior to the first symbol with <value> occurrences or more or after the last symbol with <value> occurrences or more.
+* `-t <value>`: Trim any value that is prior to the first symbol with `<value>` occurrences or more or after the last symbol with `<value>` occurrences or more.
 * `-z`: Don't output zero categories.
 * The values are expected to be provided via stdin.
 

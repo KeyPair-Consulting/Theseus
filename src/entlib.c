@@ -1628,6 +1628,7 @@ double multiMCWPredictionEstimate(const statData_t *S, size_t L, size_t k, struc
   return (predictionEstimateResult(correctCount, L - 63, maxRunOfCorrects + 1, k, result));
 }
 
+//It is important that LAGD be a power of 2 (some of the fancyness would otherwise break)
 #define LAGD 128LU
 #define LAGMASK (LAGD - 1)
 

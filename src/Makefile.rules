@@ -4,7 +4,7 @@ dep = $(obj:.o=.d)  # one dependency file for each sourc
 
 BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov generate-precision discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical double-minmaxdelta shannon linear-interpolate ro-model
 
-SIMPLEBINS=hex-to-u32 u16-to-sd dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sd u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex
+SIMPLEBINS=hex-to-u32 u16-to-sdbin dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sdbin u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex
 
 all:	$(BINARIES) $(SIMPLEBINS)
 

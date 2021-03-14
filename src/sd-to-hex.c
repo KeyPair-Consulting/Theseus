@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -22,7 +22,7 @@
 /*
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "sd-to-u8\n");
+  fprintf(stderr, "sd-to-hex\n");
   fprintf(stderr, "Output the bytes in hex format.\n");
   fprintf(stderr, "The values are expected to be provided via stdin.\n");
   fprintf(stderr, "The output values are sent to stdout.\n");

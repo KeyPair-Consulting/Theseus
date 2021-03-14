@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -24,9 +24,9 @@
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "discard-fixed-bits-u128 inputfile tooutput\n");
+  fprintf(stderr, "discard-fixed-bits-u128 inputfile outputgroup\n");
   fprintf(stderr, "inputfile is assumed to be a stream of uint128_t\n");
-  fprintf(stderr, "output sent to stdout are uint32_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.\n");
+  fprintf(stderr, "outputgroup sent to stdout are uint32_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.\n");
   exit(EX_USAGE);
 }
 

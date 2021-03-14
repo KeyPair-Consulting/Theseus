@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -26,7 +26,6 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "u64-counter-raw <filename>\n");
   fprintf(stderr, "Extract deltas treated as 64-bit unsigned counters (that roll may roll over).\n");
-  fprintf(stderr, "The values are expected to be provided via stdin.\n");
   exit(EX_USAGE);
 }
 

@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -27,7 +27,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "bits-in-use <inputfile>\n");
   fprintf(stderr, "inputfile is assumed to consist of uint32_ts\n");
-  fprintf(stderr, "outputs the number of bits required to represent data after removing stuck and superflous bits.\n");
+  fprintf(stderr, "outputs the number of bits required to represent data after removing stuck and superfluous bits.\n");
   exit(EX_USAGE);
 }
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     exit(EX_NOINPUT);
   }
 
-  if((datalen = readuint32file(infp, &data)) < 1) {
+  if ((datalen = readuint32file(infp, &data)) < 1) {
     perror("File contains no data");
     exit(EX_DATAERR);
   }
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 
   fprintf(stderr, "Read in %zu uint32_ts\n", datalen);
   if (fclose(infp) != 0) {
-    perror("Can't close intput file");
+    perror("Can't close input file");
     exit(EX_OSERR);
   }
 

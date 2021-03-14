@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -27,7 +27,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "u32-bit-permute [-r] <bit specification>\n");
   fprintf(stderr, "-r\tReverse the endianness of the u32 inputs before permuting.\n");
   fprintf(stderr, "Bit ordering is in the LSB 0 format (that is, bit 0 is the LSB, bit 31 is the MSB)\n");
-  fprintf(stderr, "Ordering of the bit spefication is left to right, MSB to LSB, so the specification \"31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0\" is the idendity permutation.\n");
+  fprintf(stderr, "Ordering of the bit specification is left to right, MSB to LSB, so the specification \"31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0\" is the identity permutation.\n");
   fprintf(stderr, "If fewer than 32 output bits are within the specification, the unspecified high order bits are set to 0\n");
   fprintf(stderr, "Each bit position can be present at most once.\n");
   fprintf(stderr, "The 32-bit values are expected to be provided via stdin.\n");
@@ -87,7 +87,7 @@ static void strtoindexarray(const char *nptr, uint8_t *bitpos) {
 
 int main(int argc, char *argv[]) {
   uint32_t data;
-  uint8_t outputBitpos[33] = {32};  // in reverse order
+  uint8_t outputBitpos[33];  // msb to lsb
   int opt;
   bool configReverse;
 

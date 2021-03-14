@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -23,7 +23,7 @@
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "blocks-to-sd [-l] <blocksize> <ordering>\n");
+  fprintf(stderr, "blocks-to-sdbin [-l] <blocksize> <ordering>\n");
   fprintf(stderr, "Extract bits from a blocksize-sized block a byte at a time, in the specified byte ordering.\n");
   fprintf(stderr, "blocksize \t is the number of bytes per block\n");
   fprintf(stderr, "ordering \t is the indexing order for bytes (zero indexed decimal, separated by colons)\n");
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  blockSize = (size_t) strtoint(argv[0], NULL, 1, INT_MAX);
+  blockSize = (size_t)strtoint(argv[0], NULL, 1, INT_MAX);
   fprintf(stderr, "%zu-byte block\n", blockSize);
   if (blockSize == 0) {
     useageExit();
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     exit(EX_OSERR);
   }
 
-  for(size_t j=0; j<blockSize; j++) order[j]=-1;
+  for (size_t j = 0; j < blockSize; j++) order[j] = -1;
 
   outputBytesPerBlock = 0;
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
   for (size_t k = 0; k < blockSize; k++) {
     foundCurrent = false;
     for (size_t j = 0; j < outputBytesPerBlock; j++) {
-      assert((order[j] >= 0) && (order[j]<(int)blockSize));
+      assert((order[j] >= 0) && (order[j] < (int)blockSize));
       if (order[j] == (int)k) {
         if (foundCurrent) {
           fprintf(stderr, "Error: Can't reference the same byte more than once\n");

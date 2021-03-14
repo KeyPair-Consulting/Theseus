@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -19,7 +19,7 @@
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
-  fprintf(stderr, "u16-to-sd [-l] [-b]\n");
+  fprintf(stderr, "u16-to-sdbin [-l] [-b]\n");
   fprintf(stderr, "Expand packed bits that are stored in u16 values.\n");
   fprintf(stderr, "-l\t extract bits from low bit to high bit\n");
   fprintf(stderr, "-b\t 16 bit values are in big endian format.\n");
@@ -52,9 +52,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  argc -= optind;
-
-  if (argc != 0) {
+  if (argc != optind) {
     useageExit();
   }
 

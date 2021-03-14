@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -833,6 +833,7 @@ int main(int argc, char *argv[]) {
   size_t numOfSymbols;
   double targetPopulation;
   uint32_t curLocation;
+  size_t offset;
   statData_t outputSymbol;
 
   assert(PRECISION(UINT_MAX) >= 32);
@@ -992,7 +993,10 @@ int main(int argc, char *argv[]) {
 
     assert(curinterval >= rewriteTable);
     assert((curinterval - rewriteTable) % 3 == 0);
-    curLocation = (uint32_t)(curinterval - rewriteTable) / 3;
+    offset = (uint64_t)(curinterval - rewriteTable) / 3;
+    assert(offset <= UINT32_MAX);
+    curLocation = (uint32_t) offset;
+	
     assert(((size_t)curLocation) < outputBuckets);
 
     outputSymbol = (statData_t)curLocation;

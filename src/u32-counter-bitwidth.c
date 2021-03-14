@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     exit(EX_NOINPUT);
   }
 
-  if((datalen = readuint32file(infp, &data))<1) {
+  if ((datalen = readuint32file(infp, &data)) < 1) {
     useageExit();
   }
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   for (size_t i = 0; i < datalen - 1; i++) {
     assert(delta[i] >= min);
-    data[i] = (uint32_t)(delta[i] - min);
+    data[i] = delta[i] - min;
   }
 
   if (fwrite(data, sizeof(uint32_t), datalen - 1, stdout) != datalen - 1) {

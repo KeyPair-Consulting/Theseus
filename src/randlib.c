@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -168,7 +168,7 @@ uint32_t randomu32(struct randstate *rstate) {
     return rstate->buffered32;
   } else {
     indata = randomu64(rstate);
-    rstate->buffered32 = (uint32_t)(indata >> 32);
+    rstate->buffered32 = (uint32_t)((indata >> 32)&0xFFFFFFFF);
     rstate->buffered32Avail = true;
     return (uint32_t)(0xFFFFFFFFUL & indata);
   }
@@ -548,7 +548,7 @@ uint32_t SUMSgenerate(struct SUMSstate *sstate, struct randstate *rstate) {
 
 /*The probability of outputting a 1 is p.*/
 uint8_t genRandBit(double p, struct randstate *rstate) {
-  return (randomUnit(rstate) < p)?1U:0U;
+  return (randomUnit(rstate) < p) ? 1U : 0U;
 }
 
 uint32_t genRandCorrelatedBit(double c, uint32_t lastbit, struct randstate *rstate) {

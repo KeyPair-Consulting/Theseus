@@ -273,7 +273,7 @@ Usage:
 
 #### `u128-discard-fixed-bits`
 Usage:
-	`discard-fixed-bits-u128 inputfile output`
+	`discard-fixed-bits-u128 inputfile outputgroup`
 * inputfile is assumed to be a stream of uint128\_t
 * output sent to stdout are uint32\_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
 
@@ -449,13 +449,14 @@ Usage:
 
 #### `u32-to-sd`
 Usage:
-	`u16-to-sd [-l] [-b]`
-* Expand packed bits that are stored in u16 values.
-* `-l`  extract bits from low bit to high bit
-* `-b`  16 bit values are in big endian format.
-* The values are expected to be provided via stdin.
+	`u32-to-sd`
+Usage:
+	`u32-to-sd <inputfile>`
+* inputfile is assumed to be a stream of uint32\_ts
+* output sent to stdout is a stream of uint8\_t integers
 
-#### `u16-to-sd`
+
+#### `u16-to-sdbin`
 Usage:
 	`u16-to-sd [-l] [-b]`
 * Expand packed bits that are stored in u16 values.
@@ -514,16 +515,16 @@ Usage:
 	`hex-to-u32`
 * The values are expected to be provided via stdin, one per line.
 
-#### `blocks-to-sd`
+#### `blocks-to-sdbin`
 Usage:
-	`blocks-to-sd [-l] <blocksize> <ordering>`
+	`blocks-to-sdbin [-l] <blocksize> <ordering>`
 * Extract bits from a blocksize-sized block a byte at a time, in the specified byte ordering.
 * blocksize        is the number of bytes per block
 * ordering         is the indexing order for bytes (zero indexed decimal, separated by colons)
 * -l  Extract bits from least to most significant within each byte.
 * The values are expected to be provided via stdin.
 * output is single bits stored in uint8\_t sent to stdout.
-* example, standard little endian 32 bit integers, data stored least to most significant: `blocks-to-sd -l 4 0:1:2:3`
+* example, standard little endian 32 bit integers, data stored least to most significant: `blocks-to-sdbin -l 4 0:1:2:3`
 
 #### `u32-counter-endian`
 Usage:

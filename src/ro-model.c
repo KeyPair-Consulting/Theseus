@@ -123,7 +123,7 @@ static long double JacksonModel(long double sigma) {
     // Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
     summand = JacksonSummand(((long double)j) * sigmaTermInv, sigmaTermInv);
 
-    if (isnormal(summand) && (summand >= LDBL_MIN)) {
+    if (isnormal(summand)) {
       tuplePmax = tuplePmax + 2.0L * summand;
     } else {
       feclearexcept(FE_UNDERFLOW);
@@ -203,7 +203,7 @@ static long double SaarinenModel(long double sigma) {
     // Note, we could just repeatedly subtract, but we accumulate floating point errors doing this.
     summand = SaarinenSummand(((long double)j) * sigmaTermInv, sigmaTermInv);
 
-    if (isnormal(summand) && (summand >= LDBL_MIN)) {
+    if (isnormal(summand)) {
       // This captures (in rough terms) both the jth term, along with parts of the the -(j-1)th term.
       sum += 2.0L * summand;
     } else {

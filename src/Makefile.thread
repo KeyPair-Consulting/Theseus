@@ -6,9 +6,16 @@ RDRND=-mrdrnd
 
 #debugging
 CC=clang-11
-MUTE=-Wno-padded -Wno-gnu-statement-expression -Wno-bad-function-cast -Wno-missing-braces
-#For general debugging (e.g., with static analyzer)
+#Silence selected warnings:
+#-Wno-padded
+#It is not clear why I should care about padding the compiler is adding.
+#-Wno-bad-function-cast
+#I don't see a problem with the construction (int)floor(1.3) and this is used here.
+#-Wno-gnu-statement-expression
+#GCC MACRO extensions are used (clang supports these)
+MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression
 
+#For general debugging (e.g., with static analyzer)
 #standard debug
 #DEBUGCFLAGS=-O2
 #DEBUGLDFLAGS=-lprofiler

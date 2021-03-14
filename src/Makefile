@@ -2,7 +2,8 @@
 CC=gcc
 RDRND=-mrdrnd
 
-MUTE=-Wno-inline -Wno-bad-function-cast -Wno-unused-function -Wno-missing-braces -Wno-pragmas
-CFLAGS=-std=gnu11 -O2 -Wall -m64 -march=native -Wextra -fstack-protector-all -Wstack-protector --param ssp-buffer-size=4 -fstack-check -Wconversion -Wsign-conversion -Wformat-security -Werror -pie -fPIE -ftrapv -Wl,-z,relro,now,noexecstack,noexecheap -fstrict-overflow -fwrapv -fno-delete-null-pointer-checks -Wshadow -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement -Wformat=2 -Wswitch-default -Wswitch-enum -Wcast-align -Wpointer-arith -Wstrict-overflow=5 -Wundef -Wnested-externs -Wunreachable-code -Wlogical-op -Wfloat-equal -Wstrict-aliasing -Wredundant-decls -Wold-style-definition -Wtrampolines -ggdb3 -fno-omit-frame-pointer -ffloat-store -fno-common -fPIC -fPIE -fstrict-aliasing -mbmi2 -mbmi -msse4.2 $(RDRND) -mfpmath=sse -msse2 $(MUTE) -DUADDL_OVERFLOW
+#conversion error silenced due to long-standing bug (fixed in GCC10) uint8_t foo=3; foo+=3; gives a conversion error. :-(
+MUTE=-Wno-conversion
+CFLAGS=-std=gnu11 -O2 -Wall -m64 -march=native -Wextra -fstack-protector-all -Wstack-protector --param ssp-buffer-size=4 -fstack-check -Wsign-conversion -Wformat-security -Werror -pie -fPIE -ftrapv -Wl,-z,relro,now,noexecstack,noexecheap -fstrict-overflow -fwrapv -fno-delete-null-pointer-checks -Wshadow -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wdeclaration-after-statement -Wformat=2 -Wswitch-default -Wswitch-enum -Wcast-align -Wpointer-arith -Wstrict-overflow=5 -Wundef -Wnested-externs -Wunreachable-code -Wlogical-op -Wfloat-equal -Wstrict-aliasing -Wredundant-decls -Wold-style-definition -Wtrampolines -ggdb3 -fno-omit-frame-pointer -ffloat-store -fno-common -fPIC -fPIE -fstrict-aliasing -mbmi2 -mbmi -msse4.2 $(RDRND) -mfpmath=sse -msse2 $(MUTE) -DUADDL_OVERFLOW
 
 include Makefile.rules

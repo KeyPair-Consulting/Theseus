@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -16,6 +16,7 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <sysexits.h>
+#include <getopt.h>
 
 #include "binio.h"
 #include "binutil.h"
@@ -36,27 +37,31 @@ int main(int argc, char *argv[]) {
   uint32_t *data = NULL;
   size_t i;
   size_t incCountNative, incCountReversed;
-  bool diffMode;
+  bool configDiffMode;
+  int opt;
 
-  diffMode = false;
+  configDiffMode = false;
   incCountNative = 0;
   incCountReversed = 0;
 
-  if (argc == 3) {
-    if (strncmp(argv[1], "-d", 2) == 0) {
-      diffMode = true;
-      argv++;
-      argc--;
-    } else {
-      useageExit();
+  while ((opt = getopt(argc, argv, "d")) != -1) {
+    switch (opt) {
+      case 'd':
+        configDiffMode = true;
+        break;
+      default: /* ? */
+        useageExit();
     }
   }
 
-  if (argc > 2) {
+  argc -= optind;
+  argv += optind;
+
+  if (argc != 1) {
     useageExit();
   }
 
-  if ((infp = fopen(argv[1], "rb")) == NULL) {
+  if ((infp = fopen(argv[0], "rb")) == NULL) {
     perror("Can't open file");
     exit(EX_NOINPUT);
   }
@@ -65,6 +70,7 @@ int main(int argc, char *argv[]) {
   assert(data != NULL);
 
   fprintf(stderr, "Read in %zu uint32_ts\n", datalen);
+
   if (fclose(infp) != 0) {
     perror("Can't close intput file");
     exit(EX_OSERR);
@@ -84,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (diffMode) {
+  if (configDiffMode) {
     for (i = 1; i < datalen; i++) {
       data[i - 1] = data[i] - data[i - 1];
     }

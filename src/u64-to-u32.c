@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -57,9 +57,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  argc -= optind;
-
-  if (argc != 0) {
+  if (argc != optind) {
     useageExit();
   }
 

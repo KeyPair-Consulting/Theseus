@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -16,6 +16,8 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <sysexits.h>
+#include <getopt.h>
+
 
 #include "precision.h"
 
@@ -28,32 +30,32 @@ noreturn static void useageExit(void) {
 }
 
 int main(int argc, char *argv[]) {
-  uint32_t data;
   size_t res;
-  uint16_t indata;
-  bool diffMode;
+  bool configDiffMode;
   uint16_t lastSymbol;
-  uint32_t delta;
+  int opt;
 
   assert(PRECISION(UINT_MAX) == 32);
 
-  diffMode = false;
+  configDiffMode = false;
 
-  if (argc == 2) {
-    if (strncmp(argv[1], "-d", 2) == 0) {
-      diffMode = true;
-    } else {
-      useageExit();
+  while ((opt = getopt(argc, argv, "d")) != -1) {
+    switch (opt) {
+      case 'd':
+        configDiffMode = true;
+        break;
+      default: /* ? */
+        useageExit();
     }
-  } else if (argc > 2) {
+  }
+
+  if (argc != optind) {
     useageExit();
   }
 
-  if (diffMode) {
-    res = fread(&indata, sizeof(uint16_t), 1, stdin);
-    if (res == 1) {
-      lastSymbol = indata;
-    } else {
+  if (configDiffMode) {
+    res = fread(&lastSymbol, sizeof(uint16_t), 1, stdin);
+    if (res != 1) {
       perror("Can't read initial symbol");
       exit(EX_OSERR);
     }
@@ -62,22 +64,23 @@ int main(int argc, char *argv[]) {
   }
 
   while (feof(stdin) == 0) {
+    uint32_t outdata;
+    uint16_t indata;
+
     res = fread(&indata, sizeof(uint16_t), 1, stdin);
     if (res == 1) {
-      if (diffMode) {
-        delta = (uint32_t)(indata - lastSymbol);
-
-        if (fwrite(&delta, sizeof(uint32_t), 1, stdout) != 1) {
-          perror("Can't write to stdout");
-          exit(EX_OSERR);
-        }
+      if (configDiffMode) {
+        uint16_t curdelta;
+        curdelta = (uint16_t)(indata - lastSymbol);
+        outdata = (uint32_t)curdelta;
         lastSymbol = indata;
       } else {
-        data = (uint32_t)indata;
-        if (fwrite(&data, sizeof(uint32_t), 1, stdout) != 1) {
-          perror("Can't write to stdout");
-          exit(EX_OSERR);
-        }
+        outdata = (uint32_t)indata;
+      }
+
+      if (fwrite(&outdata, sizeof(uint32_t), 1, stdout) != 1) {
+        perror("Can't write to stdout");
+        exit(EX_OSERR);
       }
     }
   }

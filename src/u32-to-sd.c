@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     exit(EX_NOINPUT);
   }
 
-  if((datalen = readuint32file(infp, &data))<1) {
+  if ((datalen = readuint32file(infp, &data)) < 1) {
     perror("Data file is empty");
     exit(EX_DATAERR);
   }
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "Outputting data\n");
   for (i = 0; i < datalen; i++) {
     if (data[i] > STATDATA_MAX) {
-      fprintf(stderr, "Value out of range\n");
+      fprintf(stderr, "Value %u at index %zu is out of range\n", data[i], i);
       free(data);
       free(dataout);
       exit(EX_DATAERR);

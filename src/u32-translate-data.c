@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -114,6 +114,7 @@ static size_t u32sortRelabel(uint32_t *data, size_t datalen, size_t *k) {
 
   /* L * log2(l) */
   if (needToRewrite) {
+    uint32_t maxSymbol = 0;
     /* L ops */
     if (configVerbose > 0) {
       fprintf(stderr, "Translating data\n");
@@ -130,9 +131,10 @@ static size_t u32sortRelabel(uint32_t *data, size_t datalen, size_t *k) {
 
       assert(cursymbol >= rewritetable);
       data[i] = (uint32_t)(cursymbol - rewritetable);
+      if (data[i] > maxSymbol) maxSymbol = data[i];
     }
     if (configVerbose > 0) {
-      fprintf(stderr, "Found %zu symbols total.\n", *k);
+      fprintf(stderr, "Found %zu symbols total (max symbol %u).\n", *k, maxSymbol);
     }
   } else {
     if (configVerbose > 0) {
@@ -210,17 +212,23 @@ static bool u32tableRelabel(uint32_t *S, size_t L, size_t *k) {
   }
 
   if (*k != j) {
+    uint32_t maxSymbol = 0;
     *k = j;
 
     translateNeeded = true;
     if (configVerbose > 0) {
-      fprintf(stderr, "Translation is necessary... Found %zu symbols total.\n", j);
+      fprintf(stderr, "Translation is necessary... Found %zu symbols total", j);
     }
     /* L ops */
     for (i = 0; i < L; i++) {
       assert(rewritetable[S[i]] >= 0);
       assert(rewritetable[S[i]] < (int64_t)(*k));
       S[i] = (uint32_t)rewritetable[S[i]];
+      if (S[i] > maxSymbol) maxSymbol = S[i];
+    }
+
+    if (configVerbose > 0) {
+      fprintf(stderr, " (max Symbol = %u)\n", maxSymbol);
     }
   } else {
     translateNeeded = false;

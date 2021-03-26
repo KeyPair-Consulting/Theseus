@@ -7,13 +7,13 @@
  * University.
  * All rights reserved.
  */
-/* This file is part of the Theseus distribution, and is licensed under 
+/* This file is part of the Theseus distribution, and is licensed under
  * the 3-clause BSD license. For details, see the LICENSE file.
  *
  * This is a specialization of the SFMT 1.5.1 distribution from here:
  * http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/SFMT/
- * This specialization supports only little endian architectures in modern 
- * Linux-like environments, does not support NEON or AltiVEC improvements 
+ * This specialization supports only little endian architectures in modern
+ * Linux-like environments, does not support NEON or AltiVEC improvements
  * present in the mainline package, and includes only the 19937 parameter set.
  *
  * Author(s)
@@ -42,7 +42,7 @@ static void period_certification(sfmt_t *sfmt);
  */
 static const w128_t sse2_param_mask = {{SFMT_MSK1, SFMT_MSK2, SFMT_MSK3, SFMT_MSK4}};
 
-inline static void mm_recursion(__m128i* r, __m128i a, __m128i b, __m128i c, __m128i d);
+inline static void mm_recursion(__m128i *r, __m128i a, __m128i b, __m128i c, __m128i d);
 
 /**
  * This function represents the recursion formula.
@@ -52,7 +52,7 @@ inline static void mm_recursion(__m128i* r, __m128i a, __m128i b, __m128i c, __m
  * @param c a 128-bit part of the interal state array
  * @param d a 128-bit part of the interal state array
  */
-inline static void mm_recursion(__m128i* r, __m128i a, __m128i b, __m128i c, __m128i d) {
+inline static void mm_recursion(__m128i *r, __m128i a, __m128i b, __m128i c, __m128i d) {
   __m128i v, x, y, z;
 
   y = _mm_srli_epi32(b, SFMT_SR1);
@@ -72,10 +72,10 @@ inline static void mm_recursion(__m128i* r, __m128i a, __m128i b, __m128i c, __m
  * integers.
  * @param sfmt SFMT internal state
  */
-void sfmt_gen_rand_all(sfmt_t* sfmt) {
+void sfmt_gen_rand_all(sfmt_t *sfmt) {
   int i;
   __m128i r1, r2;
-  w128_t* pstate = sfmt->state;
+  w128_t *pstate = sfmt->state;
 
   r1 = pstate[SFMT_N - 2].si;
   r2 = pstate[SFMT_N - 1].si;
@@ -91,11 +91,10 @@ void sfmt_gen_rand_all(sfmt_t* sfmt) {
   }
 }
 
-#else 
+#else
 
 inline static void rshift128(w128_t *out, w128_t const *in, int shift);
 inline static void lshift128(w128_t *out, w128_t const *in, int shift);
-
 
 inline static void do_recursion(w128_t *r, w128_t *a, w128_t *b, w128_t *c, w128_t *d);
 

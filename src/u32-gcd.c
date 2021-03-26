@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
       data[i] /= curfactor;
     }
   } else {
-    //Look for an almost common factor
+    // Look for an almost common factor
     uint32_t mostCommonGCD = 0;
     uint32_t curGCD = 0;
     size_t curcount = 0;

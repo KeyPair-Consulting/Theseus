@@ -25,7 +25,7 @@
 
 /* This file is included as part of the Theseus distribution.
  * Some changes Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Author(s)
  * Lewis Van Winkle, http://CodePlea.com
  * Joshua E. Hill, UL VS LLC.

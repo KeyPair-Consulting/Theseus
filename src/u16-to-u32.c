@@ -8,6 +8,7 @@
  * Joshua E. Hill, KeyPair Consulting, Inc.  <josh@keypair.us>
  */
 #include <assert.h>
+#include <getopt.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -16,8 +17,6 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <sysexits.h>
-#include <getopt.h>
-
 
 #include "precision.h"
 

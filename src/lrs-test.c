@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
   translate(data, L, &k, &median);
   assert(k > 1);
-  assert(L>k);
+  assert(L > k);
 
   if (configVerbose > 0) {
     fprintf(stderr, "Testing %zu samples with %zu symbols\n", L, k);
@@ -192,14 +192,14 @@ int main(int argc, char *argv[]) {
     p_col += psymbolcols * psymbolcols;
   }
 
-  if(configVerbose > 0) fprintf(stderr, "p_col = %.22Lg\n", p_col);
+  if (configVerbose > 0) fprintf(stderr, "p_col = %.22Lg\n", p_col);
   // It is possible for p_col to be exactly 1 (e.g., if the input data is all one symbol)
   // In this instance, a collision of any length up to L-1 has probability 1.
-  if(p_col > 1.0L - LDBL_EPSILON) {
-    if(configVerbose > 0) fprintf(stderr, "Pr(X>=1) = 1.0\n");
+  if (p_col > 1.0L - LDBL_EPSILON) {
+    if (configVerbose > 0) fprintf(stderr, "Pr(X>=1) = 1.0\n");
     printf("Collisions necessarily occur.\n");
     printf("LRS Test Verdict: Pass\n");
-    free(data); 
+    free(data);
     free(dataCount);
     return EX_OK;
   }
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
   assert(W > 0);
   // Note, this also assures that loc>=1.
   assert((size_t)W < L);
-  if(configVerbose > 0) fprintf(stderr, "Longest repeated substring length: %d\n", W);
+  if (configVerbose > 0) fprintf(stderr, "Longest repeated substring length: %d\n", W);
 
   if (configVerbose > 0) {
     fprintf(stderr, "Repeated string at positions %d and %d\n", SA[loc - 1], SA[loc]);
@@ -259,9 +259,9 @@ int main(int argc, char *argv[]) {
   // There isn't anything we can do about this error condition without moving to an arbitrary precision calculation, so
   // for now, we'll just detect this condition and abort the calculation.
   p_colPower = powl(p_col, (long double)W);
-  if(configVerbose > 0) fprintf(stderr, "p_col^W = %.22Lg\n", p_colPower);
+  if (configVerbose > 0) fprintf(stderr, "p_col^W = %.22Lg\n", p_colPower);
   assert(p_colPower >= LDBL_MIN);
-  assert(p_colPower <= 1.0L-LDBL_EPSILON);
+  assert(p_colPower <= 1.0L - LDBL_EPSILON);
 
   // There is some delicacy in calculating Pr(X>=1) as some of the intermediary values may be quite close to 0 or 1.
   // We first want to calculate the probability of not having a collision of length W for a single pair of independent
@@ -272,14 +272,14 @@ int main(int argc, char *argv[]) {
   // Recall that log1p(x) = log(1+x); this form is useful when |x| is small. We are particularly concerned with the case where p_col^W is a small
   // positive value, which would make log1p(-p_col^W) a negative value quite close to 0.
   logProbNoColsPerPair = log1pl(-p_colPower);
-  if(configVerbose > 0) fprintf(stderr, "log(1-p_col^W)= %.22Lg\n", logProbNoColsPerPair);
+  if (configVerbose > 0) fprintf(stderr, "log(1-p_col^W)= %.22Lg\n", logProbNoColsPerPair);
   assert(logProbNoColsPerPair < 0.0L);
 
   //(L - W + 1) is the number of overlapping contiguous substrings of length W in a string of length L.
   // The number of pairs of such overlapping substrings is N = (L - W + 1) choose 2.
   // This is the number of ways of choosing 2 substrings of length W from a string of length L.
   N = ((int64_t)L - W + 1) * ((int64_t)L - W) / 2;
-  if(configVerbose > 0) fprintf(stderr, "N = %zu\n", N);
+  if (configVerbose > 0) fprintf(stderr, "N = %zu\n", N);
 
   // Calculate the probability of not encountering a collision after N sets of independent pairs;
   // this is an application of the Binomial Distribution.
@@ -294,18 +294,18 @@ int main(int argc, char *argv[]) {
   // Note, this N is O(L^2), so use of this value as an exponent tends to cause underflows here;
   // in this case, this probability isn't accurately representable using the precision that we have to work with, but it is expected to
   // round reasonably.
-  probNoCols = expl(((long double)N)*logProbNoColsPerPair);
+  probNoCols = expl(((long double)N) * logProbNoColsPerPair);
   probAtLeastOneCols = 1.0L - probNoCols;
   roundedVerdict = (probAtLeastOneCols >= 0.001L);
-  if(configVerbose > 0) {
-    if((probNoCols <= 1.0L - LDBL_EPSILON) && (probNoCols >= LDBL_EPSILON)) {
+  if (configVerbose > 0) {
+    if ((probNoCols <= 1.0L - LDBL_EPSILON) && (probNoCols >= LDBL_EPSILON)) {
       fprintf(stderr, "Pr(X >= 1) = %.22Lg\n", probAtLeastOneCols);
     } else {
       fprintf(stderr, "Pr(X >= 1) rounds to %.22Lg, but there is precision loss. The test verdict is still expected to be valid.\n", probAtLeastOneCols);
     }
   }
 
-  //We don't need the above to have worked to come to a conclusion on the test, however:
+  // We don't need the above to have worked to come to a conclusion on the test, however:
   // The LRS test is considered a "Pass"
   // iff Pr(X>=1) >= 1/1000
   // iff 1 - Pr(X=0) >= 1/1000
@@ -313,10 +313,10 @@ int main(int argc, char *argv[]) {
   // iff 0.999 >= (1-p_col^W)^N
   // iff log(0.999) >= N*log(1-p_col^W)
   // iff log(0.999) >= N*log1p(-p_col^W)
-  verdict=(logl(0.999L) >= ((long double)N)* logProbNoColsPerPair);
+  verdict = (logl(0.999L) >= ((long double)N) * logProbNoColsPerPair);
   assert(roundedVerdict == verdict);
 
-  if(verdict) {
+  if (verdict) {
     printf("LRS Test Verdict: Pass\n");
   } else {
     printf("LRS Test Verdict: Fail\n");

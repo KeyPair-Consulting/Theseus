@@ -168,7 +168,7 @@ uint32_t randomu32(struct randstate *rstate) {
     return rstate->buffered32;
   } else {
     indata = randomu64(rstate);
-    rstate->buffered32 = (uint32_t)((indata >> 32)&0xFFFFFFFF);
+    rstate->buffered32 = (uint32_t)((indata >> 32) & 0xFFFFFFFF);
     rstate->buffered32Avail = true;
     return (uint32_t)(0xFFFFFFFFUL & indata);
   }

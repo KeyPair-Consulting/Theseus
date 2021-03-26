@@ -153,6 +153,7 @@ size_t readuint32file(FILE *input, uint32_t **buffer) {
       exit(EX_OSERR);
     }
   }
+
   return readints;
 }
 

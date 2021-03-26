@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -457,15 +457,15 @@ double BCaBootstrapPercentile(double p, double *data, size_t datalen, double val
 
     // bound is the probability of fewer than SMALLEST_SIGNIFICANT extremal elements
     bound = binomialCDF(SMALLEST_SIGNIFICANT - 1, datalen, moreExtremeProp);
-    
-    if(fetestexcept(FE_UNDERFLOW) != 0) {
-      if(configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data is likely meaningful.\n");
-      if(bound <= DBL_MIN) bound = 0.0;
-      feclearexcept(FE_UNDERFLOW);
-    } 
 
-    if(configVerbose > 1) {
-      if(bound < DBL_MIN) {
+    if (fetestexcept(FE_UNDERFLOW) != 0) {
+      if (configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data is likely meaningful.\n");
+      if (bound <= DBL_MIN) bound = 0.0;
+      feclearexcept(FE_UNDERFLOW);
+    }
+
+    if (configVerbose > 1) {
+      if (bound < DBL_MIN) {
         fprintf(stderr, "There is essentially no chance that this data will not include suitable extremal values.\n");
       } else {
         fprintf(stderr, "Probability of there being fewer than %zu samples more extreme than the sought percentile in a set of %zu samples = %.17g\n", SMALLEST_SIGNIFICANT, datalen, bound);
@@ -476,11 +476,11 @@ double BCaBootstrapPercentile(double p, double *data, size_t datalen, double val
       // We don't have enough for the normal process... Check to see if the percentile likely makes sense...
       // bound is the probability of there being 0 extremal elements
       bound = binomialCDF(0LU, datalen, moreExtremeProp);
-      if(fetestexcept(FE_UNDERFLOW) != 0) {
-        if(configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data could be meaningful.\n");
-        if(bound <= DBL_MIN) bound = 0.0;
+      if (fetestexcept(FE_UNDERFLOW) != 0) {
+        if (configVerbose > 0) fprintf(stderr, "Clearing expected binomial CDF underflow when checking if data could be meaningful.\n");
+        if (bound <= DBL_MIN) bound = 0.0;
         feclearexcept(FE_UNDERFLOW);
-      } 
+      }
 
       if (configVerbose > 1) fprintf(stderr, "Probability of there being no samples more extreme than the sought percentile in a set of %zu samples = %.17g\n", datalen, bound);
 

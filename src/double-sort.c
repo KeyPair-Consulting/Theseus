@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -22,7 +22,7 @@
 #include "globals-inst.h"
 #include "precision.h"
 
-/*Takes doubles and sorts them, outputting them to stdout.*/ 
+/*Takes doubles and sorts them, outputting them to stdout.*/
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "double-sort <filename>\n");
@@ -30,7 +30,7 @@ noreturn static void useageExit(void) {
   exit(EX_USAGE);
 }
 
-//No fancyness is needed here.
+// No fancyness is needed here.
 static int doublecompare(const void *in1, const void *in2) {
   double left, right;
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   }
 
   fprintf(stderr, "Reading the data.\n");
-  if((datalen = readdoublefile(fp, &data)) < 1) {
+  if ((datalen = readdoublefile(fp, &data)) < 1) {
     perror("File is empty");
     exit(EX_DATAERR);
   }
@@ -87,19 +87,19 @@ int main(int argc, char *argv[]) {
   qsort(data, datalen, sizeof(double), doublecompare);
 
   fprintf(stderr, "Writing the data.\n");
-  while((datalen > 0) && (ferror(stdout)!=0)) {
-	size_t written;
+  while ((datalen > 0) && (ferror(stdout) != 0)) {
+    size_t written;
 
-  	written = fwrite(data, sizeof(double), datalen, stdout);
-	data += written;
-	datalen -= written;
+    written = fwrite(data, sizeof(double), datalen, stdout);
+    data += written;
+    datalen -= written;
   }
 
-  if(ferror(stdout) != 0) {
+  if (ferror(stdout) != 0) {
     perror("Can't write sorted data");
     exit(EX_DATAERR);
   }
-	
+
   free(data);
   return (EX_OK);
 }

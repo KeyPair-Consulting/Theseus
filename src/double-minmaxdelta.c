@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   int opt;
   bool configBinary;
   FILE *fp;
-  double minValue=DBL_INFINITY, maxValue=-DBL_INFINITY;
+  double minValue = DBL_INFINITY, maxValue = -DBL_INFINITY;
 
   configVerbose = 0;
   data = NULL;
@@ -90,17 +90,17 @@ int main(int argc, char *argv[]) {
 
   assert(data != NULL);
 
-  for(size_t j=0; j<datalen; j++) {
-    if(data[j] > maxValue) maxValue = data[j];
-    if(data[j] < minValue) minValue = data[j];
+  for (size_t j = 0; j < datalen; j++) {
+    if (data[j] > maxValue) maxValue = data[j];
+    if (data[j] < minValue) minValue = data[j];
   }
 
-  if(configVerbose > 0) {
+  if (configVerbose > 0) {
     fprintf(stderr, "Max: %.17g\n", maxValue);
     fprintf(stderr, "Min: %.17g\n", minValue);
   }
 
-  printf("%.17g\n", maxValue-minValue);
+  printf("%.17g\n", maxValue - minValue);
 
   free(data);
   return (EX_OK);

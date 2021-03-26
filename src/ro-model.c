@@ -312,7 +312,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
 
   // The cycle count distribution is asymptotically normal, but the standard deviation isn't that easy to compute
   //(See equation 28 for details)
-  // This re-computes some of the same terms more than once (which makes me feel bad about myself), but it 
+  // This re-computes some of the same terms more than once (which makes me feel bad about myself), but it
   // doesn't take that long to re-compute them.
   // We use DBL_EPSILON here because, in testing, the accumulated floating point error was well above LDBL_EPSILON,
   // And waiting until we found numbers that small ended up producing some rather strange behavior that triggered
@@ -331,8 +331,8 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
     long double roundCombined;
     long double curMaxValue;
 
-    //Note that (expectedCycles + j) and (expectedCycles - j) have the same lsb
-    //That is, they are both even or both odd.
+    // Note that (expectedCycles + j) and (expectedCycles - j) have the same lsb
+    // That is, they are both even or both odd.
     roundCombined = roundPHigh + roundPLow;
 
     curMaxValue = fmax(roundPHigh, roundPLow);
@@ -391,7 +391,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
  * less than mu, so the Riemann-Stieltjes integral's bounds can be adjusted to 0 to mu.
  * We also note that for large k, sqrt(k) is approximately equal to sqrt(k+1).
  * We're normalizing everything so that mu=1/2 (remember, this is the average flipping time) and s=1000.
- * The result of symbolically integrating this expression can be written in closed form (using special functions) 
+ * The result of symbolically integrating this expression can be written in closed form (using special functions)
  * in terms of our G function.
  */
 static long double KillmannSchindlerNormalizedCycleProb(uint64_t kin, long double sigma) {
@@ -463,8 +463,8 @@ static long double KillmannSchindlerResetCycleProb(long double x, uint64_t kin, 
  */
 static long double KillmannSchindlerLowerBoundNormalizedCycleProb(uint64_t k, long double sigma) {
   const long double s = 1000.0L;
-  const long double mu = 0.5L; //Each cycle has mean unit length, but the flipping time is 1/2
-  const long double nu = 0.5L; //Target flipping phase 1/2 (which corresponds to cycle phase of 1/4 or 3/4)
+  const long double mu = 0.5L;  // Each cycle has mean unit length, but the flipping time is 1/2
+  const long double nu = 0.5L;  // Target flipping phase 1/2 (which corresponds to cycle phase of 1/4 or 3/4)
 
   assert(k > 1);
 

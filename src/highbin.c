@@ -995,8 +995,8 @@ int main(int argc, char *argv[]) {
     assert((curinterval - rewriteTable) % 3 == 0);
     offset = (uint64_t)(curinterval - rewriteTable) / 3;
     assert(offset <= UINT32_MAX);
-    curLocation = (uint32_t) offset;
-	
+    curLocation = (uint32_t)offset;
+
     assert(((size_t)curLocation) < outputBuckets);
 
     outputSymbol = (statData_t)curLocation;

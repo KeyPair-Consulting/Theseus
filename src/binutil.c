@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -181,12 +181,12 @@ uint32_t getActiveBits(const uint32_t *data, size_t datalen) {
     }
   }
 
-  //First, look for any fixed bits.
+  // First, look for any fixed bits.
   activeBits = ~andmask & ormask;
 
   if (configVerbose > 0) fprintf(stderr, "Non-fixed bits: 0x%08X.\n", activeBits);
 
-  //Now, look for equivalent bits (bits that are always equal to other places, or are alway the bitwise compliment of other places)
+  // Now, look for equivalent bits (bits that are always equal to other places, or are alway the bitwise compliment of other places)
   bitmask = 0x80000000;
   for (int j = 31; j >= 0; j--) {
     if (activeBits & bitmask) {
@@ -262,7 +262,7 @@ statData_t lowBit(statData_t in) {
   return (statData_t)(in & (-in));
 }
 
-//See Hacker's Delight, Second Edition, page 12
+// See Hacker's Delight, Second Edition, page 12
 uint32_t u32lowBit(uint32_t in) {
   return in & (-in);
 }
@@ -277,7 +277,7 @@ uint32_t u32highBit(uint32_t in) {
   return (in - (in >> 1));
 }
 
-//See Hacker's Delight, Second Edition, page 61
+// See Hacker's Delight, Second Edition, page 61
 statData_t highBit(statData_t in) {
   in |= in >> 1;
   in |= in >> 2;

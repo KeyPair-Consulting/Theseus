@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
   datalen = readuintfile(infp, &data);
   assert(data != NULL);
-  if(configVerbose > 0) printf("Read in %zu integers\n", datalen);
+  if (configVerbose > 0) printf("Read in %zu integers\n", datalen);
 
   if (fclose(infp) != 0) {
     perror("Couldn't close input data file");
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   assert(datalen > 0);
 
-  if(configVerbose > 0) fprintf(stderr, "Estimating Shannon entropy.\n");
+  if (configVerbose > 0) fprintf(stderr, "Estimating Shannon entropy.\n");
 
   translate(data, datalen, &k, &median);
   shannonEnt = shannonEntropyEstimate(data, datalen, k);

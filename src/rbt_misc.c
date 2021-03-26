@@ -4,18 +4,18 @@
  * The code base was originally written by Emin Marinian:
  * http://www.csua.berkeley.edu/~emin/index.html
  * http://alum.mit.edu/www/emin
- * License historically available here: 
+ * License historically available here:
  * http://web.mit.edu/~emin/www.old/source_code/red_black_tree/LICENSE
  * This is available using the Wayback machine:
  * https://web.archive.org/web/20180112031521/http://web.mit.edu/~emin/www.old/source_code/red_black_tree/LICENSE
  * This is include below:
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that neither the name of Emin
  * Martinian nor the names of any contributors are be used to endorse or
  * promote products derived from this software without specific prior
  * written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR

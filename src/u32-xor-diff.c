@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -28,7 +28,7 @@ int main(void) {
   uint32_t priorData;
   uint32_t rawData;
 
-  //Read in the first value
+  // Read in the first value
   if (fread(&priorData, sizeof(uint32_t), 1, stdin) != 1) {
     perror("Can't read initial value");
     exit(EX_OSERR);

@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   int64_t lowbound;
 
   for (i = 0; i < 255; i++) cutoffs[i] = -1;
-  // The total number of bins must <= 256, so 
+  // The total number of bins must <= 256, so
   // bounds + 1 <= 256
   // (argc-2) + 1 <= 257
   // argc <= 258
@@ -65,13 +65,13 @@ int main(int argc, char *argv[]) {
   }
 
   bounds = (size_t)argc - 2;
-  fprintf(stderr, "A total of %zu output bins.\n", bounds+1);
+  fprintf(stderr, "A total of %zu output bins.\n", bounds + 1);
   assert(bounds <= UINT8_MAX);
   if (bounds < 1) useageExit();
-  if(cutoffs[0] == 0) useageExit();
-  if(cutoffs[bounds-1] > UINT32_MAX) useageExit();
+  if (cutoffs[0] == 0) useageExit();
+  if (cutoffs[bounds - 1] > UINT32_MAX) useageExit();
 
-  lowbound=0;
+  lowbound = 0;
 
   for (i = 0; i < bounds; i++) {
     if (lowbound >= cutoffs[i]) {
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       lowbound = cutoffs[i];
     }
   }
-  fprintf(stderr, "[ %ld, %ld ]\n", cutoffs[bounds-1], (int64_t)UINT32_MAX);
+  fprintf(stderr, "[ %ld, %ld ]\n", cutoffs[bounds - 1], (int64_t)UINT32_MAX);
 
   datalen = readuint32file(infp, &data);
   if (datalen < 2) {
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
   fprintf(stderr, "Outputting the data...\n");
   for (i = 0; i < datalen; i++) {
-    //set this to the last valid symbol
+    // set this to the last valid symbol
     uint8_t symbol = (uint8_t)bounds;
     for (uint8_t j = 0; j < bounds; j++) {
       if (cutoffs[j] > data[i]) {

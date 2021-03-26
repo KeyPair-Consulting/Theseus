@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -27,7 +27,7 @@ static void allocSegment(struct memSegment *new) {
 
   if (configVerbose > 4) fprintf(stderr, "Allocate a new segment (bsize = %zu)\n", new->blockSize);
 
-  if ((new->segmentStart = malloc(new->blockSize * new->blockCount)) == NULL) {
+  if ((new->segmentStart = malloc(new->blockSize *new->blockCount)) == NULL) {
     perror("Can't allocate data for segment backing");
     exit(EX_OSERR);
   }

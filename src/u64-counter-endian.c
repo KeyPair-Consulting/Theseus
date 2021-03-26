@@ -1,6 +1,6 @@
 /* This file is part of the Theseus distribution.
  * Copyright 2020 Joshua E. Hill <josh@keypair.us>
- * 
+ *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
@@ -24,7 +24,7 @@ int main(void) {
   size_t datalen;
   size_t nativeSmallerCount = 0;
 
-  if((datalen = readuint64file(stdin, &input)) < 1) {
+  if ((datalen = readuint64file(stdin, &input)) < 1) {
     perror("No data read.");
     exit(EX_DATAERR);
   }

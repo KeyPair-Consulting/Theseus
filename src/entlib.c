@@ -962,9 +962,14 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
 
   assert(n > 0);
   assert(k > 0);
-  assert(n <= SAINDEX_MAX - 1);
   assert(data != NULL);
 
+  if ((n >= SAINDEX_MAX)) {
+    n = SAINDEX_MAX - 1;
+    fprintf(stderr, "Truncating data within the SA estimator so that it can be processed\n");
+  }
+
+  assert(n <= SAINDEX_MAX - 1);
   assert(fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW) == 0);
   feclearexcept(FE_ALL_EXCEPT);
 
@@ -1628,7 +1633,7 @@ double multiMCWPredictionEstimate(const statData_t *S, size_t L, size_t k, struc
   return (predictionEstimateResult(correctCount, L - 63, maxRunOfCorrects + 1, k, result));
 }
 
-//It is important that LAGD be a power of 2 (some of the fancyness would otherwise break)
+// It is important that LAGD be a power of 2 (some of the fancyness would otherwise break)
 #define LAGD 128LU
 #define LAGMASK (LAGD - 1)
 

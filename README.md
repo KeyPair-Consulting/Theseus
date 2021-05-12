@@ -7,7 +7,7 @@ For general SP 800-90B testing topics, please see [Joshua E. Hill's SP 800-90B w
 
 ## Requirements
 
-This was written with a fairly modern Linux system running on a somewhat modern Intel CPU (it uses BMI 2, SSE 4.2 and RdRand instructions). This is intended to be compiled using either a recent version of gcc (tested using gcc version 10.1.0, or clang (tested using clang version 11.1.0). This uses the divsufsort, library, libbz2 and OpenMP, so these libraries (and their associated include files) must be installed and accessible to the compiler.
+This was written with a fairly modern Linux system running on a somewhat modern Intel CPU (it uses BMI 2, SSE 4.2 and RdRand instructions). This is intended to be compiled using either a recent version of gcc (tested using gcc version 10.1.0, or clang (tested using clang version 11.1.0). This uses divsufsort, libbz2 and OpenMP, so these libraries (and their associated include files) must be installed and accessible to the compiler.
 
 ## Overview
 
@@ -445,7 +445,16 @@ Usage:
 #### `u64-to-ascii`
 Usage:
 	`u64-to-ascii`
-* The values are expected to be provided via stdin.
+* Converts provided binary data to human-readable decimal values.
+* Input values of type uint64_t are provided via stdin.
+* Output values in decimal format are sent to stdout, one per line.
+* Example:  A binary file is sent to stdin with command `./u64-to-ascii < input.bin`: 
+    * Input (in input.bin, viewed as decoded text in a hex editor):
+      >ABCDEFGH01234567abcdefgh890
+    * Output (to console): 
+      >5208208757389214273 <br />
+      >3978425819141910832 <br />
+      >7523094288207667809 <br />
 
 #### `u32-to-sd`
 Usage:
@@ -483,7 +492,19 @@ Usage:
 #### `dec-to-u32`
 Usage:
 	`dec-to-u32`
-* The values are expected to be provided via stdin, one per line.
+* Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u32-to-ascii.)
+* Input values in decimal format are provided via stdin, one per line.
+* Output values of type uint32_t are sent to stdout.
+* Example:  A text file is sent to stdin and stdout is sent to a binary file with command `./dec-to-u32 < input.txt > output.bin`: 
+    * Input (in input.txt, viewed in a text editor):
+	  >1145258561 <br />
+      >1212630597 <br />
+      >858927408  <br />
+      >926299444  <br />
+      >1684234849 <br />
+      >1751606885 <br />
+    * Output (to output.bin, viewed as decoded text with a hex editor): 
+	  >ABCDEFGH01234567abcdefgh
 
 #### `u32-expand-bitwidth`
 Usage:
@@ -494,26 +515,65 @@ Usage:
 #### `u32-to-ascii`
 Usage:
 	`u32-to-ascii`
-* Prints the provided binary data as human-readable decimal values.
-* The values are expected to be provided via stdin.
-* The values are output by stdout.
+* Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u32.)
+* Input values of type uint32_t are provided via stdin.
+* Output values are sent to stdout, one per line.
+* Example:  A binary file is sent to stdin with command `./u32-to-ascii < input.bin`: 
+    * Input (in input.bin, viewed as decoded text in a hex editor):
+      >ABCDEFGH01234567abcdefgh890
+    * Output (to console): 
+      >1145258561 <br />
+      >1212630597 <br />
+      >858927408  <br />
+      >926299444  <br />
+      >1684234849 <br />
+      >1751606885 <br />
 
 #### `sd-to-hex`
 Usage:
 	`sd-to-hex`
-* Output the bytes in hex format.
-* The values are expected to be provided via stdin.
-* The output values are sent to stdout.
+* Converts provided binary data to human-readable hexidecimal values.
+* Input values of type statData_t (default uint8_t) are provided via stdin.
+* Output values in hexidecimal format are sent to stdout, one per line.
+* Example:  A binary file is sent to stdin with command `./sd-to-hex < input.bin`: 
+    * Input (in input.bin, viewed as decoded text in a hex editor):
+	  >AB01ab89
+    * Output (to console): 
+	  >41 <br /> 
+	  >42 <br /> 
+	  >30 <br /> 
+	  >31 <br /> 
+	  >61 <br /> 
+	  >62 <br /> 
+	  >38 <br /> 
+	  >39 <br /> 
 
 #### `u8-to-u32`
 Usage:
 	`u8-to-u32`
-* The values are expected to be provided via stdin.
+* Converts provided binary data from type uint8_t to type uint32_t.
+* Input values of type uint8_t are provided via stdin.
+* Output values of type uint32_t are sent to stdout.
+* Example:  A binary file is sent to stdin and stdout is sent to a binary file with command `./u8-to-u32 < input.bin > output.bin`: 
+    * Input (in input.bin, viewed as decoded text with a hex editor):
+	  >AB01ab89
+    * Output (to output.bin, viewed as decoded text with a hex editor where '.' represents 0x00): 
+	  >A...B...0...1...a...b...8...9...
 
 #### `hex-to-u32`
 Usage:
 	`hex-to-u32`
-* The values are expected to be provided via stdin, one per line.
+* Converts provided human-readable hexidecimal values to binary data.
+* Input values in hexidecimal format are provided via stdin, spacing between bytes.
+* Output values of type uint32_t are sent to stdout.
+* Example:  A text file is sent to stdin and stdout is sent to a binary file with command `./hex-to-u32 < input.txt > output.bin`: 
+    * Input (in input.txt, viewed with a text editor): 
+	  >41 42 43 44 45 46 47 48 <br /> 
+      >30 31 32 33 34 35 36 37 <br />
+      >61 62 63 64 65 66 67 68 <br /> 
+      >38 39 30                <br />
+    * Output (to output.bin, viewed as decoded text with a hex editor where '.' represents 0x00): 
+	  >A...B...C...D...E...F...G...H...0...1...2...3...4...5...6...7...a...b...c...d...e...f...g...h...8...9...0...
 
 #### `blocks-to-sdbin`
 Usage:

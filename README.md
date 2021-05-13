@@ -418,29 +418,77 @@ Usage:
 * `<p>`: Lower bound
 * `<q>`: Upper bound
 
+
+
+
+
+
 ### Data Conversion Utilities
 #### `u64-to-u32`
 Usage:
 	`u64-to-u32 [-r] [-t]`
-* `-r`: Switch endianness of input values.
-* `-t`: Truncate input values.
-* The values are expected to be provided via stdin and the output via stdout.
+* Converts provided binary data from type uint64_t to type uint32_t.
+* Input values of type uint64_t are provided via stdin.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `-r`: Switch endianness of input values.
+    * `-t`: Truncate input values.
+* Errors will occur if data remains out of range prior to uint32_t conversion.  I.e., the user must choose to truncate and/or switch endianness if necessary prior to type casting.
+* Example DCU01 - A binary file is sent to stdin, truncation is selected, and stdout is sent to a binary file with command `./u64-to-u32 -t < dcu01-input-u64.bin > dcu01-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu01-input-u64.bin | xxd`):
+	  ```
+	  00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
+      00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
+	  ```
+    * Output (viewed with command `cat ./dcu01-output-u32.bin | xxd`):
+	  ```
+	  00000000: 4142 4344 3031 3233 6162 6364            ABCD0123abcd
+	  ```
 
 #### `u64-counter-raw`
 Usage:
 	`u64-counter-raw <filename>`
 * Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
+* Example DCU02:
 
 #### `u8-to-sd`
 Usage:
-	`u8-to-u32`
-* The values are expected to be provided via stdin.
+	`u8-to-sd [-l] [-v] <bits per symbol; 1, 2, 4>`
+* Converts provided binary data from type uint8_t to type statData_t.
+* Input values of type uint8_t are provided via stdin.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `-l`: Bytes should be output low bits to high bits.
+    * `-v`: Increase verbosity. Can be used multiple times.
+	* '<bits per symbol>': Number of bits per symbol, limited to values 1, 2, or 4.
+* Example DCU03 - A binary file is sent to stdin, -l with 1 bit/symbol is selected, and stdout is sent to a binary file with command `./u8-to-sd -l 1 < dcu03-input-u8.bin > dcu03-output-1-sd.bin`: 
+    * Input (viewed with command `cat ./dcu03-input-u8.bin | xxd`):
+	  ```
+      00000000: 4142 3031 6162 3839                      AB01ab89
+	  ```
+    * Output (viewed with command `cat ./dcu03-output-1-sd.bin | xxd`):
+	  ```
+      00000000: 0100 0000 0000 0100 0001 0000 0000 0100  ................
+      00000010: 0000 0000 0101 0000 0100 0000 0101 0000  ................
+      00000020: 0100 0000 0001 0100 0001 0000 0001 0100  ................
+      00000030: 0000 0001 0101 0000 0100 0001 0101 0000  ................
+	  ```
+	* Alternate Output (if bits per symbol = 2, viewed with command `cat ./dcu03-output-2-sd.bin | xxd`)
+	  ```
+      00000000: 0100 0001 0200 0001 0000 0300 0100 0300  ................
+      00000010: 0100 0201 0200 0201 0002 0300 0102 0300  ................
+	  ```
+	* Alternate Output (if bits per symbol = 4, viewed with command `cat ./dcu03-output-4-sd.bin | xxd`)
+	  ```
+      00000000: 0104 0204 0003 0103 0106 0206 0803 0903  ................
+	  ```
 
 #### `u16-to-u32`
 Usage:
 	`u16-to-u32 [-d]`
 * `-d`: output differences between adjacent values.
 * The values are expected to be provided via stdin.
+* Example DCU04:
 
 #### `u64-to-ascii`
 Usage:
@@ -448,13 +496,18 @@ Usage:
 * Converts provided binary data to human-readable decimal values.
 * Input values of type uint64_t are provided via stdin.
 * Output values in decimal format are sent to stdout, one per line.
-* Example:  A binary file is sent to stdin with command `./u64-to-ascii < input.bin`: 
-    * Input (in input.bin, viewed as decoded text in a hex editor):
-      >ABCDEFGH01234567abcdefgh890
+* Example DCU05 - A binary file is sent to stdin with command `./u64-to-ascii < dcu05-input-u64.bin`: 
+    * Input (viewed with command `cat ./dcu05-input-u64.bin | xxd`):
+	  ```
+      00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
+      00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
+	  ```
     * Output (to console): 
-      >5208208757389214273 <br />
-      >3978425819141910832 <br />
-      >7523094288207667809 <br />
+	  ```
+      5208208757389214273
+      3978425819141910832
+      7523094288207667809
+	  ```
 
 #### `u32-to-sd`
 Usage:
@@ -463,7 +516,7 @@ Usage:
 	`u32-to-sd <inputfile>`
 * inputfile is assumed to be a stream of uint32\_ts
 * output sent to stdout is a stream of uint8\_t integers
-
+* Example DCU06:
 
 #### `u16-to-sdbin`
 Usage:
@@ -472,12 +525,14 @@ Usage:
 * `-l`: extract bits from low bit to high bit
 * `-b`: 16 bit values are in big endian format.
 * The values are expected to be provided via stdin.
+* Example DCU07:
 
 #### `u64-jent-to-delta`
 Usage:
 	`u64-jent-to-delta`
 * input comes from stdin are in uint64\_t, in the default jent delta format.
 * output sent to stdout is the number of nanoseconds represented by the delta.
+* Example DCU08:
 
 #### `u32-to-categorical`
 Usage:
@@ -488,6 +543,7 @@ Usage:
 * `-t <value>`: Trim any value that is prior to the first symbol with `<value>` occurrences or more or after the last symbol with `<value>` occurrences or more.
 * `-z`: Don't output zero categories.
 * The values are expected to be provided via stdin.
+* Example DCU09:
 
 #### `dec-to-u32`
 Usage:
@@ -495,22 +551,28 @@ Usage:
 * Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u32-to-ascii.)
 * Input values in decimal format are provided via stdin, one per line.
 * Output values of type uint32_t are sent to stdout.
-* Example:  A text file is sent to stdin and stdout is sent to a binary file with command `./dec-to-u32 < input.txt > output.bin`: 
-    * Input (in input.txt, viewed in a text editor):
-	  >1145258561 <br />
-      >1212630597 <br />
-      >858927408  <br />
-      >926299444  <br />
-      >1684234849 <br />
-      >1751606885 <br />
-    * Output (to output.bin, viewed as decoded text with a hex editor): 
-	  >ABCDEFGH01234567abcdefgh
+* Example DCU10 - A text file is sent to stdin and stdout is sent to a binary file with command `./dec-to-u32 < dcu10-input.txt > dcu10-output-u32.bin`: 
+    * Input (in dcu10-input.txt, viewed in a text editor):
+	  ```
+	  1145258561
+      1212630597
+      858927408 
+      926299444
+      1684234849
+      1751606885
+	  ```
+    * Output (viewed with command `cat ./dcu10-output-u32.bin | xxd`): 
+	  ```
+	  00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
+      00000010: 6162 6364 6566 6768                      abcdefgh
+	  ```
 
 #### `u32-expand-bitwidth`
 Usage:
 	`u32-expand-bitwidth <filename>`
 * Extract inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.
 * The values are expected to be provided via stdin.
+* Example DCU11:
 
 #### `u32-to-ascii`
 Usage:
@@ -518,16 +580,21 @@ Usage:
 * Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u32.)
 * Input values of type uint32_t are provided via stdin.
 * Output values are sent to stdout, one per line.
-* Example:  A binary file is sent to stdin with command `./u32-to-ascii < input.bin`: 
-    * Input (in input.bin, viewed as decoded text in a hex editor):
-      >ABCDEFGH01234567abcdefgh890
+* Example DCU12 - A binary file is sent to stdin with command `./u32-to-ascii < dcu12-input-u32.bin`: 
+    * Input (viewed with command `cat ./dcu12-input-u32.bin | xxd`):
+	  ```
+      00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
+      00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
+	  ```
     * Output (to console): 
-      >1145258561 <br />
-      >1212630597 <br />
-      >858927408  <br />
-      >926299444  <br />
-      >1684234849 <br />
-      >1751606885 <br />
+	  ```
+      1145258561
+      1212630597
+      858927408 
+      926299444 
+      1684234849
+      1751606885
+	  ```
 
 #### `sd-to-hex`
 Usage:
@@ -535,18 +602,22 @@ Usage:
 * Converts provided binary data to human-readable hexidecimal values.
 * Input values of type statData_t (default uint8_t) are provided via stdin.
 * Output values in hexidecimal format are sent to stdout, one per line.
-* Example:  A binary file is sent to stdin with command `./sd-to-hex < input.bin`: 
-    * Input (in input.bin, viewed as decoded text in a hex editor):
-	  >AB01ab89
+* Example DCU13 - A binary file is sent to stdin with command `./sd-to-hex < dcu13-input-u8.bin`: 
+    * Input (viewed with command `cat ./dcu13-input-u8.bin | xxd`):
+	  ```
+	  00000000: 4142 3031 6162 3839                      AB01ab89
+	  ```
     * Output (to console): 
-	  >41 <br /> 
-	  >42 <br /> 
-	  >30 <br /> 
-	  >31 <br /> 
-	  >61 <br /> 
-	  >62 <br /> 
-	  >38 <br /> 
-	  >39 <br /> 
+	  ```
+	  41 
+	  42 
+	  30 
+	  31 
+	  61 
+	  62 
+	  38 
+	  39 
+	  ```
 
 #### `u8-to-u32`
 Usage:
@@ -554,11 +625,16 @@ Usage:
 * Converts provided binary data from type uint8_t to type uint32_t.
 * Input values of type uint8_t are provided via stdin.
 * Output values of type uint32_t are sent to stdout.
-* Example:  A binary file is sent to stdin and stdout is sent to a binary file with command `./u8-to-u32 < input.bin > output.bin`: 
-    * Input (in input.bin, viewed as decoded text with a hex editor):
-	  >AB01ab89
-    * Output (to output.bin, viewed as decoded text with a hex editor where '.' represents 0x00): 
-	  >A...B...0...1...a...b...8...9...
+* Example DCU14 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u8-to-u32 < dcu14-input-u8.bin > dcu14-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu14-input-u8.bin | xxd`):
+	  ```
+	  00000000: 4142 3031 6162 3839                      AB01ab89
+      ```
+    * Output (viewed with command `cat ./dcu14-output-u32.bin | xxd`): 
+	  ```
+	  00000000: 4100 0000 4200 0000 3000 0000 3100 0000  A...B...0...1...
+      00000010: 6100 0000 6200 0000 3800 0000 3900 0000  a...b...8...9...
+	  ```
 
 #### `hex-to-u32`
 Usage:
@@ -566,14 +642,24 @@ Usage:
 * Converts provided human-readable hexidecimal values to binary data.
 * Input values in hexidecimal format are provided via stdin, spacing between bytes.
 * Output values of type uint32_t are sent to stdout.
-* Example:  A text file is sent to stdin and stdout is sent to a binary file with command `./hex-to-u32 < input.txt > output.bin`: 
-    * Input (in input.txt, viewed with a text editor): 
-	  >41 42 43 44 45 46 47 48 <br /> 
-      >30 31 32 33 34 35 36 37 <br />
-      >61 62 63 64 65 66 67 68 <br /> 
-      >38 39 30                <br />
-    * Output (to output.bin, viewed as decoded text with a hex editor where '.' represents 0x00): 
-	  >A...B...C...D...E...F...G...H...0...1...2...3...4...5...6...7...a...b...c...d...e...f...g...h...8...9...0...
+* Example DCU15 - A text file is sent to stdin and stdout is sent to a binary file with command `./hex-to-u32 < dcu15-input.txt > dcu15-output-u32.bin`: 
+    * Input (in dcu15-input.txt, viewed with a text editor): 
+	  ```
+	  41 42 43 44 45 46 47 48 
+      30 31 32 33 34 35 36 37
+      61 62 63 64 65 66 67 68 
+      38 39 30
+	  ```
+    * Output (viewed with command `cat ./dcu15-output-u32.bin | xxd`): 
+	  ```
+	  00000000: 4100 0000 4200 0000 4300 0000 4400 0000  A...B...C...D...
+      00000010: 4500 0000 4600 0000 4700 0000 4800 0000  E...F...G...H...
+      00000020: 3000 0000 3100 0000 3200 0000 3300 0000  0...1...2...3...
+      00000030: 3400 0000 3500 0000 3600 0000 3700 0000  4...5...6...7...
+      00000040: 6100 0000 6200 0000 6300 0000 6400 0000  a...b...c...d...
+      00000050: 6500 0000 6600 0000 6700 0000 6800 0000  e...f...g...h...
+      00000060: 3800 0000 3900 0000 3000 0000            8...9...0...
+	  ```
 
 #### `blocks-to-sdbin`
 Usage:
@@ -585,29 +671,34 @@ Usage:
 * The values are expected to be provided via stdin.
 * output is single bits stored in uint8\_t sent to stdout.
 * example, standard little endian 32 bit integers, data stored least to most significant: `blocks-to-sdbin -l 4 0:1:2:3`
+* Example DCU16:
 
 #### `u32-counter-endian`
 Usage:
 	`u32-counter-endian [-d] <infile>`
 * Trys to guess counter endianness, and translates to the local platform.
 * `-d`: output differences between adjacent values (when viewing the data as a 32-bit unsigned counter with rollover).
+* Example DCU17:
 
 #### `u32-delta`
 Usage:
 	`u32-delta <filename>`
 * Extract deltas and then translate the result to a positive value.
 * The values are output via stdout.
+* Example DCU18:
 
 #### `u32-counter-bitwidth`
 Usage:
 	`u32-counter-bitwidth <filename>`
 * Extract deltas under the assumption that the data is an increasing counter of some inferred bitwidth.
+* Example DCU19:
 
 
 #### `u32-counter-raw`
 Usage:
 	`u32-counter-raw <filename>`
 * Extract deltas treated as 32-bit unsigned counters (that roll may roll over).
+* Example DCU20:
 
 #### `u64-counter-endian`
 Usage:
@@ -615,6 +706,7 @@ Usage:
 * Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
 * Attempt to determine the endianness.
 * The values are expected to be provided via stdin.
+* Example DCU21:
 
 ## Make
 

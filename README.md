@@ -448,8 +448,27 @@ Usage:
 #### `u64-counter-raw`
 Usage:
 	`u64-counter-raw <filename>`
-* Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
-* Example DCU02:
+* Extract deltas treated as 64-bit unsigned counters (they may roll over).
+* Input values of type uint64_t are provided in `<filename>`.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU02 - A binary file is given as input and stdout is sent to a binary file with command `./u64-counter-raw ./dcu02-input-u64.bin > ./dcu02-output-u64.bin`: 
+    * Input (viewed with command `cat ./dcu02-input-u64.bin | xxd`):
+	  ```
+      00000000: 0100 0000 0000 0000 0400 0000 0000 0000  ................
+      00000010: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
+      00000020: ffff ffff ffff ffff 0300 0000 0000 0000  ................
+	  ```
+    * Output (viewed with command `cat ./dcu02-output-u64.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0000 0a00 0000 0000 0000  ................
+      00000010: 0d00 0000 0000 0000 dbff ffff ffff ffff  ................
+      00000020: 0100 0000 0000 0000                      ........
+	  ```
+	* Additional Output (to console):
+	  ```
+	  Read in 6 uint64_ts
+      Shifting data down by 3. Maximum value now 18446744073709551579
+	  ```
 
 #### `u8-to-sd`
 Usage:
@@ -460,7 +479,7 @@ Usage:
 * Options:
     * `-l`: Bytes should be output low bits to high bits.
     * `-v`: Increase verbosity. Can be used multiple times.
-	* '<bits per symbol>': Number of bits per symbol, limited to values 1, 2, or 4.
+	* `<bits per symbol>`: Number of bits per symbol, limited to values 1, 2, or 4.
 * Example DCU03 - A binary file is sent to stdin, -l with 1 bit/symbol is selected, and stdout is sent to a binary file with command `./u8-to-sd -l 1 < dcu03-input-u8.bin > dcu03-output-1-sd.bin`: 
     * Input (viewed with command `cat ./dcu03-input-u8.bin | xxd`):
 	  ```
@@ -675,10 +694,36 @@ Usage:
 
 #### `u32-counter-endian`
 Usage:
-	`u32-counter-endian [-d] <infile>`
-* Trys to guess counter endianness, and translates to the local platform.
-* `-d`: output differences between adjacent values (when viewing the data as a 32-bit unsigned counter with rollover).
-* Example DCU17:
+	`u32-counter-endian [-d] <filename>`
+* Trys to guess counter endianness and translates to the local platform.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `-d`: Output differences between adjacent values (when viewing the data as a 32-bit unsigned counter with rollover).
+* Example DCU17 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-endian ./dcu17-input-u32.bin > ./dcu17-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu17-input-u32.bin | xxd`):
+	  ```
+      00000000: 0000 0011 0000 0021 0000 0044 0000 0050  .......!...D...P
+      00000010: 0000 0066 0000 00aa 0000 00ee 0000 01ff  ...f............
+      00000020: 0000 2200 0000 4400                      .."...D.
+	  ```
+    * Output (viewed with command `cat ./dcu17-output-u32.bin | xxd`):
+	  ```
+      00000000: 1100 0000 2100 0000 4400 0000 5000 0000  ....!...D...P...
+      00000010: 6600 0000 aa00 0000 ee00 0000 ff01 0000  f...............
+      00000020: 0022 0000 0044 0000                      ."...D..
+	  ```
+    * Alternate Output (if `-d` used, viewed with command `cat ./dcu17-output-d-u32.bin | xxd`):
+	  ```
+	  00000000: 1000 0000 2300 0000 0c00 0000 1600 0000  ....#...........
+      00000010: 4400 0000 4400 0000 1101 0000 0120 0000  D...D........ ..
+      00000020: 0022 0000                                ."..
+	  ```
+	* Additional Output (to console, in both Output cases above):
+	  ```
+      Read in 10 uint32_ts
+      Reversed format detected (0.90000000000000002 vs 0.80000000000000004)
+	  ```
 
 #### `u32-delta`
 Usage:
@@ -691,22 +736,75 @@ Usage:
 Usage:
 	`u32-counter-bitwidth <filename>`
 * Extract deltas under the assumption that the data is an increasing counter of some inferred bitwidth.
-* Example DCU19:
-
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Example DCU19 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-bitwidth ./dcu19-input-u32.bin > ./dcu19-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu19-input-u32.bin | xxd`):
+	  ```
+      00000000: ffff 0001 ffff 0011 ffff ff13 ffff ff21  ...............!
+      00000010: ffff ff66 ffff ff88 ffff ffaa ffff ffff  ...f............
+	  ```
+    * Output (viewed with command `cat ./dcu19-output-u32.bin | xxd`):
+	  ```
+      00000000: 0000 010d 0000 0000 0000 010b 0000 0142  ...............B
+      00000010: 0000 011f 0000 011f 0000 0152            ...........R
+	  ```
+	* Additional Output (to console):
+	  ```
+      Read in 8 uint32_ts
+      Next binary power: 0 (assuming a 32 bit counter)
+      min diff: 50266112, max diff: 1426063360
+      Translating min diff to 0 (new max diff: 1375797248)
+	  ```
 
 #### `u32-counter-raw`
 Usage:
 	`u32-counter-raw <filename>`
-* Extract deltas treated as 32-bit unsigned counters (that roll may roll over).
-* Example DCU20:
+* Extract deltas treated as 32-bit unsigned counters (they may roll over).
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Example DCU20 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-raw ./dcu20-input-u32.bin > ./dcu20-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu20-input-u32.bin | xxd`):
+	  ```
+      00000000: ffff 0001 ffff 0011 ffff ff13 ffff ff21  ...............!
+      00000010: ffff ff66 ffff ff88 ffff ffaa ffff ffff  ...f............
+      00000020: 1100 0000 2100 0000                      ....!...
+	  ```
+    * Output (viewed with command `cat ./dcu20-output-u32.bin | xxd`):
+	  ```
+      00000000: f0ff ff0f f0ff fe02 f0ff ff0d f0ff ff44  ...............D
+      00000010: f0ff ff21 f0ff ff21 f0ff ff54 0200 0000  ...!...!...T....
+      00000020: 0000 0000                                ....
+	  ```
+	* Additional Output (to console):
+	  ```
+	  Read in 10 uint32_ts
+      Shifting data down by 16. Maximum value now 1426063344
+	  ```
 
 #### `u64-counter-endian`
 Usage:
-	`u64-counter-endian <filename>`
-* Extract deltas treated as 64-bit unsigned counters (that roll may roll over).
-* Attempt to determine the endianness.
-* The values are expected to be provided via stdin.
-* Example DCU21:
+	`u64-counter-endian`
+* Trys to guess counter endianness and translates to the local platform.
+* Input values of type uint64_t are provided via stdin.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU21 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-counter-endian < ./dcu21-input-u64.bin > ./dcu21-output-u64.bin`: 
+    * Input (viewed with command `cat ./dcu21-input-u64.bin | xxd`):
+	  ```
+	  00000000: 0000 0000 0000 0011 0000 0000 0000 0021  ...............!
+      00000010: 0000 0000 0000 0044 0000 0000 0000 0050  .......D.......P
+      00000020: 0000 0000 0000 0066                      .......f
+	  ```
+    * Output (viewed with command `cat ./dcu21-output-u64.bin | xxd`):
+	  ```
+	  00000000: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
+      00000010: 4400 0000 0000 0000 5000 0000 0000 0000  D.......P.......
+      00000020: 6600 0000 0000 0000                      f.......
+	  ```
+	* Additional Output (to console):
+	  ```
+	  Swapped byte order seems better (1)
+	  ```
 
 ## Make
 

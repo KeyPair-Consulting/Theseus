@@ -505,9 +505,24 @@ Usage:
 #### `u16-to-u32`
 Usage:
 	`u16-to-u32 [-d]`
-* `-d`: output differences between adjacent values.
-* The values are expected to be provided via stdin.
-* Example DCU04:
+* Converts provided binary data from type uint16_t to type uint32_t.
+* Input values of type uint16_t are provided via stdin.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `-d`: Output differences between adjacent values.
+* Example DCU04 - A binary file is given as input and stdout is sent to a binary file with command `./u16-to-u32 < ./dcu04-input-u16.bin > ./dcu04-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu04-input-u16.bin | xxd`):
+	  ```
+      00000000: 4142 3031 6162 3839 30                   AB01ab890
+	  ```
+    * Output (viewed with command `cat ./dcu04-output-u32.bin | xxd`):
+	  ```
+	  00000000: 4142 0000 3031 0000 6162 0000 3839 0000  AB..01..ab..89..
+	  ```
+    * Alternate Output (if `-d` used, viewed with command `cat ./dcu04-output-d-u32.bin | xxd`):
+	  ```
+	  00000000: efee 0000 3131 0000 d7d6 0000            ....11......
+	  ```
 
 #### `u64-to-ascii`
 Usage:
@@ -532,19 +547,63 @@ Usage:
 Usage:
 	`u32-to-sd`
 Usage:
-	`u32-to-sd <inputfile>`
-* inputfile is assumed to be a stream of uint32\_ts
-* output sent to stdout is a stream of uint8\_t integers
-* Example DCU06:
+	`u32-to-sd <filename>`
+* Converts provided binary data from type uint32_t to type statData_t.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Example DCU06 - A binary file is given as input and stdout is sent to a binary file with command `./u32-to-sd ./dcu06-input-u32.bin > ./dcu06-output-sd.bin`: 
+    * Input (viewed with command `cat ./dcu06-input-u32.bin | xxd`):
+	  ```
+	  00000000: 4100 0000 4200 0000 3000 0000 3100 0000  A...B...0...1...
+      00000010: 6100 0000 6200 0000 3800 0000 3900 0000  a...b...8...9...
+      00000020: 3000                                     0.
+      ```
+    * Output (viewed with command `cat ./dcu06-output-sd.bin | xxd`): 
+	  ```
+      00000000: 4142 3031 6162 3839                      AB01ab89
+	  ```
 
 #### `u16-to-sdbin`
 Usage:
-	`u16-to-sd [-l] [-b]`
-* Expand packed bits that are stored in u16 values.
-* `-l`: extract bits from low bit to high bit
-* `-b`: 16 bit values are in big endian format.
-* The values are expected to be provided via stdin.
-* Example DCU07:
+	`u16-to-sdbin [-l] [-b]`
+* Converts provided binary data from type uint16_t to type statData_t by expanding packed bits.
+* Input values of type uint16_t are provided via stdin.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `-l`: Extract bits from low bit to high bit.
+	* `-b`: Input values are in big endian format.
+* Example DCU07 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u16-to-sdbin < ./dcu07-input-u16.bin > ./dcu07-output-sd.bin`: 
+    * Input (viewed with command `cat ./dcu07-input-u16.bin | xxd`):
+	  ```
+      00000000: 0101 1111 1010 00ff ff00 0000            ............
+	  ```
+    * Output (viewed with command `cat ./dcu07-output-sd.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0001 0000 0000 0000 0001  ................
+      00000010: 0000 0001 0000 0001 0000 0001 0000 0001  ................
+      00000020: 0000 0001 0000 0000 0000 0001 0000 0000  ................
+      00000030: 0101 0101 0101 0101 0000 0000 0000 0000  ................
+      00000040: 0000 0000 0000 0000 0101 0101 0101 0101  ................
+      00000050: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+	  ```
+    * Alternate Output (if `-l` used, viewed with command `cat ./dcu07-output-l-sd.bin | xxd`):
+	  ```
+      00000000: 0100 0000 0000 0000 0100 0000 0000 0000  ................
+      00000010: 0100 0000 0100 0000 0100 0000 0100 0000  ................
+      00000020: 0000 0000 0100 0000 0000 0000 0100 0000  ................
+      00000030: 0000 0000 0000 0000 0101 0101 0101 0101  ................
+      00000040: 0101 0101 0101 0101 0000 0000 0000 0000  ................
+      00000050: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+	  ```
+    * Alternate Output (if `-b` used, viewed with command `cat ./dcu07-output-b-sd.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0001 0000 0000 0000 0001  ................
+      00000010: 0000 0001 0000 0001 0000 0001 0000 0001  ................
+      00000020: 0000 0001 0000 0000 0000 0001 0000 0000  ................
+      00000030: 0000 0000 0000 0000 0101 0101 0101 0101  ................
+      00000040: 0101 0101 0101 0101 0000 0000 0000 0000  ................
+      00000050: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+	  ```
 
 #### `u64-jent-to-delta`
 Usage:
@@ -590,8 +649,30 @@ Usage:
 Usage:
 	`u32-expand-bitwidth <filename>`
 * Extract inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.
-* The values are expected to be provided via stdin.
-* Example DCU11:
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU11 - A binary file is given as input and stdout is sent to a binary file with command `./u32-expand-bitwidth ./dcu11-input-u32.bin > ./dcu11-output-u64.bin`: 
+    * Input (viewed with command `cat ./dcu11-input-u32.bin | xxd`):
+	  ```
+      00000000: 0000 010d 0000 0000 0000 010b 0000 0142  ...............B
+      00000010: 0000 011f 0000 011f 0000 0152            ...........R
+	  ```
+    * Output (viewed with command `cat ./dcu11-output-u64.bin | xxd`):
+	  ```
+	  00000000: 0000 010d 0000 0000 0000 0000 0000 0000  ................
+      00000010: 0000 010b 0000 0000 0000 0142 0000 0000  ...........B....
+      00000020: 0000 011f 0000 0000 0000 011f 0000 0000  ................
+      00000030: 0000 0152 0000 0000                      ...R....
+	  ```
+	* Additional Output (to console):
+	  ``` 
+	  Read in 7 uint32_ts
+      Next binary power: 2147483648 (assuming a 31 bit value)
+      Found most obvious transition at index: 3 (0x0B010000 -> 0x42010000)
+      Now 000b010000 -> 0x0042010000
+      New max 1375797248 (index 6)
+      New min 0
+	  ```
 
 #### `u32-to-ascii`
 Usage:
@@ -729,8 +810,26 @@ Usage:
 Usage:
 	`u32-delta <filename>`
 * Extract deltas and then translate the result to a positive value.
-* The values are output via stdout.
-* Example DCU18:
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Example DCU18 - A binary file is given as input and stdout is sent to a binary file with command `./u32-delta ./dcu18-input-u32.bin > ./dcu18-output-u32.bin`: 
+    * Input (viewed with command `cat ./dcu18-input-u32.bin | xxd`):
+	  ```
+	  00000000: 1100 0000 2100 0000 4400 0000 5000 0000  ....!...D...P...
+      00000010: 6600 0000 aa00 0000 ee00 0000 ff01 0000  f...............
+      00000020: 0022 0000 0044 0000                      ."...D..
+	  ```
+    * Output (viewed with command `cat ./dcu18-output-u32.bin | xxd`):
+	  ```
+      00000000: 0400 0000 1700 0000 0000 0000 0a00 0000  ................
+      00000010: 3800 0000 3800 0000 0501 0000 f51f 0000  8...8...........
+      00000020: f421 0000                                .!..
+	  ```
+	* Additional Output (to console):
+	  ```
+	  Read in 10 uint32_ts
+      min diff: 12, max diff: 8704
+	  ```
 
 #### `u32-counter-bitwidth`
 Usage:

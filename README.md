@@ -448,7 +448,7 @@ Usage:
 #### `u64-counter-raw`
 Usage:
 	`u64-counter-raw <filename>`
-* Extract deltas treated as 64-bit unsigned counters (they may roll over).
+* Extracts deltas treated as 64-bit unsigned counters (they may roll over).
 * Input values of type uint64_t are provided in `<filename>`.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU02 - A binary file is given as input and stdout is sent to a binary file with command `./u64-counter-raw ./dcu02-input-u64.bin > ./dcu02-output-u64.bin`: 
@@ -608,20 +608,66 @@ Usage:
 #### `u64-jent-to-delta`
 Usage:
 	`u64-jent-to-delta`
-* input comes from stdin are in uint64\_t, in the default jent delta format.
-* output sent to stdout is the number of nanoseconds represented by the delta.
-* Example DCU08:
+* Converts provided binary data from uint64_t deltas in jent format to uint64_t deltas in nanoseconds format.  Also guesses native byte order and swaps if necessary.  Jent format expects the upper 32 bits to contain seconds and the lower 32 bits to contain nanoseconds.
+* Input values of type uint64_t (in default jent delta format) are provided via stdin.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU08 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-jent-to-delta < ./dcu08-input-u64.bin > ./dcu08-output-u64.bin`: 
+    * Input (viewed with command `cat ./dcu08-input-u64.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0000 00ca 9a3b 0000 0000  ...........;....
+      00000010: 0000 0000 0100 0000 00ca 9a3b 0100 0000  ...........;....
+      00000020: 0000 0000 0200 0000 0000 0000 0300 0000  ................
+	  ```
+    * Output (viewed with command `cat ./dcu08-output-u64.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0000 00ca 9a3b 0000 0000  ...........;....
+      00000010: 00ca 9a3b 0000 0000 0094 3577 0000 0000  ...;......5w....
+      00000020: 0094 3577 0000 0000 005e d0b2 0000 0000  ..5w.....^......
+	  ```
+	* Additional Output (to console):
+	  ```
+      Native byte order seems better (0.5)
+	  ```
 
 #### `u32-to-categorical`
 Usage:
-	`u32-to-categorical [-v] [-m] [-t <value>] <infile>`
-* Produces categorical summary of data.
-* `-v`: Increase verbosity. Can be used multiple times.
-* `-m`: Output in Mathematica-friendly format.
-* `-t <value>`: Trim any value that is prior to the first symbol with `<value>` occurrences or more or after the last symbol with `<value>` occurrences or more.
-* `-z`: Don't output zero categories.
-* The values are expected to be provided via stdin.
-* Example DCU09:
+	`u32-to-categorical [-v] [-m] [-t <value>] [-z] <filename>`
+* Produces categorical summary of provided binary data.
+* Input values of type uint32_t are provided in `<filename>`.   
+* Output of text summary is sent to stdout.
+* Options:
+    * `-v`: Increase verbosity. Can be used multiple times.
+    * `-m`: Output in Mathematica-friendly format.
+    * `-t <value>`: Trim any value that is prior to the first symbol with `<value>` occurrences or more or after the last symbol with `<value>` occurrences or more.
+    * `-z`: Don't output zero categories.
+* Example DCU09 - A binary file is given as input with command `./u32-to-categorical ./dcu09-input-u32.bin`: 
+    * Input (viewed with command `cat ./dcu09-input-u32.bin | xxd`):
+	  ```
+      00000000: 0100 0000 0100 0000 0200 0000 0500 0000  ................
+      00000010: 0500 0000 0500 0000 0500 0000 0100 0000  ................
+	  ```
+    * Output (to console):
+	  ```
+      1: 3
+      2: 1
+      3: 0
+      4: 0
+      5: 4
+	  ```
+    * Alternate Output (if `-m` used, to console):
+	  ```
+	  ./dcu09-input-u32.bin={{1, 3},{2, 1},{3, 0},{4, 0},{5, 4}};
+	  ```
+    * Alternate Output (if `-t 4` used, to console):
+	  ```
+      5: 4
+	  ```
+	* Alternate Output (if `-z` used, to console):
+	  ```
+      1: 3
+      2: 1
+      5: 4
+	  ```
 
 #### `dec-to-u32`
 Usage:
@@ -648,7 +694,7 @@ Usage:
 #### `u32-expand-bitwidth`
 Usage:
 	`u32-expand-bitwidth <filename>`
-* Extract inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.
+* Extracts inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU11 - A binary file is given as input and stdout is sent to a binary file with command `./u32-expand-bitwidth ./dcu11-input-u32.bin > ./dcu11-output-u64.bin`: 
@@ -764,14 +810,40 @@ Usage:
 #### `blocks-to-sdbin`
 Usage:
 	`blocks-to-sdbin [-l] <blocksize> <ordering>`
-* Extract bits from a blocksize-sized block a byte at a time, in the specified byte ordering.
-* blocksize        is the number of bytes per block
-* ordering         is the indexing order for bytes (zero indexed decimal, separated by colons)
-* -l  Extract bits from least to most significant within each byte.
-* The values are expected to be provided via stdin.
-* output is single bits stored in uint8\_t sent to stdout.
-* example, standard little endian 32 bit integers, data stored least to most significant: `blocks-to-sdbin -l 4 0:1:2:3`
-* Example DCU16:
+* Extracts bits from a blocksize-sized block one byte at a time, in the specified byte ordering.
+* Input values in string format are provided via stdin.   
+* Output values of type statData_t (default uint8_t) are sent to stdout.  Each output represents a single bit.
+* Options:
+    * `-l`: Extract bits from least to most significant within each byte.
+	* `<blocksize>`: Required. The number of bytes per block.
+    * `<ordering>`: Required. The indexing order for bytes (zero indexed decimal, separated by colons).  E.g., `0:1:2:3:4`.
+* Example DCU16 - A binary file is sent to stdin (stored in 3 byte blocks ordered from left to right) and stdout is sent to a binary file with command `./blocks-to-sdbin 3 0:1:2 < ./dcu16-input-3byteblocks.bin > ./dcu16-output-sd.bin`: 
+    * Input (viewed with command `cat ./dcu16-input-3byteblocks.bin | xxd`):
+	  ```
+      00000000: 0011 22aa bbcc 3344 55dd eeff 6677 88    .."...3DU...fw.
+	  ```
+    * Output (viewed with command `cat ./dcu16-output-sd.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0000 0000 0001 0000 0001  ................
+      00000010: 0000 0100 0000 0100 0100 0100 0100 0100  ................
+      00000020: 0100 0101 0100 0101 0101 0000 0101 0000  ................
+      00000030: 0000 0101 0000 0101 0001 0000 0001 0000  ................
+      00000040: 0001 0001 0001 0001 0101 0001 0101 0001  ................
+      00000050: 0101 0100 0101 0100 0101 0101 0101 0101  ................
+      00000060: 0001 0100 0001 0100 0001 0101 0001 0101  ................
+      00000070: 0100 0000 0100 0000                      ........
+	  ```
+    * Alternate Output (if `-l` used, viewed with command `cat ./dcu16-output-l-sd.bin | xxd`):
+	  ```
+      00000000: 0000 0000 0000 0000 0100 0000 0100 0000  ................
+      00000010: 0001 0000 0001 0000 0001 0001 0001 0001  ................
+      00000020: 0101 0001 0101 0001 0000 0101 0000 0101  ................
+      00000030: 0101 0000 0101 0000 0000 0100 0000 0100  ................
+      00000040: 0100 0100 0100 0100 0100 0101 0100 0101  ................
+      00000050: 0001 0101 0001 0101 0101 0101 0101 0101  ................
+      00000060: 0001 0100 0001 0100 0101 0100 0101 0100  ................
+      00000070: 0000 0001 0000 0001                      ........
+	  ```
 
 #### `u32-counter-endian`
 Usage:
@@ -809,7 +881,7 @@ Usage:
 #### `u32-delta`
 Usage:
 	`u32-delta <filename>`
-* Extract deltas and then translate the result to a positive value.
+* Extracts deltas and then translates the result to positive values.
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU18 - A binary file is given as input and stdout is sent to a binary file with command `./u32-delta ./dcu18-input-u32.bin > ./dcu18-output-u32.bin`: 
@@ -834,7 +906,7 @@ Usage:
 #### `u32-counter-bitwidth`
 Usage:
 	`u32-counter-bitwidth <filename>`
-* Extract deltas under the assumption that the data is an increasing counter of some inferred bitwidth.
+* Extracts deltas under the assumption that the data is an increasing counter of some inferred bitwidth.
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU19 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-bitwidth ./dcu19-input-u32.bin > ./dcu19-output-u32.bin`: 
@@ -859,7 +931,7 @@ Usage:
 #### `u32-counter-raw`
 Usage:
 	`u32-counter-raw <filename>`
-* Extract deltas treated as 32-bit unsigned counters (they may roll over).
+* Extracts deltas treated as 32-bit unsigned counters (they may roll over).
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU20 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-raw ./dcu20-input-u32.bin > ./dcu20-output-u32.bin`: 

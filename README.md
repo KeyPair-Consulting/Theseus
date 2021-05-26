@@ -12,6 +12,7 @@ This was written with a fairly modern Linux system running on a somewhat modern 
 ## Overview
 
 * `src/` holds the codebase
+* `ex/` holds data files used in examples
 
 ## How to run
 
@@ -100,7 +101,6 @@ Usage:
 * `-t <n>`: uses `<n>` computing threads (default: number of cores * 1.3).
 * `-l <index>,<samples>`: Read the `<index>` substring of length `<samples>`.
 
-
 #### `chisquare`
 Usage:
 	`chisquare [-v] [-l <index>,<samples> ] <inputfile>`
@@ -128,8 +128,10 @@ Usage:
 * `-s <m>`:  Use a sample set of `<m>` values (default `m`=1000000).
 
 
-### Utilities for Performing Interpretation and Processing
 
+
+
+### Interpretation and Processing Utilities
 #### `selectbits`
 Usage:
 	`selectbits [-l logging dir] [-v] [-t <n>] [-c] <inputfile> <outputBits>`
@@ -175,7 +177,8 @@ Usage:
 * `-c`: Disable the creation of confidence intervals.
 
 
-### Others
+
+### Other Data Utilities
 #### `u32-selectdata`
 Usage:
 	`u32-selectdata inputfile trimLowPercent trimHighPercent`
@@ -308,8 +311,10 @@ Usage:
 	`double-merge <file1> <file2> <outfile>`
 * Merges two sorted lists into a single merged sorted list.
 
-### Utilities to help produce H\_submitter
 
+
+
+### H_submitter Production Utilities
 #### `ro-model`
 Usage:
 	`ro-model [-v] [-J] [-B] [-S] [-K] [-W] [-g gaussian-prop] <sigma>` <br />
@@ -344,7 +349,11 @@ Usage:
 
 This tool can be used to infer parameters from the statistical results.
 
-### Utilities to Produce Test Data
+
+
+
+
+### Test Data Production Utilities
 #### `randomfile`
 Usage:
 	`randomfile [-v] [-b <p>,<bits>] [-s <m>] [-d] [-a <andmask>] [-n <mean>,<stddev>]`
@@ -378,47 +387,129 @@ Usage:
 * Jitter Standard Deviation is in seconds (e.g. 1E-15) or a percentage of the ring oscillator period (ending with %, e.g., 0.001%).
 * Output is uint8\_t integers; lsb is oscillator output. next bit (if enabled) tracks deviations from the deterministic value.
 
-### Utilities to Help Interpret Results.
+
+
+
+
+
+
+### Result Interpretation Utilities
 #### `percentile`
 Usage:
-	`percentile [-l] [-v] [-d] [-o] [-0] [-b <low>,<high>] <p> [filename]`
-* Takes doubles from the file (if provided) or stdin (by default), 1 per line, and gives the pth percentile
-* percentile estimated using the recommended NIST method (Hyndman and Fan's R6).
-* See: http://www.itl.nist.gov/div898/handbook/prc/section2/prc262.htm
-* data is presumed to be passed in via stdin, consisting of a series of lines of doubles.
-* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
-* `-d`: Make any RNG deterministic.
-* `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
-* `-l`: Treat the last value as an upper bound, rather than a data element. Report a single value, the min of the upper bound and the assessed value or smallest value in the confidence interval.
-* `-b <c>,<rounds>`:  Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
-* `-u <low>,<high>`: Discard samples that are not in the range [low, high].
-* `-0`: Read in doubles in machine-specific format.
-* `<p>`: Return the pth percentile p in [0, 1]
+	`percentile [-v] [-d] [-o] [-l] [-0] [-b <c>,<rounds>] [-u <low>,<high>] <p> [filename]`
+* Takes a set of human-readable doubles and provides the pth percentile.  Percentile is estimated using the recommended NIST method [Hyndman and Fan's R6](http://www.itl.nist.gov/div898/handbook/prc/section2/prc262.htm).
+* Input values in double format are provided via stdin (by default) or in `[filename]` (if provided), one per line.
+* Output of text summary is sent to stdout.
+* Options:
+    * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+    * `-d`: Make any RNG deterministic.
+    * `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
+    * `-l`: Treat the last value as an upper bound, rather than a data element. Report a single value, the min of the upper bound and the assessed value or smallest value in the confidence interval.
+    * `-0`: Read in doubles in machine-specific binary format.
+	* `-b <c>,<rounds>`:  Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
+    * `-u <low>,<high>`: Discard samples that are not in the range [low, high].
+    * `<p>`: Required. Return the pth percentile where p is in the range [0, 1].
+* Example RIU01 - A text file is given as input with a request for the 50% percentile with command `./percentile .50 ./riu01-input.txt`: 
+    * Input (in riu01-input.txt, viewed with a text editor):
+	  ```
+	  0.111111
+      2.074924
+      2.145488
+      2.196152
+      2.029292
+      2.784276
+      3.000001
+	  ```
+	* Alternate Input (if `-0` is used and above data is now binary, viewed with command `xxd ./riu01-input-0-double.bin`):
+	  ```
+	  00000000: b3d1 393f c571 bc3f ea7b 0dc1 7199 0040  ..9?.q.?.{..q..@
+      00000010: ffae cf9c f529 0140 255c c823 b891 0140  .....).@%\.#...@
+      00000020: 8446 b071 fd3b 0040 344d d87e 3246 0640  .F.q.;.@4M.~2F.@
+      00000030: 06bd 3786 0000 0840                      ..7....@
+	  ```
+    * Output (to console):
+	  ```
+      2.1454879999999998
+	  ```
+    * Alternate Output (if `-l` is used, to console):
+	  ```	  
+      2.1102059999999998
+	  ```
+    * Alternate Output (if `-b .95,10` is used, to console):
+	  ```	  
+      2.0749240000000002, 2.1454879999999998, 2.7842760000000002
+	  ```
+	* Alternate Output (if `-u 0.0,2.4999999999999999 ` is used, to console):
+	  ```
+	  2.0749240000000002
+	  ```
 
 #### `mean`
 Usage:
 	`mean [-v] [-d] [-o] [-0] [-b <c>,<rounds>] [-u <low>,<high>] [filename]`
-* Takes doubles from the file (if provided) or stdin (by default), 1 per line, and gives the mean.
-* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
-* `-d`: Make any RNG deterministic.
-* `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
-* `-b <c>,<rounds>`: Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
-* `-u <low>,<high>`: Discard samples that are not in the range [low, high].
-* `-0`: Read in doubles in machine-specific format.
+* Takes a set of human-readable doubles and provides the mean.
+* Input values in double format are provided via stdin (by default) or in `[filename]` (if provided), one per line.
+* Output of text summary is sent to stdout.
+* Options:
+    * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+    * `-d`: Make any RNG deterministic.
+    * `-o`: Produce only one output. If there is a confidence interval, report the minimum value.
+    * `-0`: Read in doubles in machine-specific binary format.
+	* `-b <c>,<rounds>`: Produce `<c>`-BCa bootstrap confidence intervals using `<rounds>` of bootstrapping.
+    * `-u <low>,<high>`: Discard samples that are not in the range [low, high].
+* Example RIU02 - A text file is given as input with command `./mean ./riu02-input.txt`: 
+    * Input (in riu02-input.txt, viewed with a text editor):
+	  ```
+	  0.111111
+      2.074924
+      2.145488
+      2.196152
+      2.029292
+      2.784276
+      3.000001
+	  ```
+    * Output (to console):
+	  ```
+	  2.0487491428571429
+	  ```
+    * Alternate Output (if `-b .95,10` is used, to console):
+	  ```	  
+      1.8055411428571428, 2.0487491428571429, 2.4306298571428573
+	  ```
+	  * Alternate Output (if `-u 2.0,3.0` is used, to console):
+	  ```	  
+      2.2460264000000003
+	  ```
 
 #### `failrate`
 Usage:
-	`failrate [-v] [-d] [-0] <p> <q> [filename]`
-* Takes doubles from the file (if provided) or stdin (by default), 1 per line or in binary format, and gives the proportion that are less than or equal to p or greater than or equal to q.
-* Useful to characterize false positive rates for statistical tests with inclusive failure bounds.
-* data is presumed to be passed in via stdin, consisting of a series of lines of doubles.
-* `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
-* `-s`: Assume that the data is sorted.
-* `-0`: Read in doubles in machine-specific format.
-* `<p>`: Lower bound
-* `<q>`: Upper bound
-
-
+	`failrate [-v] [-s] [-0] <p> <q> [filename]`
+* Takes a set of human-readable doubles and provides the proportion that are less than or equal to `<p>` or greater than or equal to `<q>`.  This is useful to characterize false positive rates for statistical tests with inclusive failure bounds.
+* Input values in double format are provided via stdin (by default) or in `[filename]` (if provided), one per line.
+* Output of text summary is sent to stdout.
+* Options:
+    * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
+    * `-s`: Assume that the data is sorted.
+    * `-0`: Read in doubles in machine-specific binary format.
+    * `<p>`: Required. Lower bound as a double.
+    * `<q>`: Required. Upper bound as a double.
+* Example RIU03 - A text file is given as input, p is set to 0.1, and q is set to 3.0 with command `./failrate 0.1 3.0 ./riu03-input.txt`: 
+    * Input (in riu03-input.txt, viewed with a text editor):
+	  ```
+	  0.111111
+      2.074924
+      2.145488
+      2.196152
+      2.029292
+      2.784276
+      3.000001
+	  ```
+    * Output (to console):
+	  ```
+	  Proportion in lower failure region: 0
+      Proportion in upper failure region: 0.14285714285714285
+      Proportion in failure region: 0.14285714285714285
+	  ```
 
 
 
@@ -435,12 +526,12 @@ Usage:
     * `-t`: Truncate input values.
 * Errors will occur if data remains out of range prior to uint32_t conversion.  I.e., the user must choose to truncate and/or switch endianness if necessary prior to type casting.
 * Example DCU01 - A binary file is sent to stdin, truncation is selected, and stdout is sent to a binary file with command `./u64-to-u32 -t < dcu01-input-u64.bin > dcu01-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu01-input-u64.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu01-input-u64.bin`):
 	  ```
 	  00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
       00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
 	  ```
-    * Output (viewed with command `cat ./dcu01-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu01-output-u32.bin`):
 	  ```
 	  00000000: 4142 4344 3031 3233 6162 6364            ABCD0123abcd
 	  ```
@@ -452,13 +543,13 @@ Usage:
 * Input values of type uint64_t are provided in `<filename>`.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU02 - A binary file is given as input and stdout is sent to a binary file with command `./u64-counter-raw ./dcu02-input-u64.bin > ./dcu02-output-u64.bin`: 
-    * Input (viewed with command `cat ./dcu02-input-u64.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu02-input-u64.bin`):
 	  ```
       00000000: 0100 0000 0000 0000 0400 0000 0000 0000  ................
       00000010: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
       00000020: ffff ffff ffff ffff 0300 0000 0000 0000  ................
 	  ```
-    * Output (viewed with command `cat ./dcu02-output-u64.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu02-output-u64.bin`):
 	  ```
       00000000: 0000 0000 0000 0000 0a00 0000 0000 0000  ................
       00000010: 0d00 0000 0000 0000 dbff ffff ffff ffff  ................
@@ -481,23 +572,23 @@ Usage:
     * `-v`: Increase verbosity. Can be used multiple times.
 	* `<bits per symbol>`: Number of bits per symbol, limited to values 1, 2, or 4.
 * Example DCU03 - A binary file is sent to stdin, -l with 1 bit/symbol is selected, and stdout is sent to a binary file with command `./u8-to-sd -l 1 < dcu03-input-u8.bin > dcu03-output-1-sd.bin`: 
-    * Input (viewed with command `cat ./dcu03-input-u8.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu03-input-u8.bin`):
 	  ```
       00000000: 4142 3031 6162 3839                      AB01ab89
 	  ```
-    * Output (viewed with command `cat ./dcu03-output-1-sd.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu03-output-1-sd.bin`):
 	  ```
       00000000: 0100 0000 0000 0100 0001 0000 0000 0100  ................
       00000010: 0000 0000 0101 0000 0100 0000 0101 0000  ................
       00000020: 0100 0000 0001 0100 0001 0000 0001 0100  ................
       00000030: 0000 0001 0101 0000 0100 0001 0101 0000  ................
 	  ```
-	* Alternate Output (if bits per symbol = 2, viewed with command `cat ./dcu03-output-2-sd.bin | xxd`)
+	* Alternate Output (if bits per symbol = 2, viewed with command `xxd ./dcu03-output-2-sd.bin`)
 	  ```
       00000000: 0100 0001 0200 0001 0000 0300 0100 0300  ................
       00000010: 0100 0201 0200 0201 0002 0300 0102 0300  ................
 	  ```
-	* Alternate Output (if bits per symbol = 4, viewed with command `cat ./dcu03-output-4-sd.bin | xxd`)
+	* Alternate Output (if bits per symbol = 4, viewed with command `xxd ./dcu03-output-4-sd.bin`)
 	  ```
       00000000: 0104 0204 0003 0103 0106 0206 0803 0903  ................
 	  ```
@@ -511,15 +602,15 @@ Usage:
 * Options:
     * `-d`: Output differences between adjacent values.
 * Example DCU04 - A binary file is given as input and stdout is sent to a binary file with command `./u16-to-u32 < ./dcu04-input-u16.bin > ./dcu04-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu04-input-u16.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu04-input-u16.bin`):
 	  ```
       00000000: 4142 3031 6162 3839 30                   AB01ab890
 	  ```
-    * Output (viewed with command `cat ./dcu04-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu04-output-u32.bin`):
 	  ```
 	  00000000: 4142 0000 3031 0000 6162 0000 3839 0000  AB..01..ab..89..
 	  ```
-    * Alternate Output (if `-d` used, viewed with command `cat ./dcu04-output-d-u32.bin | xxd`):
+    * Alternate Output (if `-d` used, viewed with command `xxd ./dcu04-output-d-u32.bin`):
 	  ```
 	  00000000: efee 0000 3131 0000 d7d6 0000            ....11......
 	  ```
@@ -531,7 +622,7 @@ Usage:
 * Input values of type uint64_t are provided via stdin.
 * Output values in decimal format are sent to stdout, one per line.
 * Example DCU05 - A binary file is sent to stdin with command `./u64-to-ascii < dcu05-input-u64.bin`: 
-    * Input (viewed with command `cat ./dcu05-input-u64.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu05-input-u64.bin`):
 	  ```
       00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
       00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
@@ -552,13 +643,13 @@ Usage:
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type statData_t (default uint8_t) are sent to stdout.
 * Example DCU06 - A binary file is given as input and stdout is sent to a binary file with command `./u32-to-sd ./dcu06-input-u32.bin > ./dcu06-output-sd.bin`: 
-    * Input (viewed with command `cat ./dcu06-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu06-input-u32.bin`):
 	  ```
 	  00000000: 4100 0000 4200 0000 3000 0000 3100 0000  A...B...0...1...
       00000010: 6100 0000 6200 0000 3800 0000 3900 0000  a...b...8...9...
       00000020: 3000                                     0.
       ```
-    * Output (viewed with command `cat ./dcu06-output-sd.bin | xxd`): 
+    * Output (viewed with command `xxd ./dcu06-output-sd.bin`): 
 	  ```
       00000000: 4142 3031 6162 3839                      AB01ab89
 	  ```
@@ -573,11 +664,11 @@ Usage:
     * `-l`: Extract bits from low bit to high bit.
 	* `-b`: Input values are in big endian format.
 * Example DCU07 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u16-to-sdbin < ./dcu07-input-u16.bin > ./dcu07-output-sd.bin`: 
-    * Input (viewed with command `cat ./dcu07-input-u16.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu07-input-u16.bin`):
 	  ```
       00000000: 0101 1111 1010 00ff ff00 0000            ............
 	  ```
-    * Output (viewed with command `cat ./dcu07-output-sd.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu07-output-sd.bin`):
 	  ```
       00000000: 0000 0000 0000 0001 0000 0000 0000 0001  ................
       00000010: 0000 0001 0000 0001 0000 0001 0000 0001  ................
@@ -586,7 +677,7 @@ Usage:
       00000040: 0000 0000 0000 0000 0101 0101 0101 0101  ................
       00000050: 0000 0000 0000 0000 0000 0000 0000 0000  ................
 	  ```
-    * Alternate Output (if `-l` used, viewed with command `cat ./dcu07-output-l-sd.bin | xxd`):
+    * Alternate Output (if `-l` used, viewed with command `xxd ./dcu07-output-l-sd.bin`):
 	  ```
       00000000: 0100 0000 0000 0000 0100 0000 0000 0000  ................
       00000010: 0100 0000 0100 0000 0100 0000 0100 0000  ................
@@ -595,7 +686,7 @@ Usage:
       00000040: 0101 0101 0101 0101 0000 0000 0000 0000  ................
       00000050: 0000 0000 0000 0000 0000 0000 0000 0000  ................
 	  ```
-    * Alternate Output (if `-b` used, viewed with command `cat ./dcu07-output-b-sd.bin | xxd`):
+    * Alternate Output (if `-b` used, viewed with command `xxd ./dcu07-output-b-sd.bin`):
 	  ```
       00000000: 0000 0000 0000 0001 0000 0000 0000 0001  ................
       00000010: 0000 0001 0000 0001 0000 0001 0000 0001  ................
@@ -612,13 +703,13 @@ Usage:
 * Input values of type uint64_t (in default jent delta format) are provided via stdin.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU08 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-jent-to-delta < ./dcu08-input-u64.bin > ./dcu08-output-u64.bin`: 
-    * Input (viewed with command `cat ./dcu08-input-u64.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu08-input-u64.bin`):
 	  ```
       00000000: 0000 0000 0000 0000 00ca 9a3b 0000 0000  ...........;....
       00000010: 0000 0000 0100 0000 00ca 9a3b 0100 0000  ...........;....
       00000020: 0000 0000 0200 0000 0000 0000 0300 0000  ................
 	  ```
-    * Output (viewed with command `cat ./dcu08-output-u64.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu08-output-u64.bin`):
 	  ```
       00000000: 0000 0000 0000 0000 00ca 9a3b 0000 0000  ...........;....
       00000010: 00ca 9a3b 0000 0000 0094 3577 0000 0000  ...;......5w....
@@ -641,7 +732,7 @@ Usage:
     * `-t <value>`: Trim any value that is prior to the first symbol with `<value>` occurrences or more or after the last symbol with `<value>` occurrences or more.
     * `-z`: Don't output zero categories.
 * Example DCU09 - A binary file is given as input with command `./u32-to-categorical ./dcu09-input-u32.bin`: 
-    * Input (viewed with command `cat ./dcu09-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu09-input-u32.bin`):
 	  ```
       00000000: 0100 0000 0100 0000 0200 0000 0500 0000  ................
       00000010: 0500 0000 0500 0000 0500 0000 0100 0000  ................
@@ -685,7 +776,7 @@ Usage:
       1684234849
       1751606885
 	  ```
-    * Output (viewed with command `cat ./dcu10-output-u32.bin | xxd`): 
+    * Output (viewed with command `xxd ./dcu10-output-u32.bin`): 
 	  ```
 	  00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
       00000010: 6162 6364 6566 6768                      abcdefgh
@@ -698,12 +789,12 @@ Usage:
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU11 - A binary file is given as input and stdout is sent to a binary file with command `./u32-expand-bitwidth ./dcu11-input-u32.bin > ./dcu11-output-u64.bin`: 
-    * Input (viewed with command `cat ./dcu11-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu11-input-u32.bin`):
 	  ```
       00000000: 0000 010d 0000 0000 0000 010b 0000 0142  ...............B
       00000010: 0000 011f 0000 011f 0000 0152            ...........R
 	  ```
-    * Output (viewed with command `cat ./dcu11-output-u64.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu11-output-u64.bin`):
 	  ```
 	  00000000: 0000 010d 0000 0000 0000 0000 0000 0000  ................
       00000010: 0000 010b 0000 0000 0000 0142 0000 0000  ...........B....
@@ -727,7 +818,7 @@ Usage:
 * Input values of type uint32_t are provided via stdin.
 * Output values are sent to stdout, one per line.
 * Example DCU12 - A binary file is sent to stdin with command `./u32-to-ascii < dcu12-input-u32.bin`: 
-    * Input (viewed with command `cat ./dcu12-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu12-input-u32.bin`):
 	  ```
       00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
       00000010: 6162 6364 6566 6768 3839 30              abcdefgh890
@@ -749,7 +840,7 @@ Usage:
 * Input values of type statData_t (default uint8_t) are provided via stdin.
 * Output values in hexidecimal format are sent to stdout, one per line.
 * Example DCU13 - A binary file is sent to stdin with command `./sd-to-hex < dcu13-input-u8.bin`: 
-    * Input (viewed with command `cat ./dcu13-input-u8.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu13-input-u8.bin`):
 	  ```
 	  00000000: 4142 3031 6162 3839                      AB01ab89
 	  ```
@@ -772,11 +863,11 @@ Usage:
 * Input values of type uint8_t are provided via stdin.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU14 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u8-to-u32 < dcu14-input-u8.bin > dcu14-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu14-input-u8.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu14-input-u8.bin`):
 	  ```
 	  00000000: 4142 3031 6162 3839                      AB01ab89
       ```
-    * Output (viewed with command `cat ./dcu14-output-u32.bin | xxd`): 
+    * Output (viewed with command `xxd ./dcu14-output-u32.bin`): 
 	  ```
 	  00000000: 4100 0000 4200 0000 3000 0000 3100 0000  A...B...0...1...
       00000010: 6100 0000 6200 0000 3800 0000 3900 0000  a...b...8...9...
@@ -796,7 +887,7 @@ Usage:
       61 62 63 64 65 66 67 68 
       38 39 30
 	  ```
-    * Output (viewed with command `cat ./dcu15-output-u32.bin | xxd`): 
+    * Output (viewed with command `xxd ./dcu15-output-u32.bin`): 
 	  ```
 	  00000000: 4100 0000 4200 0000 4300 0000 4400 0000  A...B...C...D...
       00000010: 4500 0000 4600 0000 4700 0000 4800 0000  E...F...G...H...
@@ -818,11 +909,11 @@ Usage:
 	* `<blocksize>`: Required. The number of bytes per block.
     * `<ordering>`: Required. The indexing order for bytes (zero indexed decimal, separated by colons).  E.g., `0:1:2:3:4`.
 * Example DCU16 - A binary file is sent to stdin (stored in 3 byte blocks ordered from left to right) and stdout is sent to a binary file with command `./blocks-to-sdbin 3 0:1:2 < ./dcu16-input-3byteblocks.bin > ./dcu16-output-sd.bin`: 
-    * Input (viewed with command `cat ./dcu16-input-3byteblocks.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu16-input-3byteblocks.bin`):
 	  ```
       00000000: 0011 22aa bbcc 3344 55dd eeff 6677 88    .."...3DU...fw.
 	  ```
-    * Output (viewed with command `cat ./dcu16-output-sd.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu16-output-sd.bin`):
 	  ```
       00000000: 0000 0000 0000 0000 0000 0001 0000 0001  ................
       00000010: 0000 0100 0000 0100 0100 0100 0100 0100  ................
@@ -833,7 +924,7 @@ Usage:
       00000060: 0001 0100 0001 0100 0001 0101 0001 0101  ................
       00000070: 0100 0000 0100 0000                      ........
 	  ```
-    * Alternate Output (if `-l` used, viewed with command `cat ./dcu16-output-l-sd.bin | xxd`):
+    * Alternate Output (if `-l` used, viewed with command `xxd ./dcu16-output-l-sd.bin`):
 	  ```
       00000000: 0000 0000 0000 0000 0100 0000 0100 0000  ................
       00000010: 0001 0000 0001 0000 0001 0001 0001 0001  ................
@@ -854,19 +945,19 @@ Usage:
 * Options:
     * `-d`: Output differences between adjacent values (when viewing the data as a 32-bit unsigned counter with rollover).
 * Example DCU17 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-endian ./dcu17-input-u32.bin > ./dcu17-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu17-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu17-input-u32.bin`):
 	  ```
       00000000: 0000 0011 0000 0021 0000 0044 0000 0050  .......!...D...P
       00000010: 0000 0066 0000 00aa 0000 00ee 0000 01ff  ...f............
       00000020: 0000 2200 0000 4400                      .."...D.
 	  ```
-    * Output (viewed with command `cat ./dcu17-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu17-output-u32.bin`):
 	  ```
       00000000: 1100 0000 2100 0000 4400 0000 5000 0000  ....!...D...P...
       00000010: 6600 0000 aa00 0000 ee00 0000 ff01 0000  f...............
       00000020: 0022 0000 0044 0000                      ."...D..
 	  ```
-    * Alternate Output (if `-d` used, viewed with command `cat ./dcu17-output-d-u32.bin | xxd`):
+    * Alternate Output (if `-d` used, viewed with command `xxd ./dcu17-output-d-u32.bin`):
 	  ```
 	  00000000: 1000 0000 2300 0000 0c00 0000 1600 0000  ....#...........
       00000010: 4400 0000 4400 0000 1101 0000 0120 0000  D...D........ ..
@@ -885,13 +976,13 @@ Usage:
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU18 - A binary file is given as input and stdout is sent to a binary file with command `./u32-delta ./dcu18-input-u32.bin > ./dcu18-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu18-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu18-input-u32.bin`):
 	  ```
 	  00000000: 1100 0000 2100 0000 4400 0000 5000 0000  ....!...D...P...
       00000010: 6600 0000 aa00 0000 ee00 0000 ff01 0000  f...............
       00000020: 0022 0000 0044 0000                      ."...D..
 	  ```
-    * Output (viewed with command `cat ./dcu18-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu18-output-u32.bin`):
 	  ```
       00000000: 0400 0000 1700 0000 0000 0000 0a00 0000  ................
       00000010: 3800 0000 3800 0000 0501 0000 f51f 0000  8...8...........
@@ -910,12 +1001,12 @@ Usage:
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU19 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-bitwidth ./dcu19-input-u32.bin > ./dcu19-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu19-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu19-input-u32.bin`):
 	  ```
       00000000: ffff 0001 ffff 0011 ffff ff13 ffff ff21  ...............!
       00000010: ffff ff66 ffff ff88 ffff ffaa ffff ffff  ...f............
 	  ```
-    * Output (viewed with command `cat ./dcu19-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu19-output-u32.bin`):
 	  ```
       00000000: 0000 010d 0000 0000 0000 010b 0000 0142  ...............B
       00000010: 0000 011f 0000 011f 0000 0152            ...........R
@@ -935,13 +1026,13 @@ Usage:
 * Input values of type uint32_t are provided in `<filename>`.
 * Output values of type uint32_t are sent to stdout.
 * Example DCU20 - A binary file is given as input and stdout is sent to a binary file with command `./u32-counter-raw ./dcu20-input-u32.bin > ./dcu20-output-u32.bin`: 
-    * Input (viewed with command `cat ./dcu20-input-u32.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu20-input-u32.bin`):
 	  ```
       00000000: ffff 0001 ffff 0011 ffff ff13 ffff ff21  ...............!
       00000010: ffff ff66 ffff ff88 ffff ffaa ffff ffff  ...f............
       00000020: 1100 0000 2100 0000                      ....!...
 	  ```
-    * Output (viewed with command `cat ./dcu20-output-u32.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu20-output-u32.bin`):
 	  ```
       00000000: f0ff ff0f f0ff fe02 f0ff ff0d f0ff ff44  ...............D
       00000010: f0ff ff21 f0ff ff21 f0ff ff54 0200 0000  ...!...!...T....
@@ -960,13 +1051,13 @@ Usage:
 * Input values of type uint64_t are provided via stdin.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU21 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-counter-endian < ./dcu21-input-u64.bin > ./dcu21-output-u64.bin`: 
-    * Input (viewed with command `cat ./dcu21-input-u64.bin | xxd`):
+    * Input (viewed with command `xxd ./dcu21-input-u64.bin`):
 	  ```
 	  00000000: 0000 0000 0000 0011 0000 0000 0000 0021  ...............!
       00000010: 0000 0000 0000 0044 0000 0000 0000 0050  .......D.......P
       00000020: 0000 0000 0000 0066                      .......f
 	  ```
-    * Output (viewed with command `cat ./dcu21-output-u64.bin | xxd`):
+    * Output (viewed with command `xxd ./dcu21-output-u64.bin`):
 	  ```
 	  00000000: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
       00000010: 4400 0000 0000 0000 5000 0000 0000 0000  D.......P.......

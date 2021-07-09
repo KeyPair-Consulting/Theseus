@@ -238,7 +238,7 @@ static void *simulateBoundThread(void *ptr) {
     localThreadData->results[j] = simulateBoundRound(localThreadData->k, localThreadData->p, localThreadData->MLScount, localThreadData->subsetSize, counts, localThreadData->configFixedSymbol, &rstate);
   }
 
-  if (configVerbose > 1) {
+  if (configVerbose > 2) {
     fprintf(stderr, "Thread done.\n");
   }
 
@@ -664,6 +664,9 @@ int main(int argc, char *argv[]) {
     } else {
       localMax = maxSelected(data + configSubsetSize * j, 1, configSubsetSize, k, counts);
     }
+    if( (localMax > configXmaxCutoff) && (configVerbose>0) ) {
+      fprintf(stderr, "Row over the cutoff: X_{C%zu} = %zu\n", j+1, localMax);
+    }
     if (localMax > rowMax) {
       rowMax = localMax;
       rowIndex = j;
@@ -683,6 +686,9 @@ int main(int argc, char *argv[]) {
       localMax = maxSelectedFixed(data + j, configSubsetSize, configSubsetSize, maxSymbol);
     } else {
       localMax = maxSelected(data + j, configSubsetSize, configSubsetSize, k, counts);
+    }
+    if( (localMax > configXmaxCutoff) && (configVerbose>0) ) {
+      fprintf(stderr, "Column over the cutoff: X_{C%zu} = %zu\n", j+1, localMax);
     }
     if (localMax > colMax) {
       colMax = localMax;

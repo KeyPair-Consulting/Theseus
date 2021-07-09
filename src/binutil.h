@@ -25,4 +25,5 @@ uint32_t u32lowBit(uint32_t in);
 uint32_t reverse32(uint32_t input);
 uint64_t reverse64(uint64_t input);
 void reverse128(uint64_t *input);
+size_t serialXOR(statData_t *data, size_t datalen, size_t compression);
 #endif

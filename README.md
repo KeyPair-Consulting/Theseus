@@ -179,43 +179,75 @@ Usage:
 
 
 ### Other Data Utilities
-#### `u32-selectdata`
+#### `bits-in-use`
 Usage:
-	`u32-selectdata inputfile trimLowPercent trimHighPercent`
-* Attempt to keep the percentages noted.
-* inputfile is assumed to be a stream of uint32\_ts
-* output is to stdout, and is u32 ints
+	`bits-in-use <inputfile>`
+* inputfile is assumed to consist of uint32\_ts
+* outputs the number of bits required to represent data after removing stuck and superfluous bits.
+* Example ODU01 - 
 
-#### `u32-selectrange`
+#### `discard-fixed-bits`
 Usage:
-	`u32-selectrange inputfile low high`
-* Extracts all values between low and high (inclusive).
-* inputfile is assumed to be a stream of uint32\_ts
-* output is to stdout, and is u32 ints
+	`discard-fixed-bits inputfile`
+* inputfile is assumed to be a stream of uint8\_t
+* output sent to stdout are uint8\_t, with all fixed bits removed and the non-fixed bits moved to the lsb of the output.
+* Example ODU02 - 
 
-#### `u32-xor-diff`
+#### `double-merge`
 Usage:
-	`u32-xor-diff`
-* Output the running XOR of adjacent values. 
-* The values are expected to be provided via stdin.
+	`double-merge <file1> <file2> <outfile>`
+* Merges two sorted lists into a single merged sorted list.	 
+* Example ODU03 - 
 
-#### `u128-bit-select`
+#### `double-minmaxdelta`
 Usage:
-	`bit-select-u128 (bit)`
-* The 128-bit values are expected to be provided via stdin.
-* output is uint8_t via stdout.
+	`double-minmaxdelta [-v] [-0] [filename]`
+* Takes doubles from the file (if provided) or stdin (by default) (1 per line in ascii mode) and gives the mean.
+* Verbose mode (can be used up to 3 times for increased verbosity).
+* `-0`: Read in doubles in machine-specific format.
+* Example ODU04 - 
 
-#### `u32-discard-fixed-bits`
+#### `double-sort`
 Usage:
-	`u32-discard-fixed-bits <inputfile>`
-* inputfile is assumed to be a stream of uint32\_ts
-* output sent to stdout are uint32\_t integers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+	`double-sort <filename>`
+* Takes doubles from the file and sorts them.
+* Example ODU05 - 
+
+#### `downsample`
+Usage:
+	`downsample [-b <block size>] <rate> <data file>`
+* Groups data by index into modular classes mod `<rate>` evenly into the block size.
+* `<rate>`: Number of input samples per output samples
+* `-b`: Samples per output block (default 1000000)
+* The uint8\_t values are output via stdout.
+* Example ODU06 - 
 
 #### `extractbits`
 Usage:
 	`extractbits <inputfile> <bitmask>`
 * inputfile is assumed to be a stream of uint32\_ts
 * output is sent to stdout is in uint8\_t format
+* Example ODU07 - 
+
+#### `hweight`
+Usage:
+	`hweight bitmask`
+* output is the hamming weight of the bitmask
+* Example ODU08 - 
+
+#### `u128-bit-select`
+Usage:
+	`u128-bit-select (bit)`
+* The 128-bit values are expected to be provided via stdin.
+* output is uint8_t via stdout.
+* Example ODU09 - 
+
+#### `u128-discard-fixed-bits`
+Usage:
+	`u128-discard-fixed-bits inputfile outputgroup`
+* inputfile is assumed to be a stream of uint128\_t
+* output sent to stdout are uint32\_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+* Example ODU10 - 
 
 #### `u32-anddata`
 Usage:
@@ -224,30 +256,7 @@ Usage:
 * inputfile is assumed to be a stream of uint32\_ts
 * Outputs uint32\_ts to stdout
 * The result is the data bitwise anded with the provided bitmask output to stdout
-
-#### `double-sort`
-Usage:
-	`double-sort <filename>`
-* Takes doubles from the file and sorts them.
-
-#### `u32-bit-select`
-Usage:
-	`u32-bit-select [-r] (bit)`
-* `-r`: Reverse the endianness of the u32 inputs before selecting the bit.
-* Outputs only the selected bit (0 is the lsb, 31 is msb).
-* The 32-bit values are expected to be provided via stdin.
-* output is uint8\_t via stdout.
-
-#### `hweight`
-Usage:
-	`hweight bitmask`
-* output is the hamming weight of the bitmask
-
-#### `bits-in-use`
-Usage:
-	`bits-in-use <inputfile>`
-* inputfile is assumed to consist of uint32\_ts
-* outputs the number of bits required to represent data after removing stuck and superfluous bits.
+* Example ODU11 - 
 
 #### `u32-bit-permute`
 Usage:
@@ -259,32 +268,30 @@ Usage:
 * Each bit position can be present at most once.
 * The 32-bit values are expected to be provided via stdin.
 * output is u32 values via stdout in machine native format.
+* Example ODU12 - 
 
-#### `discard-fixed-bits`
+#### `u32-bit-select`
 Usage:
-	`discard-fixed-bits inputfile`
-* inputfile is assumed to be a stream of uint8\_t
-* output sent to stdout are uint8\_t, with all fixed bits removed and the non-fixed bits moved to the lsb of the output.
+	`u32-bit-select [-r] (bit)`
+* `-r`: Reverse the endianness of the u32 inputs before selecting the bit.
+* Outputs only the selected bit (0 is the lsb, 31 is msb).
+* The 32-bit values are expected to be provided via stdin.
+* output is uint8\_t via stdout.
+* Example ODU13 - 
 
-#### `downsample`
+#### `u32-discard-fixed-bits`
 Usage:
-	`downsample [-b <block size>] <rate> <data file>`
-* Groups data by index into modular classes mod `<rate>` evenly into the block size.
-* `<rate>`: Number of input samples per output samples
-* `-b`: Samples per output block (default 1000000)
-* The uint8\_t values are output via stdout.
-
-#### `u128-discard-fixed-bits`
-Usage:
-	`discard-fixed-bits-u128 inputfile outputgroup`
-* inputfile is assumed to be a stream of uint128\_t
-* output sent to stdout are uint32\_tegers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+	`u32-discard-fixed-bits <inputfile>`
+* inputfile is assumed to be a stream of uint32\_ts
+* output sent to stdout are uint32\_t integers, with all fixed bits removed and the non-fixed bits moved to the LSB of the output.
+* Example ODU14 - 
 
 #### `u32-gcd`
 Usage:
 	`u32-gcd <filename>`
 * Find common divisors, and remove these factors.
 * The values are output to stdout.
+* Example ODU15 - 
 
 #### `u32-manbin`
 Usage:
@@ -293,23 +300,37 @@ Usage:
 * The cutoffs specify the first value in the next bin (so the first bin is `[0, cutoff_1)`, the second bin is `[cutoff_1, cutoff_2)`, the last bin is `[cutoff_{n-1}, UINT32_MAX ]` etc.)
 * inputfile is assumed to be a stream of uint32\_ts
 * output is to stdout, and is uint8\_t values
+* Example ODU16 - 
 
 #### `u32-regress-to-mean`
 Usage:
 	`u32-regress-to-mean <filename> <k>`
 * Calculate the mean, and then force each `k`-block to have this mean, and then round the resulting values.
+* Example ODU17 - 
 
-#### `double-minmaxdelta`
+#### `u32-selectdata`
 Usage:
-	`double-minmaxdelta [-v] [-0] [filename]`
-* Takes doubles from the file (if provided) or stdin (by default) (1 per line in ascii mode) and gives the mean.
-* Verbose mode (can be used up to 3 times for increased verbosity).
-* `-0`: Read in doubles in machine-specific format.
+	`u32-selectdata inputfile trimLowPercent trimHighPercent`
+* Attempt to keep the percentages noted.
+* inputfile is assumed to be a stream of uint32\_ts
+* output is to stdout, and is u32 ints
+* Example ODU18 - 
 
-#### `double-merge`
+#### `u32-selectrange`
 Usage:
-	`double-merge <file1> <file2> <outfile>`
-* Merges two sorted lists into a single merged sorted list.
+	`u32-selectrange inputfile low high`
+* Extracts all values between low and high (inclusive).
+* inputfile is assumed to be a stream of uint32\_ts
+* output is to stdout, and is u32 ints
+* Example ODU19 - 
+
+#### `u32-xor-diff`
+Usage:
+	`u32-xor-diff`
+* Output the running XOR of adjacent values. 
+* The values are expected to be provided via stdin.
+* Example ODU20 - 
+
 
 
 

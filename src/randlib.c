@@ -425,42 +425,41 @@ void genRandInts(statData_t *data, size_t datalen, uint32_t k, struct randstate 
 inline double randomUnit(struct randstate *rstate) {
   /*Note that 2^53 is the largest integer that can be represented in a 64 bit IEEE 754 double, such that all smaller positive integers can also be
    * represented. Anding by 0x001FFFFFFFFFFFFFULL masks out the lower 53 bits, so the resulting integer is in the range [0, 2^53 - 1].
-   * 0x1.0p-53 is 2^(-53) (multiplying by this value just effects the exponent of the resulting double, not the significand)!
+   * 0x1.0p-53 is 2^(-53) (multiplying by this value just affects the exponent of the resulting double, not the significand)!
    * We get a double uniformly distributed in the range [0, 1).  (The delta between adjacent values is 2^(-53))
-   * There is a lot of BS on the internet on how to do this well. This is the best I could come up with, and
-   * it appears to be the standard approach (used by the corrected SFMT and xoroshiro authors).
+   * There is a lot of misinformation on the internet on how to do this well; this is the approach that yields the most possible distinct outputs
+   * that are evenly spaced, and is basically the same as used by the SFMT (once it was corrected) and xoroshiro authors.
    */
   return (((double)(randomu64(rstate) & 0x001FFFFFFFFFFFFFULL)) * 0x1.0p-53);
-  // out is now in [0, 1)
 }
 
 /*Produces a double with the full significand worth of randomness, where "adjacent" possible values are evenly spaced, in the interval (-1,1)*/
 double randomSignedUnit(struct randstate *rstate) {
   uint64_t in;
+  uint64_t significand;
   double out;
 
   in = randomu64(rstate);
   /*Note that 2^53 is the largest integer that can be represented in a 64 bit IEEE 754 double, such that all smaller positive integers can also be
    * represented. Anding by 0x001FFFFFFFFFFFFFULL masks out the lower 53 bits, so the resulting integer is in the range [0, 2^53 - 1].
-   * 0x1.0p-53 is 2^(-53) (multiplying by this value just effects the exponent of the resulting double, not the significand)!
+   * 0x1.0p-53 is 2^(-53) (multiplying by this value just affects the exponent of the resulting double, not the significand)!
    * We get a double uniformly distributed in the range [0, 1).  (The delta between adjacent values is 2^(-53))
-   * There is a lot of BS on the internet on how to do this well. This is the best I could come up with, and
-   * it appears to be the standard approach (used by the corrected SFMT and xoroshiro authors).
+   * There is a lot of misinformation on the internet on how to do this well; this is the approach that yields the most possible distinct outputs
+   * that are evenly spaced, and is basically the same as used by the SFMT (once it was corrected) and xoroshiro authors.
    */
-  out = ((double)(in & 0x001FFFFFFFFFFFFFULL)) * 0x1.0p-53;
+  significand = in & 0x001FFFFFFFFFFFFFULL;
+  out = ((double)significand) * 0x1.0p-53;
   // out is now in [0, 1)
 
-  // We'll treat the LSb as the sign bit; this bit is necessarily discarded when creating "out" above.
+  // We'll treat the LSb remaining as the sign bit; this bit is necessarily discarded when creating "out" above.
   if ((in & 0x0020000000000000ULL) != 0) {
-    // The sign bit is set, so we should generally made the output negative, unless out is identically 0.0
-    // If the output is equal to 0.0, this makes 0 equally likely, as 0 == -0 (though they have different representations)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-    if (likely(out != 0.0)) {
-#pragma GCC diagnostic pop
+    // The sign bit is set, so we should generally make the output negative, unless the significand is 0
+    // If the significand is identically equal to 0, then keeping the negative value would make the 0.0 value twice as
+    // likely as 0.0 == -0.0 numerically (though they have different representations as floating point values.)
+    if (significand != 0UL) {
       out *= -1.0;
     } else {
-      /*In the unlikely event that we generated exactly 0, and want to make it negative, try again. OW 0 is twice as likely as everything else*/
+      /*In the unlikely event that we generated exactly 0, and want to make it negative, try again. Otherwise 0 is twice as likely as everything else*/
       return randomSignedUnit(rstate);
     }
   }

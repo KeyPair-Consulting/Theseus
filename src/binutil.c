@@ -311,3 +311,22 @@ void reverse128(uint64_t *input) {
   input[0] = reverse64(input[1]);
   input[1] = temp;
 }
+
+size_t serialXOR(statData_t *data, size_t datalen, size_t compression)
+{
+  size_t compressedLength;
+
+  assert(compression>0);
+  if(compression == 1) return datalen;
+
+  compressedLength = datalen / compression;
+
+  for(size_t i=0; i<compressedLength; i++) {
+    data[i] = data[i*compression];
+    for(size_t j=1; j<compression; j++) {
+      data[i] ^= data[i*compression + j];
+    }
+  }
+
+  return compressedLength;
+}

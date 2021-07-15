@@ -1,31 +1,30 @@
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
-dep = $(obj:.o=.d)  # one dependency file for each sourc
+dep = $(obj:.o=.d)  # one dependency file for each source
 
-BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov generate-precision discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical double-minmaxdelta shannon linear-interpolate ro-model
+BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical double-minmaxdelta shannon linear-interpolate ro-model
 
 SIMPLEBINS=hex-to-u32 u16-to-sdbin dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sdbin u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex
 
 all:	$(BINARIES) $(SIMPLEBINS)
+
+.PHONY : clean
+clean:
+	rm -f *.o *~ *.style-check-stamp *.orig $(BINARIES) $(SIMPLEBINS) precision.h a.out *.d generate-precision
 
 -include $(dep)   # include all dep files in the makefile
 
 # rule to generate a dep file by using the C preprocessor
 # (see man cpp for details on the -MM and -MT options)
 %.d: %.c precision.h
-	@$(CPP) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
+	@$(CC) $(CFLAGS) $< -MM -MT $(@:.d=.o) >$@
 
 sources:	$(src)
 
 style:	$(src:.c=.style-check-stamp)
 
-clean:
-	rm -f *.o *~ *.style-check-stamp *.orig $(BINARIES) $(SIMPLEBINS) precision.h a.out *.d
-
-generate-precision:    generate-precision.o
-	$(CC) -o $@ $^ $(LDFLAGS)
-
-precision.h:    generate-precision
+precision.h: generate-precision.c
+	$(CC) -o generate-precision $(CFLAGS) generate-precision.c
 	./generate-precision > precision.h
 
 $(SIMPLEBINS):	%: %.o

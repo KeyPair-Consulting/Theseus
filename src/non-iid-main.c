@@ -24,6 +24,8 @@
 #include <sysexits.h>
 #include <time.h>
 #include <unistd.h>
+#include <sys/file.h>
+
 
 #include "assessments.h"
 #include "binio.h"
@@ -71,6 +73,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-P\tEstablish an overall assessment based on bootstrap of individual test parameters.\n");
   fprintf(stderr, "-F\tEstablish an overall assessment based on bootstrap of final assessments.\n");
   fprintf(stderr, "-S\tEstablish an overall assessment using a large block assessment.\n");
+  fprintf(stderr, "-X <s>\tSerially XOR s consecutative random values.\n");
   fprintf(stderr, "The final assessment is the minimum of the overall assessments.\n");
   exit(EX_USAGE);
 }
@@ -242,6 +245,7 @@ int main(int argc, char *argv[]) {
   size_t k = 0;
   int opt;
   unsigned long long int inint;
+  size_t configSerialXOR;
   size_t configSubsetIndex;
   size_t configSubsetSize;
   char *nextOption;
@@ -289,10 +293,11 @@ int main(int argc, char *argv[]) {
   configLargeBlockAssessment = false;
   configBootstrapAssessments = false;
   configFixedRandomNu = false;
+  configSerialXOR = 1;
 
   initGenerator(&rstate);
 
-  while ((opt = getopt(argc, argv, "fvsicrl:b:gR:L:B:PFSN:O:d")) != -1) {
+  while ((opt = getopt(argc, argv, "fvsicrl:b:gR:L:B:PFSN:O:dX:")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -363,6 +368,13 @@ int main(int argc, char *argv[]) {
         }
         configEvaluationBlockSize = (uint32_t)inint;
         break;
+      case 'X':
+        inint = strtoull(optarg, NULL, 0);
+        if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > UINT32_MAX) || (inint < 2)) {
+          useageExit();
+        }
+        configSerialXOR = (uint32_t)inint;
+        break;
       case 'N':
         inint = strtoull(optarg, NULL, 0);
         if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > UINT32_MAX)) {
@@ -420,6 +432,8 @@ int main(int argc, char *argv[]) {
 
   seedGenerator(&rstate);
 
+  if (configVerbose > 0) fprintf(stderr, "Verbosity set to %d\n", configVerbose);
+
   if (configUseFile) {
     // Taking data from a file
     if (argc != 1) {
@@ -429,6 +443,11 @@ int main(int argc, char *argv[]) {
     if (configRandomRounds != 1) {
       fprintf(stderr, "Using input files isn't compatible with multiple rounds of testing.\n");
       useageExit();
+    }
+
+    if(configVerbose > 0) {
+      if(configSubsetSize == 0) printf("Opening file: '%s'\n", argv[0]);
+      else printf("Opening file: '%s', reading block %zu of size %zu\n", argv[0], configSubsetIndex, configSubsetSize);
     }
 
     if ((infp = fopen(argv[0], "rb")) == NULL) {
@@ -444,7 +463,10 @@ int main(int argc, char *argv[]) {
       exit(EX_OSERR);
     }
 
-    if (configVerbose > 0) fprintf(stderr, "Verbosity set to %d\n", configVerbose);
+    if(configSerialXOR > 1) {
+      datalen=serialXOR(data, datalen, configSerialXOR);
+      if(configVerbose > 0) fprintf(stderr, "Performing %zu:1 serial XOR compression on input data; new size is %zu symbols.\n", configSerialXOR, datalen);
+    }
 
     if (configVerbose > 0) {
       fprintf(stderr, "Read in %zu integers\n", datalen);
@@ -465,7 +487,11 @@ int main(int argc, char *argv[]) {
       exit(EX_OSERR);
     }
 
-    datalen = configRandDataSize;
+    if(configSerialXOR > 1) {
+      datalen = configRandDataSize / configSerialXOR;
+    } else {
+      datalen = configRandDataSize;
+    }
   }
 
   // This assessment type doesn't support multiple rounds.
@@ -509,7 +535,7 @@ int main(int argc, char *argv[]) {
     bitWidth = (size_t)__builtin_popcount(activeBits);
   } else {
     bitWidth = (size_t)ceil(log2((double)configK));
-    activeBits = (statData_t)((1 << bitWidth) - 1);
+    activeBits = (statData_t)((1U << bitWidth) - 1);
   }
 
   if (configEval != raw) {
@@ -649,8 +675,9 @@ int main(int argc, char *argv[]) {
 
   // Note, we do not thread across the round count
   for (size_t i = 0; i < configRandomRounds; i++) {
+
     if (!configUseFile) {
-      size_t generationBlocks = configRandDataSize / evaluationBlockSize;
+      size_t generationBlocks = configRandDataSize / (evaluationBlockSize*configSerialXOR);
 
       if (configRingOscillator) {
         double oscFreq = 1000000000;  // Reference RO design is 1GHz
@@ -669,7 +696,7 @@ int main(int argc, char *argv[]) {
               fprintf(stderr, "sampleFreq in the interval [%.17g, %.17g]\n", oscFreq / (1000.25), oscFreq / (1000.0));
             }
           }
-          fprintf(stderr, "%lu Generate %zu bits from a simulated ring oscillator for round %zu.", time(NULL), configRandDataSize, i + 1);
+          fprintf(stderr, "%lu Generate %zu bits from a simulated ring oscillator for round %zu. ", time(NULL), configRandDataSize, i + 1);
         }
 
 #pragma omp parallel
@@ -697,13 +724,15 @@ int main(int argc, char *argv[]) {
               localSampleFreq = oscFreq / (1000.0 + configRONu);  // Reference RO design is sampled near 1MHz.
             }
 
-            for (size_t j = 0; j < evaluationBlockSize; j++) {
-              data[l * evaluationBlockSize + j] = ringOscillatorNextNonDeterministicSample(oscFreq, oscJitter, &oscPhase, localSampleFreq, &samplePhase, &threadrstate);
+            assert(generationBlocks*evaluationBlockSize*configSerialXOR == configRandDataSize);
+
+            for (size_t j = 0; j < evaluationBlockSize*configSerialXOR; j++) {
+              data[l*evaluationBlockSize*configSerialXOR + j] = ringOscillatorNextNonDeterministicSample(oscFreq, oscJitter, &oscPhase, localSampleFreq, &samplePhase, &threadrstate);
             }
           }
-        }
+        } // end parallel
       } else {
-        if (configVerbose > 0) fprintf(stderr, "%lu Generate %zu integers for round %zu.", time(NULL), configRandDataSize, i + 1);
+        if (configVerbose > 0) fprintf(stderr, "%lu Generate %zu integers for round %zu. ", time(NULL), configRandDataSize, i + 1);
 #pragma omp parallel
         {
           struct randstate threadrstate;
@@ -713,45 +742,55 @@ int main(int argc, char *argv[]) {
 
 #pragma omp for
           for (size_t l = 0; l < generationBlocks; l++) {
-            genRandInts(data + l * evaluationBlockSize, evaluationBlockSize, (uint32_t)(configK - 1), &threadrstate);
+            genRandInts(data + l * evaluationBlockSize*configSerialXOR, evaluationBlockSize*configSerialXOR, (uint32_t)(configK - 1), &threadrstate);
           }
-        }
+        } //end parallel
       }
+
+      //Do any XORing here
+      if(configSerialXOR > 1) {
+        size_t localDatalen;
+        localDatalen=serialXOR(data, generationBlocks*evaluationBlockSize*configSerialXOR, configSerialXOR);
+        assert(localDatalen == datalen);
+        assert(configRandDataSize == generationBlocks*evaluationBlockSize*configSerialXOR);
+        if(configVerbose > 0) fprintf(stderr, "Performing %zu:1 serial XOR compression. ", configSerialXOR);
+      } 
 
       // Populate bitData
       if (configEval != raw) makeBitstring(data, bitData, datalen, activeBits, configLittleEndian);
     } else {
-      if (configVerbose > 0) fprintf(stderr, "File being processed.");
+      if (configVerbose > 0) fprintf(stderr, "File being processed. ");
     }
 
-    if (configVerbose > 0) fprintf(stderr, " Dataset preparation done.\n");
+    if (configVerbose > 0) fprintf(stderr, "Dataset preparation done.\n");
 
-// All the data is in place now.
-#pragma omp parallel
+    // All the data is in place now.
+    #pragma omp parallel
     {
       if (configEval != bitstring) {
         // We thread across blockCount, so datalen should be made large to allow for multithreading speedups.
-#pragma omp for
+        #pragma omp for
         for (size_t j = startIndex; j <= blockCount; j++) {
           if (j != 0)
             doAssessment(data + (j - 1) * evaluationBlockSize, evaluationBlockSize, k, configTestBitmask, rawResults + (i * blockCount) + j, "Literal");
           else
             doAssessment(data, datalen, k, configTestBitmask, rawResults, "Literal");
         }
-      }
+      } //end literal evaluation
 
       if (configEval != raw) {
         assert(bitDatalen > 0);
-#pragma omp for
+        #pragma omp for
         for (size_t j = startIndex; j <= blockCount; j++) {
           if (j != 0)
             doAssessment(bitData + (j - 1) * bitBlockSize, bitBlockSize, 2, configTestBitmask, binaryResults + (i * blockCount) + j, "Bitstring");
           else
             doAssessment(bitData, bitDatalen, 2, configTestBitmask, binaryResults, "Bitstring");
         }
-      }
-    }
-  }
+      } //end bitstring evaluation
+    } //end parallel region
+
+  } // round for loop
 
   if (configVerbose > 0) fprintf(stderr, "Done with calculation\n");
 

@@ -214,7 +214,7 @@ Usage:
     * Input (viewed with command `xxd odu02-input-sd.bin`):
 	  ```
       00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
-      00000010: 6162 6364 6566 6768                      abcdefgh                          0.
+      00000010: 6162 6364 6566 6768                      abcdefgh
       ```
     * Output (viewed with command `xxd odu02-output-sd.bin`): 
 	  ```
@@ -243,7 +243,7 @@ Usage:
       00000000: 1b9d f353 1cc7 f13f a96b ed7d aaaa 0a40  ...S...?.k.}...@
       00000010: 6284 f068 e338 1640 f052 ea92 711c 1f40  b..h.8.@.R..q..@
 	  ```
-	 * Input 2 (viewed with command `xxd odu03-input2-double.bin`):
+	* Input 2 (viewed with command `xxd odu03-input2-double.bin`):
 	  ```
       00000000: 1b9d f353 1cc7 0140 1b9d f353 1cc7 1140  ...S...@...S...@
       00000010: a96b ed7d aaaa 1a40 1b9d f353 1cc7 2140  .k.}...@...S..!@
@@ -323,23 +323,76 @@ Usage:
 
 #### `extractbits`
 Usage:
-	`extractbits <inputfile> <bitmask>`
-* inputfile is assumed to be a stream of uint32\_ts
-* output is sent to stdout is in uint8\_t format
-* Example ODU07 - 
+	`extractbits <filename> <bitmask>`
+* Takes the given binary data and extracts bits with `<bitmask>`.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `<bitmask>`: Required. Type uint32_t value identifying the bitmask.  Read as an integer.
+* Example ODU07 - A binary file is given as input, `bitmask` is set to 10 (0x0A000000) , and stdout is sent to a binary file with command `./extractbits odu07-input-u32.bin 10 > odu07-output-sd.bin`: 
+    * Input (viewed with command `xxd odu07-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000                      ........
+	  ```
+    * Output (viewed with command `xxd odu07-output-sd.bin`):
+	  ```
+      00000000: 0001 0100 0001 0102 0203                 ..........
+	  ```
+    * Additional Output (to console):
+	  ``` 
+      Input bitmask 0xA (Hamming weight: 2)
+      Read in 10 uint32_ts
+      Outputting data
+	  ```
 
 #### `hweight`
 Usage:
-	`hweight bitmask`
-* output is the hamming weight of the bitmask
-* Example ODU08 - 
+	`hweight <bitmask>`
+* Calculates the Hamming weight of `<bitmask>`.  As an example, the bit string 11101000 has a Hamming weight of 4.
+* Input value `<bitmask>` of type uint32_t is a required argument that is read as an integer.
+* Output of text summary is sent to stdout.
+* Example ODU08 - `<bitmask>` is set to 16711935 (0xFF00FF00) with command `./hweight 16711935`: 
+    * Output (to console):
+	  ```
+      16
+	  ```
 
 #### `u128-bit-select`
 Usage:
-	`u128-bit-select (bit)`
-* The 128-bit values are expected to be provided via stdin.
-* output is uint8_t via stdout.
-* Example ODU09 - 
+	`u128-bit-select <bit>`
+* Selects and returns the value in the given bit position (0 is the LSB, 127 is the MSB, little endian is assumed).
+* Input values of type uint128_t (read as 2 uint64_t values) are provided via stdin.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `<bit>`: Required. Integer value between 0 and 127 representing the bit position of interest.
+* Example ODU09 - A binary file is sent to stdin, `<bit>` is set to 0, and stdout is sent to a binary file with command `./u128-bit-select 0 < odu09-input-u128.bin > odu09-output-0-sd.bin`: 
+    * Input (viewed with command `xxd odu09-input-u128.bin`):
+	  ```
+      00000000: 0100 0000 0000 0000 0000 0000 0000 0000  ................
+      00000010: 0200 0000 0000 0000 0000 0000 0000 0000  ................
+      00000020: 0300 0000 0000 0000 0000 0000 0000 0000  ................
+      00000030: 0400 0000 0000 0000 0000 0000 0000 0000  ................
+      00000040: 0500 0000 0000 0000 0000 0000 0000 0000  ................
+      00000050: 0600 0000 0000 0000 0000 0000 0000 0000  ................
+      00000060: 0700 0000 0000 0000 0000 0000 0000 0000  ................
+      00000070: 0800 0000 0000 0000 0000 0000 0000 0000  ................
+      00000080: 0900 0000 0000 0000 0000 0000 0000 0000  ................
+      00000090: 0a00 0000 0000 0000 0000 0000 0000 0000  ................
+	  ```
+    * Output (viewed with command `xxd odu09-output-0-sd.bin`):
+	  ```
+      00000000: 0100 0100 0100 0100 0100                 ..........
+      ```
+	* Alternate Output (if `<bit>` = 1, viewed with command `xxd odu09-output-1-sd.bin`)
+	  ```
+      00000000: 0001 0100 0001 0100 0001                 ..........
+	  ```
+	* Alternate Output (if `<bit>` = 2, viewed with command `xxd odu09-output-2-sd.bin`)
+	  ```
+      00000000: 0000 0001 0101 0100 0000                 ..........
+	  ```
 
 #### `u128-discard-fixed-bits`
 Usage:
@@ -375,33 +428,97 @@ Usage:
 
 #### `u32-anddata`
 Usage:
-	`u32-anddata [inputfile] <bitmask>`
-* Takes the uint32\_t symbols in (machine format) and bitwise ANDs each symbol with `<bitmask>`.
-* inputfile is assumed to be a stream of uint32\_ts
-* Outputs uint32\_ts to stdout
-* The result is the data bitwise anded with the provided bitmask output to stdout
-* Example ODU11 - 
+	`u32-anddata [filename] <bitmask>`
+* Takes the given binary data and bitwise ANDs each symbol with `<bitmask>`.
+* Input values of type uint32_t are provided via stdin (by default) or in `[filename]` (if provided).
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `<bitmask>`: Required. Type uint32_t value identifying the bitmask for performing AND operations.  Read as an integer.
+* Example ODU11 - A binary file is given as input, `bitmask` is set to 16711935, and stdout is sent to a binary file with command `./u32-anddata odu11-input-u32.bin 16711935 > odu11-output-u32.bin`: 
+    * Input (viewed with command `xxd odu11-input-u32.bin`):
+	  ```
+      00000000: 8040 2010 0804 0201 f00f ff00 ff00 ff00  .@ .............
+	  ```
+    * Output (viewed with command `xxd odu11-output-u32.bin`):
+	  ```
+      00000000: 8000 2000 0800 0200 f000 ff00 ff00 ff00  .. .............
+	  ```
+    * Additional Output (to console):
+	  ``` 
+      Andmask: 0x00ff00ff
+      Outputting data
+	  ```
 
 #### `u32-bit-permute`
 Usage:
 	`u32-bit-permute [-r] <bit specification>`
-* `-r`: Reverse the endianness of the u32 inputs before permuting.
-* Bit ordering is in the LSB 0 format (that is, bit 0 is the LSB, bit 31 is the MSB)
-* Ordering of the bit specification is left to right, MSB to LSB, so the specification "31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0" is the identity permutation.
-* If fewer than 32 output bits are within the specification, the unspecified high order bits are set to 0
-* Each bit position can be present at most once.
-* The 32-bit values are expected to be provided via stdin.
-* output is u32 values via stdout in machine native format.
-* Example ODU12 - 
+* Permute bits within the given binary data as specified in `<bit specification>`.  Bit ordering is specified in the LSB 0 format (i.e., bit 0 is the LSB and bit 31 is the MSB).
+* Input values of type uint32_t are provided via stdin.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `-r`: Reverse the endianness of input values before permuting.
+    * `<bit specification>`: Required. Ordered integer values between 0 and 31 representing the bit specification of interest.  Ordering of the bit specification is left to right, MSB to LSB, so the specification "31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0" is the identity permutation.  If fewer than 32 output bits are within the specification, the unspecified high order bits are set to 0.  Each bit position can be present at most once.
+* Example ODU12 - A binary file is sent to stdin, `<bit specification>` is set to 31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0 (the identity permutation), and stdout is sent to a binary file with command `./u32-bit-permute 31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16:15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0 < odu12-input-u32.bin > odu12-output-identity-u32.bin`: 
+    * Input (viewed with command `xxd odu12-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000                      ........
+	  ```
+    * Output (viewed with command `xxd odu12-output-identity-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000                      ........
+      ```
+	* Alternate Output (if `-r` is used, viewed with command `xxd odu12-output-identity-r-u32.bin`)
+	  ```
+      00000000: 0000 0001 0000 0002 0000 0003 0000 0004  ................
+      00000010: 0000 0005 0000 0006 0000 0007 0000 0008  ................
+      00000020: 0000 0009 0000 000a                      ........
+	  ```
+	* Alternate Output (if `<bit specification>` is set to 15:14:13:12:11:10:9:8:7:6:5:4:3:2:1:0:31:30:29:28:27:26:25:24:23:22:21:20:19:18:17:16, viewed with command `xxd odu12-output-swap-u32.bin`)
+	  ```
+      00000000: 0000 0100 0000 0200 0000 0300 0000 0400  ................
+      00000010: 0000 0500 0000 0600 0000 0700 0000 0800  ................
+      00000020: 0000 0900 0000 0a00                      ........
+
+	  ```
+	* Alternate Output (if `<bit specification>` is set to 15:13:11:9:7:5:3:1:31:29:27:25:23:21:19:17, viewed with command `xxd odu12-output-swapRemoveEven-u32.bin`)
+	  ```
+      00000000: 0000 0000 0001 0000 0001 0000 0000 0000  ................
+      00000010: 0000 0000 0001 0000 0001 0000 0002 0000  ................
+      00000020: 0002 0000 0003 0000                      ........
+	  ```
 
 #### `u32-bit-select`
 Usage:
-	`u32-bit-select [-r] (bit)`
-* `-r`: Reverse the endianness of the u32 inputs before selecting the bit.
-* Outputs only the selected bit (0 is the lsb, 31 is msb).
-* The 32-bit values are expected to be provided via stdin.
-* output is uint8\_t via stdout.
-* Example ODU13 - 
+	`u32-bit-select [-r] <bit>`
+* Selects and returns the value in the given bit position (0 is the LSB, 31 is the MSB).
+* Input values of type uint32_t are provided via stdin.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `-r`: Reverse the endianness of input values before selecting the specified bit.
+    * `<bit>`: Required. Integer value between 0 and 31 representing the bit position of interest.
+* Example ODU13 - A binary file is sent to stdin, `<bit>` is set to 0, and stdout is sent to a binary file with command `./u32-bit-select 0 < odu13-input-u32.bin > odu13-output-0-sd.bin`: 
+    * Input (viewed with command `xxd odu13-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000                      ........
+	  ```
+    * Output (viewed with command `xxd odu13-output-0-sd.bin`):
+	  ```
+      00000000: 0100 0100 0100 0100 0100                 ..........
+      ```
+	* Alternate Output (if `<bit>` = 1, viewed with command `xxd odu13-output-1-sd.bin`)
+	  ```
+      00000000: 0001 0100 0001 0100 0001                 ..........
+	  ```
+	* Alternate Output (if `<bit>` = 2, viewed with command `xxd odu13-output-2-sd.bin`)
+	  ```
+      00000000: 0000 0001 0101 0100 0000                 ..........
+	  ```
 
 #### `u32-discard-fixed-bits`
 Usage:
@@ -430,9 +547,23 @@ Usage:
 #### `u32-gcd`
 Usage:
 	`u32-gcd <filename>`
-* Find common divisors, and remove these factors.
-* The values are output to stdout.
-* Example ODU15 - 
+* Finds common divisors and removes these factors from the given binary data.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Example ODU15 - A binary file is given as input and stdout is sent to a binary file with command `./u32-gcd odu15-input-u32.bin > odu15-output-u32.bin`: 
+    * Input (viewed with command `xxd odu15-input-u32.bin`):
+	  ```
+      00000000: 8040 2010 0804 0201 f00f ff00 ff00 ff00  .@ .............
+	  ```
+    * Output (viewed with command `xxd odu15-output-u32.bin`):
+	  ```
+      00000000: 8037 1301 7833 1100 1001 1100 1100 1100  .7..x3..........
+	  ```
+    * Additional Output (to console):
+	  ``` 
+      Read in 4 uint32_ts
+      Found common divisor 15
+	  ```
 
 #### `u32-manbin`
 Usage:
@@ -451,28 +582,77 @@ Usage:
 
 #### `u32-selectdata`
 Usage:
-	`u32-selectdata inputfile trimLowPercent trimHighPercent`
-* Attempt to keep the percentages noted.
-* inputfile is assumed to be a stream of uint32\_ts
-* output is to stdout, and is u32 ints
-* Example ODU18 - 
+	`u32-selectdata <filename> <trimLowPercent> <trimHighPercent>`
+* Attempt to keep the percentages noted in the provided binary data.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `<trimLowPercent>`: Required. Double value between 0 and 1.
+    * `<trimHighPercent>`: Required. Double value between 0 and 1.
+* Example ODU18 - A binary file is sent to stdin, trimLowPercent is set to 30%, tripHighPercent is set to 10%, and stdout is sent to a binary file with command `./u32-selectdata odu18-input-u32.bin .3 .1 > odu18-output-u32.bin`: 
+    * Input (viewed with command `xxd odu18-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000                      ........
+	  ```
+    * Output (viewed with command `xxd odu18-output-u32.bin`):
+	  ```
+      00000000: 0200 0000 0300 0000 0400 0000 0500 0000  ................
+      00000010: 0600 0000 0700 0000 0800 0000            ............
+	  ```
+    * Additional Output (to console):
+	  ``` 
+      Read in 10 samples
+      Copying data
+      Sorting data
+      Getting the 1 to the 7 entries
+      MinValue = 2
+      MaxValue = 8
+      Outputting the data...
+	  ```
 
 #### `u32-selectrange`
 Usage:
-	`u32-selectrange inputfile low high`
-* Extracts all values between low and high (inclusive).
-* inputfile is assumed to be a stream of uint32\_ts
-* output is to stdout, and is u32 ints
-* Example ODU19 - 
+	`u32-selectrange <filename> <low> <high>`
+* Extracts all values from the given binary data between a specified `low` and `high` (inclusive).
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `<low>`: Required. Type uint32_t value identifying the lowest value in the range to select.
+    * `<high>`: Required. Type uint32_t value identifying the highest value in the range to select.
+* Example ODU19 - A binary file is sent to stdin, low is set to 16, high is set to 255, and stdout is sent to a binary file with command `./u32-selectrange odu19-input-u32.bin 16 255 > odu19-output-u32.bin`: 
+    * Input (viewed with command `xxd odu19-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 1000 0000 1100 0000 ff00 0000  ................
+      00000010: 0001 0000 0011 0000 ff00 0000 0f00 0000  ................
+	  ```
+    * Output (viewed with command `xxd odu19-output-u32.bin`):
+	  ```
+      00000000: 1000 0000 1100 0000 ff00 0000 ff00 0000  ................
+	  ```
+    * Additional Output (to console):
+	  ``` 
+      Read in 8 samples
+      Outputting data in the interval [16, 255]
+      Outputting the data...
+	  ```
 
 #### `u32-xor-diff`
 Usage:
 	`u32-xor-diff`
-* Output the running XOR of adjacent values. 
-* The values are expected to be provided via stdin.
-* Example ODU20 - 
-
-
+* Produces the running XOR of adjacent values in provided binary data. 
+* Input values of type uint32_t are provided via stdin.
+* Output values of type uint32_t are sent to stdout.
+* Example ODU20 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u32-xor-diff < odu20-input-u32.bin > odu20-output-u32.bin`: 
+    * Input (viewed with command `xxd odu20-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0001 0000 0000 0100 0000 0001  ................
+	  ```
+    * Output (viewed with command `xxd odu20-output-u32.bin`):
+	  ```
+      00000000: 0101 0000 0001 0100 0000 0101            ............
+	  ```
 
 
 

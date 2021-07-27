@@ -51,7 +51,6 @@ Usage:
 
 	The final assessment is the minimum of the overall assessments.
 
-
 #### `restart-transpose`
 Usage:
 	`restart-transpose [-v] [-l <index> ] [-d <samples>,<restarts>] <inputfile>`
@@ -126,8 +125,6 @@ Usage:
 * `-r`: instead of doing testing on provided data use a random IID variable.
 * `-k <k>`:  Use an alphabet of `<k>` values (default `k`=2).
 * `-s <m>`:  Use a sample set of `<m>` values (default `m`=1000000).
-
-
 
 
 
@@ -314,12 +311,37 @@ Usage:
 
 #### `downsample`
 Usage:
-	`downsample [-b <block size>] <rate> <data file>`
-* Groups data by index into modular classes mod `<rate>` evenly into the block size.
-* `<rate>`: Number of input samples per output samples
-* `-b`: Samples per output block (default 1000000)
-* The uint8\_t values are output via stdout.
-* Example ODU06 - 
+	`downsample [-v] [-b <block size>] <rate> <filename>`
+* Groups data by index into modular classes mod `<rate>` evenly into the `<block size>`.
+* Input values of type statData_t (default uint8_t) are provided in `<filename>`.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `-v`: Increase verbosity. 
+    * `-b <block size>`: Samples per output block (default 1000000).  Read as an integer.
+    * `<rate>`: Required.  Type uint32_t value identifying the number of input samples per output samples.  Read as an integer.
+* Example ODU06 - A binary file is given as input, `-b <block size>` is set to 1, `rate` is set to 16, and stdout is sent to a binary file with command `./downsample -b 1 16 odu06-input-sd.bin > odu06-output-b1-16-sd.bin`: 
+    * Input (viewed with command `xxd odu06-input-sd.bin`):
+	  ```
+      00000000: 0001 0203 0405 0607 0809 0a0b 0c0d 0e0f  ................
+      00000010: 1011 1213 1415 1617 1819 1a1b 1c1d 1e1f  ................
+      00000020: 2021 2223 2425 2627 2829 2a               !"#$%&'()*
+	  ```
+    * Output (viewed with command `xxd odu06-output-b1-16-sd.bin`):
+	  ```
+      00000000: 0010 0111 0212 0313 0414 0515 0616 0717  ................
+      00000010: 0818 0919 0a1a 0b1b 0c1c 0d1d 0e1e 0f1f  ................
+	  ```
+	* Alternate Output (if `<block size>` = 1 and `<rate>` = 10, viewed with command `xxd odu06-output-b1-10-sd.bin`)
+	  ```
+      00000000: 000a 141e 010b 151f 020c 1620 030d 1721  ........... ...!
+      00000010: 040e 1822 050f 1923 0610 1a24 0711 1b25  ..."...#...$...%
+      00000020: 0812 1c26 0913 1d27                      ...&...'
+	  ```
+	* Alternate Output (if `<block size>` = 2 and `<rate>` = 8, viewed with command `xxd odu06-output-b2-8-sd.bin`)
+	  ```
+      00000000: 0008 1018 0109 1119 020a 121a 030b 131b  ................
+      00000010: 040c 141c 050d 151d 060e 161e 070f 171f  ................
+	  ```
 
 #### `extractbits`
 Usage:
@@ -567,18 +589,63 @@ Usage:
 
 #### `u32-manbin`
 Usage:
-	`u32-manbin inputfile cutoff_1 ... cutoff_{n-1}`
-* convert data to one of the n bin numbers (0, ..., n-1).
-* The cutoffs specify the first value in the next bin (so the first bin is `[0, cutoff_1)`, the second bin is `[cutoff_1, cutoff_2)`, the last bin is `[cutoff_{n-1}, UINT32_MAX ]` etc.)
-* inputfile is assumed to be a stream of uint32\_ts
-* output is to stdout, and is uint8\_t values
-* Example ODU16 - 
+	`u32-manbin <filename> <cutoff_1 ... cutoff_{n-1}>`
+* Assign given binary data to one of the n bin numbers (0, ..., n-1).  
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint8_t are sent to stdout.
+* Options:
+    * `<cutoff_1 ... cutoff_{n-1}>`: Required. Set of integer values separated by spaces where the total number of bins must <= 256.  The cutoffs specify the first value in the next bin (so the first bin is `[0, cutoff_1)`, the second bin is `[cutoff_1, cutoff_2)`, the last bin is `[cutoff_{n-1}, UINT32_MAX ]`, etc.).
+* Example ODU16 - A binary file is sent to stdin, `cutoffs` are set to 5 10 15 20, and stdout is sent to a binary file with command `./u32-manbin odu16-input-u32.bin 5 10 15 20 > odu16-output-u8.bin`: 
+    * Input (viewed with command `xxd odu16-input-u32.bin`):
+	  ```
+      00000000: 0000 0000 0100 0000 0200 0000 0300 0000  ................
+      00000010: 0400 0000 0500 0000 0600 0000 0700 0000  ................
+      00000020: 0800 0000 0900 0000 0a00 0000 0b00 0000  ................
+      00000030: 0f00 0000 1000 0000 1400 0000 ffff ffff  ................
+	  ```
+    * Output (viewed with command `xxd odu16-output-u8.bin`):
+	  ```
+      00000000: 0000 0000 0001 0101 0101 0202 0303 0404  ................
+      ```
+    * Additional Output (to console): 
+	  ```
+      A total of 5 output bins.
+      [ 0, 5 ), [ 5, 10 ), [ 10, 15 ), [ 15, 20 ), [ 20, 4294967295 ]
+      Read in 16 samples
+      Outputting the data...
+	  ```
 
 #### `u32-regress-to-mean`
 Usage:
 	`u32-regress-to-mean <filename> <k>`
-* Calculate the mean, and then force each `k`-block to have this mean, and then round the resulting values.
-* Example ODU17 - 
+* Calculate the mean, force each `k`-block to have this mean, and then round the resulting values.
+* Input values of type uint32_t are provided in `<filename>`.
+* Output values of type uint32_t are sent to stdout.
+* Options:
+    * `<k>`: Required. Integer value representing the number of samples in each block.
+* Example ODU17 - A binary file is given as input, `<k>` is set to 3, and stdout is sent to a binary file with command `./u32-regress-to-mean odu17-input-u32.bin 3 > odu17-output-3-u32.bin`: 
+    * Input (viewed with command `xxd odu17-input-u32.bin`):
+	  ```
+      00000000: 0100 0000 0200 0000 0300 0000 0400 0000  ................
+      00000010: 0500 0000 0600 0000 0700 0000 0800 0000  ................
+      00000020: 0900 0000 0a00 0000 0b00 0000 0c00 0000  ................
+      ```
+    * Output (viewed with command `xxd odu17-output-3-u32.bin`): 
+	  ```
+      00000000: 0600 0000 0700 0000 0800 0000 0600 0000  ................
+      00000010: 0700 0000 0800 0000 0500 0000 0600 0000  ................
+      00000020: 0700 0000 0500 0000 0600 0000 0700 0000  ................
+	  ```
+    * Additional Output (to console): 
+	  ```
+      Read in 12 uint32_ts
+      Processing 4 blocks of 3 samples each.
+      Global mean is 6.5.
+      Adjusting block 0 by 5: Block mean: 2 (delta: 4.5) -> 7 (delta: 0.5)
+      Adjusting block 1 by 2: Block mean: 5 (delta: 1.5) -> 7 (delta: 0.5)
+      Adjusting block 2 by -2: Block mean: 8 (delta: 1.5) -> 6 (delta: 0.5)
+      Adjusting block 3 by -5: Block mean: 11 (delta: 4.5) -> 6 (delta: 0.5)
+	  ```
 
 #### `u32-selectdata`
 Usage:
@@ -693,9 +760,8 @@ This tool can be used to infer parameters from the statistical results.
 
 
 
-
-
 ### Test Data Production Utilities
+
 #### `randomfile`
 Usage:
 	`randomfile [-v] [-b <p>,<bits>] [-s <m>] [-d] [-a <andmask>] [-n <mean>,<stddev>]`
@@ -731,11 +797,8 @@ Usage:
 
 
 
-
-
-
-
 ### Result Interpretation Utilities
+
 #### `percentile`
 Usage:
 	`percentile [-v] [-d] [-o] [-l] [-0] [-b <c>,<rounds>] [-u <low>,<high>] <p> [filename]`
@@ -852,7 +915,6 @@ Usage:
       Proportion in upper failure region: 0.14285714285714285
       Proportion in failure region: 0.14285714285714285
 	  ```
-
 
 
 

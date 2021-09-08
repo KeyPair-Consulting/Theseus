@@ -1469,6 +1469,27 @@ Usage:
 	  Swapped byte order seems better (1)
 	  ```
 
+#### `u64-counter-endian`
+Usage:
+	`u64-counter-endian`
+* Changes between big and little endian byte-ordering conventions.
+* Input values of type uint64_t are provided via stdin.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU21 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-counter-endian < dcu21-input-u64.bin > dcu21-output-u64.bin`: 
+    * Input (viewed with command `xxd dcu21-input-u64.bin`):
+	  ```
+	  00000000: 0000 0000 0000 0011 0000 0000 0000 0021  ...............!
+      00000010: 0000 0000 0000 0044 0000 0000 0000 0050  .......D.......P
+      00000020: 0000 0000 0000 0066                      .......f
+	  ```
+    * Output (viewed with command `xxd dcu21-output-u64.bin`):
+	  ```
+	   00000000: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
+      00000010: 4400 0000 0000 0000 5000 0000 0000 0000  D.......P.......
+      00000020: 6600 0000 0000 0000                      f.......
+
+	  ```
+
 ## Make
 
 Several `Makefile`s are provided; these are useful in various contexts which are hopefully reasonably clear from the name.

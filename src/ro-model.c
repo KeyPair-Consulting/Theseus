@@ -233,7 +233,7 @@ static long double SaarinenModel(long double sigma) {
 
 /*This is from the paper "On the Security of Oscillator-Based Random Number Generators, by Baudet, Lubicz, Micolod, and Tassiaux.
  *This model produces Shannon Entropy. We interpret this value as a per-bit value (which for this bound, is reasonable, but would
- *not work out for other bounds in that paper.
+ *not work out for other bounds in that paper.)
  *Given the Shannon entropy for a specific bit, we can determine what p_max must have been in order to get this Shannon Entropy,
  *and then we use this to calculate a min entropy.
  */

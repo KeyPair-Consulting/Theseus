@@ -1475,7 +1475,7 @@ Usage:
 * Changes between big and little endian byte-ordering conventions.
 * Input values of type uint64_t are provided via stdin.
 * Output values of type uint64_t are sent to stdout.
-* Example DCU22 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-counter-endian < dcu22-input-u64.bin > dcu22-output-u64.bin`: 
+* Example DCU22 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-change-endianness < dcu22-input-u64.bin > dcu22-output-u64.bin`: 
     * Input (viewed with command `xxd dcu22-input-u64.bin`):
 	  ```
 	  00000000: 0000 0000 0000 0011 0000 0000 0000 0021  ...............!

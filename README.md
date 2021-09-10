@@ -7,7 +7,7 @@ For general SP 800-90B testing topics, please see [Joshua E. Hill's SP 800-90B w
 
 ## Requirements
 
-This was written with a fairly modern Linux system running on a somewhat modern Intel CPU (it uses BMI 2, SSE 4.2 and RdRand instructions). This is intended to be compiled using either a recent version of gcc (tested using gcc version 10.1.0, or clang (tested using clang version 11.1.0). This uses divsufsort, libbz2 and OpenMP, so these libraries (and their associated include files) must be installed and accessible to the compiler.
+This was written with a fairly modern Linux system running on a somewhat modern Intel CPU (it uses BMI 2, SSE 4.2 and RdRand instructions). This is intended to be compiled using either a recent version of gcc (tested using gcc version 10.3.0, or clang (tested using clang version 12.0.1). This uses divsufsort, libbz2 and OpenMP, so these libraries (and their associated include files) must be installed and accessible to the compiler.
 
 ## Overview
 
@@ -126,6 +126,15 @@ Usage:
 * `-k <k>`:  Use an alphabet of `<k>` values (default `k`=2).
 * `-s <m>`:  Use a sample set of `<m>` values (default `m`=1000000).
 
+#### `Markov`
+Usage:
+	`markov [-v] [-c] <inputfile>`
+* Run some variant of the SP 800-90B 2016 Markov test.
+* `<inputfile>` is presumed to be a stream of `statData_t` ints.
+* `-v`: Verbose mode (can be used several times for increased verbosity).
+* `-p <cutoff>`: The lowest acceptable probability for a symbol to be relevant.
+* `-c`: Disable the creation of confidence intervals.
+
 
 
 ### Interpretation and Processing Utilities
@@ -163,16 +172,6 @@ Usage:
 * output is sent to stdout, and is `uint32_t` in machine format
 * `-v`: Verbose mode (can be used up to 3 times for increased verbosity).
 * `-n`: No data output. Report number of symbols on stdout.
-
-#### `Markov`
-Usage:
-	`markov [-v] [-c] <inputfile>`
-* Run some variant of the SP 800-90B 2016 Markov test.
-* `<inputfile>` is presumed to be a stream of `statData_t` ints.
-* `-v`: Verbose mode (can be used several times for increased verbosity).
-* `-p <cutoff>`: The lowest acceptable probability for a symbol to be relevant.
-* `-c`: Disable the creation of confidence intervals.
-
 
 
 ### Other Data Utilities
@@ -1101,7 +1100,7 @@ Usage:
 #### `u64-jent-to-delta`
 Usage:
 	`u64-jent-to-delta`
-* Converts provided binary data from uint64_t deltas in jent format to uint64_t deltas in nanoseconds format.  Also guesses native byte order and swaps if necessary.  Jent format expects the upper 32 bits to contain seconds and the lower 32 bits to contain nanoseconds.
+* Converts provided binary data from uint64_t deltas in jent format (JEnt version 3.0.1 and earlier) to uint64_t deltas in nanoseconds format.  Also guesses native byte order and swaps if necessary.  Jent format expects the upper 32 bits to contain seconds and the lower 32 bits to contain nanoseconds.
 * Input values of type uint64_t (in default jent delta format) are provided via stdin.
 * Output values of type uint64_t are sent to stdout.
 * Example DCU08 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-jent-to-delta < dcu08-input-u64.bin > dcu08-output-u64.bin`: 
@@ -1468,6 +1467,27 @@ Usage:
 	* Additional Output (to console):
 	  ```
 	  Swapped byte order seems better (1)
+	  ```
+
+#### `u64-change-endianness`
+Usage:
+	`u64-change-endianness`
+* Changes between big and little endian byte-ordering conventions.
+* Input values of type uint64_t are provided via stdin.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU22 - A binary file is sent to stdin and stdout is sent to a binary file with command `./u64-change-endianness < dcu22-input-u64.bin > dcu22-output-u64.bin`: 
+    * Input (viewed with command `xxd dcu22-input-u64.bin`):
+	  ```
+	  00000000: 0000 0000 0000 0011 0000 0000 0000 0021  ...............!
+      00000010: 0000 0000 0000 0044 0000 0000 0000 0050  .......D.......P
+      00000020: 0000 0000 0000 0066                      .......f
+	  ```
+    * Output (viewed with command `xxd dcu22-output-u64.bin`):
+	  ```
+	   00000000: 1100 0000 0000 0000 2100 0000 0000 0000  ........!.......
+      00000010: 4400 0000 0000 0000 5000 0000 0000 0000  D.......P.......
+      00000020: 6600 0000 0000 0000                      f.......
+
 	  ```
 
 ## Make

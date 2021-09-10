@@ -73,8 +73,8 @@ int main(int argc, char *argv[]) {
   configConfidenceInterval = -1.0;
   configOneOutput = false;
   configBinary = false;
-  configLowBound = 0.0;
-  configHighBound = 8.0;
+  configLowBound = -DBL_INFINITY;
+  configHighBound = DBL_INFINITY;
 
   initGenerator(&rstate);
 

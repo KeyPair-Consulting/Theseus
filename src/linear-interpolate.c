@@ -36,6 +36,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-v\tVerbose mode (can be used up to 3 times for increased verbosity).\n");
   fprintf(stderr, "-i\tAfter the described relation is turned into a function, the relation's coordinates are exchanged, and points are discarded from the resulting relation until it is again a function (this is in some sense an inverse function).\n");
   fprintf(stderr, "-x\tIf we encounter a relation with multiple equal arguments, keep the one with the largest value (y-value).\n");
+  fprintf(stderr, "-c\tAssume that the function (or its inverse) is constant when out of the domain (or range, respectively).\n");
   exit(EX_USAGE);
 }
 
@@ -245,7 +246,7 @@ static bool isStrictlyMonotonic(double *points, size_t n) {
 
 /*This works well for functions, but it doesn't deal well with some of the behaviors that you get with
  *function inverses.*/
-static double linearInterpolate(double x, double *points, size_t n) {
+static double linearInterpolate(double x, double *points, size_t n, bool constantExtend) {
   double y;
   assert(n > 0);
 
@@ -256,8 +257,14 @@ static double linearInterpolate(double x, double *points, size_t n) {
 
   // Is the input argument actually smaller than the first point's argument?
   if (x < points[0]) {
-    fprintf(stderr, "Argument is lower than the domain interval.\n");
-    exit(EX_DATAERR);
+      fprintf(stderr, "Argument is lower than the domain interval. ");
+    if(constantExtend) {
+      fprintf(stderr, "Extending function as a constant.\n");
+      return points[1];
+    } else {
+      fprintf(stderr, "Exiting.\n");
+      exit(EX_DATAERR);
+    }
   }
 
   // Is the input argument effectively equal to the argument of the last point?
@@ -267,8 +274,14 @@ static double linearInterpolate(double x, double *points, size_t n) {
 
   // Is the input argument larger than the last point's argument?
   if (x > points[2 * (n - 1)]) {
-    fprintf(stderr, "Argument is higher than the domain interval.\n");
-    exit(EX_DATAERR);
+      fprintf(stderr, "Argument is higher than the domain interval. ");
+    if(constantExtend) {
+      fprintf(stderr, "Extending function as a constant.\n");
+      return points[2 * (n - 1) + 1];
+    } else {
+      fprintf(stderr, "Exiting.\n");
+      exit(EX_DATAERR);
+    }
   }
 
   // At this point, we know that there is some interval that applies. Find it.
@@ -398,11 +411,11 @@ int main(int argc, char *argv[]) {
   int opt;
   bool configInverse = false;
   bool configMinValue = true;
+  bool configConstantExtend = false;
   double inputArgument;
   char *nextArgument;
 
   configVerbose = 0;
-  configMinValue = true;
 
   assert(PRECISION(UINT_MAX) >= 32);
 
@@ -417,7 +430,7 @@ int main(int argc, char *argv[]) {
   }
   argc--;
 
-  while ((opt = getopt(argc, argv, "vix")) != -1) {
+  while ((opt = getopt(argc, argv, "vixc")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -427,6 +440,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'x':
         configMinValue = false;
+        break;
+      case 'c':
+        configConstantExtend = true;
         break;
       default: /* ? */
         useageExit();
@@ -490,7 +506,7 @@ int main(int argc, char *argv[]) {
       numOfPoints = discardDuplicateArguments(pStart, numOfPoints, configMinValue);
       if (configVerbose > 0) fprintf(stderr, "Number of non-duplicated inverse points: %zu\n", numOfPoints);
 
-      printf("%.17g\n", linearInterpolate(inputArgument, points, numOfPoints));
+      printf("%.17g\n", linearInterpolate(inputArgument, points, numOfPoints, configConstantExtend));
     } else {
       // This isn't a monotonic function, so we're going to have to be careful here.
       double *inverses;
@@ -506,7 +522,7 @@ int main(int argc, char *argv[]) {
     }
   } else {
     // This isn't the inverse, so we're all set.
-    printf("%.17g\n", linearInterpolate(inputArgument, points, numOfPoints));
+    printf("%.17g\n", linearInterpolate(inputArgument, points, numOfPoints, configConstantExtend));
   }
 
   free(points);

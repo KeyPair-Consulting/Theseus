@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -411,6 +411,9 @@ static void collisionTesting(struct curData *inData, struct testState *curState)
 
     assert(cur < tableSize);
     if (curState->collisionTable[cur]) {
+      //Correct j so that it is the window size
+      j++;
+
       // A collision has occurred
       for (i = 0; i < tableSize; i++) {
         curState->collisionTable[i] = false;
@@ -440,14 +443,13 @@ static void collisionTesting(struct curData *inData, struct testState *curState)
 // 5.1.9, 5.1.10
 static void periodicityTesting(struct curData *inData, struct testState *curState) {
   uint32_t offsets[NUMOFOFFSETS] = {1, 2, 8, 16, 32};
+  uint64_t covariance[NUMOFOFFSETS];
   uint32_t j;
   uint32_t i;
   statData_t curSymbol, distantSymbol;
   uint64_t product;
   int64_t *periodicity;
-  int64_t *covariance;
   size_t localDatalen;
-  bool sumOverflow;
 
   assert(inData->datalen <= INT64_MAX);
   assert(inData != NULL);
@@ -460,12 +462,11 @@ static void periodicityTesting(struct curData *inData, struct testState *curStat
   }
 
   periodicity = inData->results[curState->index].periodicity;
-  covariance = inData->results[curState->index].covariance;
-  assert((periodicity != NULL) && (covariance != NULL));
+  assert((periodicity != NULL) && ((inData->results[curState->index].covariance != NULL)));
 
   for (j = 0; j < NUMOFOFFSETS; j++) {
     periodicity[j] = 0;
-    covariance[j] = 0;
+    covariance[j] = 0ULL;
   }
 
   for (i = 0; i < localDatalen; i++) {
@@ -489,24 +490,14 @@ static void periodicityTesting(struct curData *inData, struct testState *curStat
       }
 
       // This attempts to catch integer overflows.
-      product = (uint64_t)curSymbol * (uint64_t)distantSymbol;  // No overflow risk
-
-      if (product > INT64_MAX) {
-        sumOverflow = true;
-      } else {
-#ifdef UADDL_OVERFLOW
-        sumOverflow = __builtin_saddl_overflow(covariance[j], (int64_t)product, &(covariance[j]));
-#else
-        if ((int64_t)(INT64_MAX - product) >= covariance[j]) {
-          sumOverflow = false;
-          covariance[j] += (int64_t)product;  // We've now verified that this isn't causing an overflow
-        } else {
-          sumOverflow = true;
-        }
-#endif
-      }
-      assert(!sumOverflow);
+      product = (uint64_t)curSymbol * (uint64_t)distantSymbol;  // No overflow risk because the symbols are at most 32 bits wide
+      safeAdduint64(covariance[j], product, covariance + j);
     }
+  }
+
+  for (j = 0; j < NUMOFOFFSETS; j++) {
+    assert(covariance[j] <= INT64_MAX);
+    inData->results[curState->index].covariance[j] = (int64_t)covariance[j];
   }
 
   inData->results[curState->index].containsResults = true;

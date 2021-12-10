@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
   if (gaussianProp < 1.0L) {
     sigma = sigma * gaussianProp;
     if (configVerbose > 0) fprintf(stderr, "Presumed proportion of observed jitter due to local Gaussian noise: %.17Lg\n", gaussianProp);
-    if (configVerbose > 1) fprintf(stderr, "Looking for entropy for a normalized jitter standard deviation of %.17Lg\n", sigma);
+    if (configVerbose > 0) fprintf(stderr, "Looking for entropy for a normalized jitter standard deviation of %.17Lg\n", sigma);
   }
 
   if (configJackson) printf("Min entropy assessment (Ben Jackson's XORed Average): %.17Lg\n", JacksonModel(sigma));

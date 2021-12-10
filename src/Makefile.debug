@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-12 --use-cc=/usr/bin/clang-12 make
+#scan-build-13 --use-cc=/usr/bin/clang-13 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-12
+CC=clang-13
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -18,7 +18,8 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression
 #For general debugging (e.g., with static analyzer)
 #standard debug
 DEBUGCFLAGS=-O2
-DEBUGLDFLAGS=-lprofiler -flto
+#DEBUGLDFLAGS=-flto -lprofiler
+DEBUGLDFLAGS=-flto
 #undefined flag and ASAN
 #DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined
 #DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined

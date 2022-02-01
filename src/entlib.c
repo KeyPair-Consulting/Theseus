@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -958,7 +958,6 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   double pu;
   uint64_t *S;  // Each value 0 <= S[i] < n^3
   int exceptions;
-  bool sumOverflow;
 
   assert(n > 0);
   assert(k > 0);
@@ -968,6 +967,14 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
     n = SAINDEX_MAX - 1;
     fprintf(stderr, "Truncating data within the SA estimator so that it can be processed\n");
   }
+
+  //We ultimately need to be able to compute using values of the scale n choose 2
+  // Note that n choose 2 is just (n)(n-1)/2. 
+  // We can fit the numerator of this expression in a size_t type variable variable works iff
+  // SIZE_MAX >= n * (n-1) iff
+  // SIZE_MAX / n >= n-1, which is is surely true if
+  // floor(SIZE_MAX / n) >= n-1.
+  assert((SIZE_MAX / n) >= (n-1)); // (mult assert)
 
   assert(n <= SAINDEX_MAX - 1);
   assert(fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW) == 0);
@@ -1164,21 +1171,10 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
         // Check for overflows when adding to Psum element (unsigned 64 bit integers)
         // The logic here is just
         // S[t] += (((uint64_t)(A[t]+1) * (uint64_t)(A[t]))/2); /* update sum */
-#ifdef UADDL_OVERFLOW
-        sumOverflow = __builtin_uaddl_overflow(S[t], (((uint64_t)A[t]) * ((uint64_t)A[t] + 1)) >> 1, &S[t]);
-#else
-        {
-          uint64_t tmpOverflowInt;
-          tmpOverflowInt = S[t] + ((((uint64_t)A[t]) * ((uint64_t)A[t] + 1)) >> 1);
-          if (tmpOverflowInt < S[t]) {
-            sumOverflow = true;
-          } else {
-            sumOverflow = false;
-          }
-          S[t] = tmpOverflowInt;
-        }
-#endif
-        assert(!sumOverflow);
+	// A[t] is the number of times the value _repeats_, so the total count of such symbols is A[t]+1.
+	// As such, we want to add (A[t] + 1 choose 2) = (A[t]+1)*A[t]/2.
+        // Note, A[t] < n, so the assert marked "(mult assert)" tells us that the multiplication won't rollover.
+        safeAdduint64(S[t], (((uint64_t)A[t]) * ((uint64_t)A[t] + 1U)) >> 1, &S[t]);
       }
       if (b >= u) A[b] += A[b + 1]; /* carry over count for t = L[i] */
       A[b + 1] = 0;
@@ -1188,13 +1184,21 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
 
   Pmax = 0.0;
   for (j = u; j <= v; j++) {
-    double curP = ((double)S[j]) / (double)(((n - (size_t)j) * (n - (size_t)j + 1)) >> 1);
-    double curPMax = pow(curP, 1.0 / ((double)j));
-    // curP is now an estimate for the probability of collision across all j-tuples
-    // This was calculated using an unbiased estimator for the _distribution's_ 2-moment (see "Improvised Estimation of Collision Entropy..." by Skorski, equation (1)
+    // Note:
+    // j>=u>0, so (n-j) * (n-j+1) <= (n-1)*(n)
+    // By the assert marked "(mult assert)", floor(SIZE_MAX / n) >= (n-1), so the multiplication won't rollover.
+    size_t choices = (((n - (size_t)j) * (n - (size_t)j + 1U)) >> 1);
+    double curP, curPMax;
+    assert(S[j] <= choices);
+
+    curP = ((double)S[j]) / (double)choices;
+    curPMax = pow(curP, 1.0 / ((double)j));
+    // curP is now an estimate for the probability of collision across all j-tuples.
+    // This was calculated using an unbiased estimator for the _distribution's_ 2-moment; 
+    // see "Improvised Estimation of Collision Entropy..." by Skorski, equation (1)
     // or "The Complexity of Estimating Rényi Entropy" by Acharya, Orlitsky, Suresh and Tyagi Section 1.5.
     if (configVerbose > 3) {
-      fprintf(stderr, "LRS Estimate: P_%d = %.17g ( %zu / %zu )\n", j, curP, S[j], ((n - (size_t)j) * (n - (size_t)j + 1)) >> 1);
+      fprintf(stderr, "LRS Estimate: P_%d = %.17g ( %zu / %zu )\n", j, curP, S[j], choices);
       fprintf(stderr, "LRS Estimate: P_{max,%d} = %.17g\n", j, curPMax);
     }
     if (Pmax < curPMax) {
@@ -1376,7 +1380,7 @@ static double predictionEstFct(double pin, const size_t *params) {
   // We know that
   // * x is in the interval [1,1/p] which is a subset of [1,k]
   // * the sequence is monotonic up (so x >= xlast).
-  // As such we don't need much fancyness for looking for "equality"
+  // As such we don't need much fanciness for looking for "equality"
   for (j = 0; (j < 65) && ((x - xlast) > LDBL_EPSILON * x); j++) {
     // x=x_j presently
     xlast = x;
@@ -1633,7 +1637,7 @@ double multiMCWPredictionEstimate(const statData_t *S, size_t L, size_t k, struc
   return (predictionEstimateResult(correctCount, L - 63, maxRunOfCorrects + 1, k, result));
 }
 
-// It is important that LAGD be a power of 2 (some of the fancyness would otherwise break)
+// It is important that LAGD be a power of 2 (some of the fanciness would otherwise break)
 #define LAGD 128LU
 #define LAGMASK (LAGD - 1)
 

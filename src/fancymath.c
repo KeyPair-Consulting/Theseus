@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -971,5 +971,24 @@ double monotonicBinarySearch(double (*fval)(double, const size_t *), double ldom
       fprintf(stderr, "Didn't converge sufficiently quickly, or not in open interval; stopped after %u rounds. Returning upper bound.\n", j + 1);
     }
     return (fmin(hbound, hdomain));
+  }
+}
+
+void safeAdduint64(uint64_t a, uint64_t b, uint64_t *res) {
+  bool sumOverflow;
+
+#ifdef UADDL_OVERFLOW
+  sumOverflow = __builtin_add_overflow(a, b, res);
+#else
+  *res = a+b;
+  if (*res < a) {
+    sumOverflow = true;
+  } else {
+    sumOverflow = false;
+  }
+#endif
+  if(sumOverflow) {
+    fprintf(stderr, "Integer overflow in calculation.\n");
+    exit(EX_DATAERR);
   }
 }

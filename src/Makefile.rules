@@ -200,7 +200,7 @@ non-iid-main: non-iid-main.o binio.o entlib.o fancymath.o sa.o translate.o randl
 	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm -fopenmp
 
 %.style-check-stamp:    %.c
-	clang-format-11 -i $< && touch $@
+	clang-format-13 -i $< && touch $@
 
 install:	$(BINARIES) $(SIMPLEBINS)
 	mv $(BINARIES) $(SIMPLEBINS) ../bin

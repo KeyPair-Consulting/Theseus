@@ -156,4 +156,5 @@ uint64_t selectionsForBirthdayCollisionBound(size_t n, uint32_t bExp);
 double binomialCDF(size_t k, size_t n, double p);
 int doublecompare(const void *in1, const void *in2);
 double monotonicBinarySearch(double (*fval)(double, const size_t *), double ldomain, double hdomain, double target, const size_t *params, bool decreasing);
+void safeAdduint64(uint64_t a, uint64_t b, uint64_t *res);
 #endif

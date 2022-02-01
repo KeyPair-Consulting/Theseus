@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -35,7 +35,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-m Output in Mathematica-friendly format.\n");
   fprintf(stderr, "-t <value>\tTrim any value that is prior to the first symbol with <value> occurrences or more or after the last symbol with <value> occurrences or more.\n");
   fprintf(stderr, "-z\tDon't output zero categories.\n");
-  fprintf(stderr, "The values are expected to be provided via stdin.\n");
+  fprintf(stderr, "The values are output using stdout.\n");
   exit(EX_USAGE);
 }
 

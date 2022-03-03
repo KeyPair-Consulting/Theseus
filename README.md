@@ -32,7 +32,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Executables that Implement Portions of SP 800-90B Testing
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[non-iid-main](./docs/SP800-90B_TESTING.md#non-iid-main) | An implementation of the non-IID SP 800-90B estimators.|
 |[restart-transpose](./docs/SP800-90B_TESTING.md#restart-transpose) | Calculate the transpose of the provided restart data matrix.|
@@ -44,7 +44,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Interpretation and Processing Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[selectbits](./docs/INTERPRETATION&PROCESSING_UTILITIES.md#selectbits) | Identify the bit selections that are likely to contain the most entropy, up to `<outputBits>` bits wide.|
 |[highbin](./docs/INTERPRETATION&PROCESSING_UTILITIES.md#highbin) | Attempts to bin input symbols into `2^<outputBits>` bins with equal numbers of adjacent samples.|
@@ -53,21 +53,21 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### H_submitter Production Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[ro-model](./docs/HSUBMITTER_PRODUCTION_UTILITIES.md#ro-model) | Produce a min entropy estimate using the selected stochastic model.|
 |[linear-interpolate](./docs/HSUBMITTER_PRODUCTION_UTILITIES.md#linear-interpolate) | Takes a set of points (`x_1`, `y_1`), ... (`x_n`, `y_n`), one point per line, from stdin and treats the points as a relation.|
 
 ### Test Data Production Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[randomfile](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#randomfile) | |
 |[simulate-osc](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#simulate-osc) | |
 
 ### Result Interpretation Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[percentile](./docs/RESULT_INTERPRETATION_UTILITIES.md#percentile) | Takes a set of human-readable doubles and provides the pth percentile.  Percentile is estimated using the recommended NIST method [Hyndman and Fan's R6](http://www.itl.nist.gov/div898/handbook/prc/section2/prc262.htm).|
 |[mean](./docs/RESULT_INTERPRETATION_UTILITIES.md#mean) | Takes a set of human-readable doubles and provides the mean.|
@@ -75,7 +75,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Data Conversion Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[u64-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-u32) | Converts provided binary data from type uint64_t to type uint32_t.|
 |[u64-counter-raw](./docs/DATA_CONVERSION_UTILITIES.md#u64-counter-raw) | Extracts deltas treated as 64-bit unsigned counters (they may roll over).|
@@ -102,7 +102,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Other Data Utilities
 
-| <div style="width:175px">Function Name</div> | Description                         |
+| Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[bits-in-use](./docs/OTHER_DATA_UTILITIES.md#bits-in-use) | Determines the number of bits required to represent the given data after removing stuck and superfluous bits.|
 |[discard-fixed-bits](./docs/OTHER_DATA_UTILITIES.md#discard-fixed-bits) | Takes provided binary data and returns it with fixed bits discarded. Non-fixed bits are moved to the LSB of the output.|

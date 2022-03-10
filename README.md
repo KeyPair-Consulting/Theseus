@@ -56,14 +56,14 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 | Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[ro-model](./docs/HSUBMITTER_PRODUCTION_UTILITIES.md#ro-model) | Produce a min entropy estimate using the selected stochastic model.|
-|[linear-interpolate](./docs/HSUBMITTER_PRODUCTION_UTILITIES.md#linear-interpolate) | Takes a set of points (`x_1`, `y_1`), ... (`x_n`, `y_n`), one point per line, from stdin and treats the points as a relation.|
+|[linear-interpolate](./docs/HSUBMITTER_PRODUCTION_UTILITIES.md#linear-interpolate) | Takes a set of points (`x_1`, `y_1`), ... (`x_n`, `y_n`) and treats the points as a relation. This tool can be used to infer parameters from the statistical results.|
 
 ### Test Data Production Utilities
 
 | Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
-|[randomfile](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#randomfile) | |
-|[simulate-osc](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#simulate-osc) | |
+|[randomfile](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#randomfile) | Create a random data file for use in testing.|
+|[simulate-osc](./docs/TEST_DATA_PRODUCTION_UTILITIES.md#simulate-osc) | Create a random data file for use in testing that simulates a ring oscillator.|
 
 ### Result Interpretation Utilities
 

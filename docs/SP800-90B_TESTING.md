@@ -31,37 +31,99 @@ Usage:
 
 ## restart-transpose
 Usage:
-	`restart-transpose [-v] [-l <index> ] [-d <samples>,<restarts>] <inputfile>`
-* Calculate the transpose of the provided restart data matrix.
-* `<inputfile>` is assumed to be a sequence of `statData_t` integers
-* output is sent to stdout
-* `-v`: verbose mode
-* `-l <index>`: Read the `<index>` substring of length `<samples * restarts>`. (default index = 0)
-* `-d <samples>,<restarts>`: Perform the restart testing using the described matrix dimensions. (default is 1000x1000)
-* Example 90B02 - Todo.
+	`restart-transpose [-v] [-l <index>] [-d <samples>,<restarts>] <inputfile>`
+* Create the transpose of the provided restart data matrix.
+* Input values of type statData_t (default uint8_t) are provided in `<inputfile>`.
+* Output values of type statData_t (default uint8_t) are sent to stdout.
+* Options:
+    * `-v`: Verbose mode.
+    * `-l <index>`: Read the `<index>` substring of length `<samples * restarts>` (default `index` = 0).
+    * `-d <samples>,<restarts>`: Perform the restart testing using the described matrix dimensions (default `<samples>` X `<restarts>` is 1000 X 1000).
+* Example 90B02 - A binary file is sent to stdin,`<samples>,<restarts>` is set to 16,4, and stdout is sent to a binary file with command `./restart-transpose -d 16,4 90b02-input-sd.bin > 90b02-output-0-sd.bin`: 
+    * Input (viewed with command `xxd 90b02-input-sd.bin`):
+	  ```
+	  00000000: 0001 0203 0405 0607 0809 1011 1213 1415  ................
+	  00000010: 1617 1819 2021 2223 2425 2627 2829 3031  .... !"#$%&'()01
+	  00000020: 3233 3435 3637 3839 4041 4243 4445 4647  23456789@ABCDEFG
+	  00000030: 4849 5051 5253 5455 5657 5859 6061 6263  HIPQRSTUVWXY`abc
+	  ```
+    * Output (if `<index>` = 0 (default), viewed with command `xxd 90b02-output-0-sd.bin`):
+	  ```
+	  00000000: 0004 0812 1620 2428 3236 4044 4852 5660  ..... $(26@DHRV`
+	  00000010: 0105 0913 1721 2529 3337 4145 4953 5761  .....!%)37AEISWa
+	  00000020: 0206 1014 1822 2630 3438 4246 5054 5862  ....."&048BFPTXb
+	  00000030: 0307 1115 1923 2731 3539 4347 5155 5963  .....#'159CGQUYc
+	  ```
+    * Alternate Output (if `<index>` = 1 and `<samples>,<restarts>` = 16,2, viewed with command `xxd 90b02-output-1-sd.bin`):
+	  ```
+	  00000000: 3234 3638 4042 4446 4850 5254 5658 6062  2468@BDFHPRTVX`b
+	  00000010: 3335 3739 4143 4547 4951 5355 5759 6163  3579ACEGIQSUWYac
+	  ```
 
 ## restart-sanity
 Usage:
-  `restart-sanity [-t <n>] [-v] [-n] [-l <index> ] [-d <samples>,<restarts>] [-c] [-i <rounds>] <H_I> <inputfile>` <br />
+  `restart-sanity [-t <n>] [-v] [-n] [-l <index> ] [-d <samples>,<restarts>] [-c <Xmaxcutoff>] [-i <rounds>] <H_I> <inputfile>` <br />
    or <br />
-  `restart-sanity [-t <n>] [-v] [-n] [-k <m>]  [-d <samples>,<restarts>] [-c] [-i <rounds>] -r <H_I>`
+  `restart-sanity [-t <n>] [-v] [-n] [-k <m>] [-d <samples>,<restarts>] [-c <Xmaxcutoff>] [-i <rounds>] -r <H_I>`
 * Perform the restart test for the provided restart data.
-* `<inputfile>` is assumed to be a sequence of `statData_t` integers
-* `<H_I>` is the assessed entropy.
-*  output is sent to stdout
-* `-v`: verbose mode
-* `-l <index>`: Read the `<index>` substring of length `<samples * restarts>`.
-* `-d <samples>,<restarts>`: Perform the restart testing using the described matrix dimensions. (default is 1000x1000).
-* `-r`: Instead of doing testing on provided data use a random IID variable.
-* `-k <m>`: Use an alphabet of `<m>` values (default `m`=2).
-* `-n` Force counting a single fixed global symbol (Causes the test to be binomial).
-* `-u`: Don't simulate the cutoff.
-*  `-c <Xmaxcutoff>`: Use the provided cutoff.
-* `-i <rounds>`: Use `<rounds>` simulation rounds (default is 2000000).
-* `-t <n>`:  uses `<n>` computing threads (default: number of cores * 1.3).
-* `-j <n>`: Each restart sanity vector is `<n>` elements long (default: min(1000,samples,restart))
-* `-m <t>,<simsym>`: For simulation, Use `<t>` maximal size symbols (the residual probability is evenly distributed amongst the remaining `simsym-t` symbols).
-* Example 90B03 - Todo.
+* Input values of type statData_t (default uint8_t) are provided in `<inputfile>`.
+* Output of text summary is sent to stdout.
+* Options:
+    * `<H_I>`: Required. The assessed initial entropy estimate as defined in SP 800-90B Section 3.1.3.
+    * `-t <n>`: Uses `<n>` computing threads (default: number of cores * 1.3).
+    * `-v`: Verbose mode (can be used several times for increased verbosity).
+	* `-n`: Force counting a single fixed global symbol (causes the test to be binomial).
+	* `-l <index>`: Read the `<index>` substring of length `<samples * restarts>` (default `index` = 0).
+	* `-k <m>`: Use an alphabet of `<m>` values (default `m` = 2).
+	* `-d <samples>,<restarts>`: Perform the restart testing using the described matrix dimensions (default `<samples>` X `<restarts>` is 1000 X 1000).
+	* `-c <Xmaxcutoff>`: Use the provided cutoff (default `Xmaxcutoff` = 0).
+	* `-i <rounds>`: Use `<rounds>` simulation rounds (default `rounds` = 2000000).
+	* `-r`: Instead of doing testing on provided data use a random IID variable.
+	* `-j <n>`: Each restart sanity vector is `<n>` elements long (default `n` = min(1000,`<samples>`,`<restart>`)).
+	* `-m <t>,<simsym>`: For simulation, use `<t>` maximal size symbols (the residual probability is evenly distributed amongst the remaining `simsym-t` symbols) (default `<t>` = 0 and `<simsym>` = 0).
+	* `-u`: Don't simulate the cutoff.
+* Example 90B03 - A random data file is generated with -r, -vvv increases verbosity, -t 10 increases computing threads, -i 1000 decreases rounds (for testing), and `<H_I>` is set to 0.0123456 with command `./restart-sanity -r -vv -t 10 -i 1000 0.0123456`: 
+    * Output (to console):
+	  ```
+	  Restart Sanity Test: p = 0.99147919179620048
+	  Using 10 threads
+	  Restart Sanity Test: Simulation Rounds = 1000
+	  Restart Sanity Test: Simulation MLS Count = 1
+	  Restart Sanity Test: Simulation Symbols = 2
+	  Restart Sanity Test: Simulation MLS probability = 0.99147919179620048
+	  Restart Sanity Test: Simulation other symbol probability = 0.0085208082037995236
+	  Restart Sanity Test: Simulated XmaxCutoff = 998
+	  At most 2 symbols.
+	  Table based translation approach.
+	  No translation is necessary.
+	  Restart Sanity Test: X_R = 551 (row 759)
+	  Restart Sanity Test: X_C = 551 (column 513)
+	  Restart Sanity Test: X_max = 551
+	  Restart Sanity Check Verdict: Pass
+	  ```
+    * Alternate Output (`<H_I>` is changed to 0.999988, to console):
+	  ```
+	  Restart Sanity Test: p = 0.50000415890037975
+	  Using 10 threads
+	  Restart Sanity Test: Simulation Rounds = 1000
+	  Restart Sanity Test: Simulation MLS Count = 1
+	  Restart Sanity Test: Simulation Symbols = 2
+	  Restart Sanity Test: Simulation MLS probability = 0.50000415890037975
+	  Restart Sanity Test: Simulation other symbol probability = 0.49999584109962025
+	  Restart Sanity Test: Simulated XmaxCutoff = 549
+	  At most 2 symbols.
+	  Table based translation approach.
+	  No translation is necessary.
+	  Row over the cutoff: X_{C69} = 556
+	  Row over the cutoff: X_{C175} = 558
+	  Row over the cutoff: X_{C713} = 557
+	  Restart Sanity Test: X_R = 558 (row 174)
+	  Column over the cutoff: X_{C47} = 556
+	  Column over the cutoff: X_{C125} = 551
+	  Restart Sanity Test: X_C = 556 (column 46)
+	  Restart Sanity Test: X_max = 558
+	  Restart Sanity Check Verdict: Fail
+	  ```
 
 ## permtests
 Usage:

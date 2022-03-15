@@ -110,31 +110,58 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Other Data Utilities
 
+#### Functions to bin and group data:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[downsample](./docs/OTHER_DATA_UTILITIES.md#downsample) | Groups data by index into modular classes mod `<rate>` evenly into the `<block size>`.|
+|[highbin](./docs/OTHER_DATA_UTILITIES.md#highbin) | Attempts to bin input symbols into `2^<outputBits>` bins with equal numbers of adjacent samples.|
+|[u32-manbin](./docs/OTHER_DATA_UTILITIES.md#u32-manbin) | Assign given binary data to one of the n bin numbers (0, ..., n-1).|
+
+#### Functions to select and extract data:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[extractbits](./docs/OTHER_DATA_UTILITIES.md#extractbits) | Takes the given binary data and extracts bits with `<bitmask>`.|
+|[selectbits](./docs/OTHER_DATA_UTILITIES.md#selectbits) | Identify the bit selections that are likely to contain the most entropy, up to `<outputBits>` bits wide.|
+|[u32-bit-select](./docs/OTHER_DATA_UTILITIES.md#u32-bit-select) | Selects and returns the value in the given bit position (0 is the LSB, 31 is the MSB).|
+|[u128-bit-select](./docs/OTHER_DATA_UTILITIES.md#u128-bit-select) | Selects and returns the value in the given bit position (0 is the LSB, 127 is the MSB, little endian is assumed).|
+|[u32-selectdata](./docs/OTHER_DATA_UTILITIES.md#u32-selectdata) | Attempt to keep the percentages noted in the provided binary data.|
+|[u32-selectrange](./docs/OTHER_DATA_UTILITIES.md#u32-selectrange) | Extracts all values from the given binary data between a specified `low` and `high` (inclusive).|
+
+#### Functions to translate data:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[translate-data](./docs/OTHER_DATA_UTILITIES.md#translate-data) | Perform an order-preserving map to arrange the input symbols to (0, ..., k-1).|
+|[u32-translate-data](./docs/OTHER_DATA_UTILITIES.md#u32-translate-data) | Perform an order-preserving map to arrange the input symbols to (0, ..., k-1).|
+
+#### Functions to find and process fixed data:
+
 | Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
 |[bits-in-use](./docs/OTHER_DATA_UTILITIES.md#bits-in-use) | Determines the number of bits required to represent the given data after removing stuck and superfluous bits.|
 |[discard-fixed-bits](./docs/OTHER_DATA_UTILITIES.md#discard-fixed-bits) | Takes provided binary data and returns it with fixed bits discarded. Non-fixed bits are moved to the LSB of the output.|
-|[double-merge](./docs/OTHER_DATA_UTILITIES.md#double-merge) | Merges two sorted lists of doubles into a single merged sorted list of doubles.|
-|[double-minmaxdelta](./docs/OTHER_DATA_UTILITIES.md#double-minmaxdelta) | Takes a set of human-readable doubles and provides the mean.|
-|[double-sort](./docs/OTHER_DATA_UTILITIES.md#double-sort) | Takes doubles from the file and sorts them.|
-|[downsample](./docs/OTHER_DATA_UTILITIES.md#downsample) | Groups data by index into modular classes mod `<rate>` evenly into the `<block size>`.|
-|[extractbits](./docs/OTHER_DATA_UTILITIES.md#extractbits) | Takes the given binary data and extracts bits with `<bitmask>`.|
-|[highbin](./docs/OTHER_DATA_UTILITIES.md#highbin) | Attempts to bin input symbols into `2^<outputBits>` bins with equal numbers of adjacent samples.|
-|[hweight](./docs/OTHER_DATA_UTILITIES.md#hweight) | Calculates the Hamming weight of `<bitmask>`.  As an example, the bit string 11101000 has a Hamming weight of 4.|
-|[selectbits](./docs/OTHER_DATA_UTILITIES.md#selectbits) | Identify the bit selections that are likely to contain the most entropy, up to `<outputBits>` bits wide.|
-|[translate-data](./docs/OTHER_DATA_UTILITIES.md#translate-data) | Perform an order-preserving map to arrange the input symbols to (0, ..., k-1).|
-|[u128-bit-select](./docs/OTHER_DATA_UTILITIES.md#u128-bit-select) | Selects and returns the value in the given bit position (0 is the LSB, 127 is the MSB, little endian is assumed).|
-|[u128-discard-fixed-bits](./docs/OTHER_DATA_UTILITIES.md#u128-discard-fixed-bits) | Takes provided binary data and returns it with fixed bits discarded. Non-fixed bits are moved to the LSB of the output.|
-|[u32-anddata](./docs/OTHER_DATA_UTILITIES.md#u32-anddata) | Takes the given binary data and bitwise ANDs each symbol with `<bitmask>`.|
-|[u32-bit-permute](./docs/OTHER_DATA_UTILITIES.md#u32-bit-permute) | Permute bits within the given binary data as specified in `<bit specification>`.  Bit ordering is specified in the LSB 0 format (i.e., bit 0 is the LSB and bit 31 is the MSB).|
-|[u32-bit-select](./docs/OTHER_DATA_UTILITIES.md#u32-bit-select) | Selects and returns the value in the given bit position (0 is the LSB, 31 is the MSB).|
 |[u32-discard-fixed-bits](./docs/OTHER_DATA_UTILITIES.md#u32-discard-fixed-bits) | Takes provided binary data and returns it with fixed bits discarded. Non-fixed bits are moved to the LSB of the output.|
+|[u128-discard-fixed-bits](./docs/OTHER_DATA_UTILITIES.md#u128-discard-fixed-bits) | Takes provided binary data and returns it with fixed bits discarded. Non-fixed bits are moved to the LSB of the output.|
+
+#### Functions to merge, sort, and permute data:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[double-merge](./docs/OTHER_DATA_UTILITIES.md#double-merge) | Merges two sorted lists of doubles into a single merged sorted list of doubles.|
+|[double-sort](./docs/OTHER_DATA_UTILITIES.md#double-sort) | Takes doubles from the file and sorts them.|
+|[u32-bit-permute](./docs/OTHER_DATA_UTILITIES.md#u32-bit-permute) | Permute bits within the given binary data as specified in `<bit specification>`.  Bit ordering is specified in the LSB 0 format (i.e., bit 0 is the LSB and bit 31 is the MSB).|
+
+#### Functions with mathematical operations on data:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[double-minmaxdelta](./docs/OTHER_DATA_UTILITIES.md#double-minmaxdelta) | Takes a set of human-readable doubles and provides the mean.|
+|[hweight](./docs/OTHER_DATA_UTILITIES.md#hweight) | Calculates the Hamming weight of `<bitmask>`.  As an example, the bit string 11101000 has a Hamming weight of 4.|
+|[u32-anddata](./docs/OTHER_DATA_UTILITIES.md#u32-anddata) | Takes the given binary data and bitwise ANDs each symbol with `<bitmask>`.|
 |[u32-gcd](./docs/OTHER_DATA_UTILITIES.md#u32-gcd) | Finds common divisors and removes these factors from the given binary data.|
-|[u32-manbin](./docs/OTHER_DATA_UTILITIES.md#u32-manbin) | Assign given binary data to one of the n bin numbers (0, ..., n-1).|
 |[u32-regress-to-mean](./docs/OTHER_DATA_UTILITIES.md#u32-regress-to-mean) | Calculate the mean, force each `k`-block to have this mean, and then round the resulting values.|
-|[u32-selectdata](./docs/OTHER_DATA_UTILITIES.md#u32-selectdata) | Attempt to keep the percentages noted in the provided binary data.|
-|[u32-selectrange](./docs/OTHER_DATA_UTILITIES.md#u32-selectrange) | Extracts all values from the given binary data between a specified `low` and `high` (inclusive).|
-|[u32-translate-data](./docs/OTHER_DATA_UTILITIES.md#u32-translate-data) | Perform an order-preserving map to arrange the input symbols to (0, ..., k-1).|
 |[u32-xor-diff](./docs/OTHER_DATA_UTILITIES.md#u32-xor-diff) | Produces the running XOR of adjacent values in provided binary data.|
 
 ## More Information

@@ -66,30 +66,47 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 
 ### Data Conversion Utilities
 
+#### Functions for word size and base input conversion:
+
 | Function Name | Description                                                        |
 |:--------------|:-------------------------------------------------------------------|
-|[u64-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-u32) | Converts provided binary data from type uint64_t to type uint32_t.|
-|[u64-counter-raw](./docs/DATA_CONVERSION_UTILITIES.md#u64-counter-raw) | Extracts deltas treated as 64-bit unsigned counters (they may roll over).|
-|[u8-to-sd](./docs/DATA_CONVERSION_UTILITIES.md#u8-to-sd) | Converts provided binary data from type uint8_t to type statData_t.|
-|[u16-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u16-to-u32) | Converts provided binary data from type uint16_t to type uint32_t.|
-|[u64-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-ascii) | Converts provided binary data to human-readable decimal values.|
-|[u32-to-sd](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-sd) | Converts provided binary data from type uint32_t to type statData_t.|
-|[u16-to-sdbin](./docs/DATA_CONVERSION_UTILITIES.md#u16-to-sdbin) | Converts provided binary data from type uint16_t to type statData_t by expanding packed bits.|
-|[u64-jent-to-delta](./docs/DATA_CONVERSION_UTILITIES.md#u64-jent-to-delta) | Converts provided binary data from uint64_t deltas in jent format (JEnt version 3.0.1 and earlier) to uint64_t deltas in nanoseconds format.  Also guesses native byte order and swaps if necessary.  Jent format expects the upper 32 bits to contain seconds and the lower 32 bits to contain nanoseconds.|
-|[u32-to-categorical](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-categorical) | Produces categorical summary of provided binary data.|
-|[dec-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#dec-to-u32) | Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u32-to-ascii.)|
-|[u32-expand-bitwidth](./docs/DATA_CONVERSION_UTILITIES.md#u32-expand-bitwidth) | Extracts inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.|
-|[u32-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-ascii) | Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u32.)|
-|[sd-to-hex](./docs/DATA_CONVERSION_UTILITIES.md#sd-to-hex) | Converts provided binary data to human-readable hexidecimal values.|
 |[u8-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u8-to-u32) | Converts provided binary data from type uint8_t to type uint32_t.|
+|[u16-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u16-to-u32) | Converts provided binary data from type uint16_t to type uint32_t.|
+|[u64-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-u32) | Converts provided binary data from type uint64_t to type uint32_t.|
+|[dec-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#dec-to-u32) | Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u32-to-ascii.)|
 |[hex-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#hex-to-u32) | Converts provided human-readable hexidecimal values to binary data.|
-|[blocks-to-sdbin](./docs/DATA_CONVERSION_UTILITIES.md#blocks-to-sdbin) | Extracts bits from a blocksize-sized block one byte at a time, in the specified byte ordering.|
-|[u32-counter-endian](./docs/DATA_CONVERSION_UTILITIES.md#u32-counter-endian) | Trys to guess counter endianness and translates to the local platform.|
+
+#### Functions related to deltas, counters, endianness, and bit width:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
 |[u32-delta](./docs/DATA_CONVERSION_UTILITIES.md#u32-delta) | Extracts deltas and then translates the result to positive values.|
-|[u32-counter-bitwidth](./docs/DATA_CONVERSION_UTILITIES.md#u32-counter-bitwidth) | Extracts deltas under the assumption that the data is an increasing counter of some inferred bitwidth.|
+|[u64-jent-to-delta](./docs/DATA_CONVERSION_UTILITIES.md#u64-jent-to-delta) | Converts provided binary data from uint64_t deltas in jent format (JEnt version 3.0.1 and earlier) to uint64_t deltas in nanoseconds format.  Also guesses native byte order and swaps if necessary.  Jent format expects the upper 32 bits to contain seconds and the lower 32 bits to contain nanoseconds.|
 |[u32-counter-raw](./docs/DATA_CONVERSION_UTILITIES.md#u32-counter-raw) | Extracts deltas treated as 32-bit unsigned counters (they may roll over).|
+|[u64-counter-raw](./docs/DATA_CONVERSION_UTILITIES.md#u64-counter-raw) | Extracts deltas treated as 64-bit unsigned counters (they may roll over).|
+|[u32-counter-endian](./docs/DATA_CONVERSION_UTILITIES.md#u32-counter-endian) | Trys to guess counter endianness and translates to the local platform.|
 |[u64-counter-endian](./docs/DATA_CONVERSION_UTILITIES.md#u64-counter-endian) | Trys to guess counter endianness and translates to the local platform.|
 |[u64-change-endianness](./docs/DATA_CONVERSION_UTILITIES.md#u64-change-endianness) | Changes between big and little endian byte-ordering conventions.|
+|[u32-counter-bitwidth](./docs/DATA_CONVERSION_UTILITIES.md#u32-counter-bitwidth) | Extracts deltas under the assumption that the data is an increasing counter of some inferred bitwidth.|
+|[u32-expand-bitwidth](./docs/DATA_CONVERSION_UTILITIES.md#u32-expand-bitwidth) | Extracts inferred values under the assumption that the data is a truncation of some sampled value, whose bitwidth is inferred.|
+
+#### Functions for converting to type statData_t for statistical analysis:
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[u8-to-sd](./docs/DATA_CONVERSION_UTILITIES.md#u8-to-sd) | Converts provided binary data from type uint8_t to type statData_t.|
+|[u16-to-sdbin](./docs/DATA_CONVERSION_UTILITIES.md#u16-to-sdbin) | Converts provided binary data from type uint16_t to type statData_t by expanding packed bits.|
+|[u32-to-sd](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-sd) | Converts provided binary data from type uint32_t to type statData_t.|
+|[blocks-to-sdbin](./docs/DATA_CONVERSION_UTILITIES.md#blocks-to-sdbin) | Extracts bits from a blocksize-sized block one byte at a time, in the specified byte ordering.|
+
+#### Functions for output conversion (for histograms, human readability, categorization, etc.):
+
+| Function Name | Description                                                        |
+|:--------------|:-------------------------------------------------------------------|
+|[sd-to-hex](./docs/DATA_CONVERSION_UTILITIES.md#sd-to-hex) | Converts provided binary data to human-readable hexidecimal values.|
+|[u32-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-ascii) | Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u32.)|
+|[u64-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-ascii) | Converts provided binary data to human-readable decimal values.|
+|[u32-to-categorical](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-categorical) | Produces categorical summary of provided binary data.|
 
 ### Other Data Utilities
 

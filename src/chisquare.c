@@ -296,7 +296,6 @@ static bool nonbinaryChiSquareIndependence(const statData_t *data, size_t datale
 
   nbin = chiSquareBin(chiSquareLookup, binExpectations, k * k);
 
-  assert(nbin > k);
   if (configVerbose > 0) {
     fprintf(stderr, "Non-Binary Chi-Square Independence: nbin = %zu\n", nbin);
   }

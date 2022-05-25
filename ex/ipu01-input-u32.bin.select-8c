@@ -1,0 +1,9 @@
+Best entropy up to weight 1: 0 (mask: 0x00000001)
+Best entropy up to weight 2: 0.00088217340301532075 (mask: 0x20000001)
+Best entropy up to weight 3: 0.0028483489593084709 (mask: 0x60000001)
+Best entropy up to weight 4: 0.0028483489593084709 (mask: 0x60000001)
+Final Best Masks: 
+0x00000001 (weight 1): 0
+0x20000001 (weight 2): 0.00088217340301532075
+0x60000001 (weight 3): 0.0028483489593084709
+test: 0x00000001 0x20000001 0x60000001 

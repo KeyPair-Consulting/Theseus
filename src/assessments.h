@@ -16,7 +16,7 @@
 #include "entlib.h"
 #include "randlib.h"
 
-double bootstrapAssessments(struct entropyTestingResult *result, size_t count, size_t bitWidth, struct randstate *rstate);
-double bootstrapParameters(struct entropyTestingResult *result, size_t count, size_t bitWidth, struct randstate *rstate);
+double bootstrapAssessments(struct entropyTestingResult *result, size_t count, size_t bitWidth, double *IIDminent, struct randstate *rstate);
+double bootstrapParameters(struct entropyTestingResult *result, size_t count, size_t bitWidth, double *IIDminent, struct randstate *rstate);
 
 #endif

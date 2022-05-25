@@ -117,12 +117,15 @@ static double doAssessment(const statData_t *data, size_t datalen, size_t k, uin
   struct timespec overallStartTime;
   struct timespec overallEndTime;
   double minminent;
+  double minIIDminent;
   double curminent, curminent2;
   size_t j;
 
   initEntropyTestingResult(label, result);
 
   minminent = DBL_INFINITY;
+  minIIDminent = DBL_INFINITY;
+
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &overallStartTime);
 
   if (configTestBitmask & MCVESTIMATEMASK) {
@@ -131,6 +134,7 @@ static double doAssessment(const statData_t *data, size_t datalen, size_t k, uin
     curminent = mostCommonValueEstimate(data, datalen, k, &(result->mcv));
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &endTime);
     minminent = curminent;
+    minIIDminent = curminent;
     result->mcv.runTime = ((double)endTime.tv_sec + (double)endTime.tv_nsec * 1.0e-9) - ((double)startTime.tv_sec + (double)startTime.tv_nsec * 1.0e-9);
   }
 
@@ -231,7 +235,11 @@ static double doAssessment(const statData_t *data, size_t datalen, size_t k, uin
     }
   }
 
+  assert(isfinite(minminent) != 0);
   result->assessedEntropy = minminent;
+
+  assert(isfinite(minIIDminent) != 0);
+  result->assessedIIDEntropy = minIIDminent;
 
   return minminent;
 }
@@ -576,7 +584,8 @@ int main(int argc, char *argv[]) {
           fprintf(stderr, "Sample cannot contain entropy!\n");
         }
 
-        printf("Assessed min entropy = %.17g\n\n", 0.0);
+        printf("Assessed min entropy = %.17g\n", 0.0);
+        printf("Assessed min entropy (IID) = %.17g\n\n", 0.0);
 
         if (bitData != NULL) {
           free(bitData);
@@ -797,6 +806,7 @@ int main(int argc, char *argv[]) {
   // output results
   for (size_t j = 1; j <= configRandomRounds * blockCount; j++) {
     double minminent = DBL_INFINITY;
+    double minIIDminent = DBL_INFINITY;
 
     if ((configRandomRounds * blockCount > 1) || configLargeBlockAssessment)
       fprintf(stderr, "Results for block %zu\n", j);
@@ -806,100 +816,154 @@ int main(int argc, char *argv[]) {
     if (configEval != bitstring) {
       printEntropyTestingResult(rawResults + j);
       minminent = rawResults[j].assessedEntropy;
+      minIIDminent = rawResults[j].assessedIIDEntropy;
       printf("H_original = %.17g\n", rawResults[j].assessedEntropy);
+      printf("H_original (IID) = %.17g\n", rawResults[j].assessedIIDEntropy);
       fflush(stdout);
     }
 
     if (configEval != raw) {
       printEntropyTestingResult(binaryResults + j);
       printf("H_bitstring = %.17g\n", binaryResults[j].assessedEntropy);
+      printf("H_bitstring Per Symbol = %.17g\n", (double)bitWidth * binaryResults[j].assessedEntropy);
       minminent = fmin(minminent, (double)bitWidth * binaryResults[j].assessedEntropy);
+
+      printf("H_bitstring (IID) = %.17g\n", binaryResults[j].assessedIIDEntropy);
+      printf("H_bitstring Per Symbol (IID) = %.17g\n", (double)bitWidth * binaryResults[j].assessedIIDEntropy);
+      minIIDminent = fmin(minIIDminent, (double)bitWidth * binaryResults[j].assessedIIDEntropy);
       fflush(stdout);
     }
 
-    printf("Assessed min entropy = %.17g\n\n", minminent);
+    printf("Assessed min entropy = %.17g\n", minminent);
+    printf("Assessed min entropy (IID) = %.17g\n\n", minIIDminent);
     fflush(stdout);
   }
 
   // Find a final assessment (if applicable)
   if (configLargeBlockAssessment || configBootstrapParams || configBootstrapAssessments) {
     double minminent = DBL_INFINITY;
+    double minIIDminent = DBL_INFINITY;
 
     if (configLargeBlockAssessment) {
       double localMinminent = DBL_INFINITY;
+      double localMinIIDminent = DBL_INFINITY;
       fprintf(stderr, "Results for Large Block Assessment\n");
       if (configEval != bitstring) {
         printEntropyTestingResult(rawResults);
         localMinminent = rawResults[0].assessedEntropy;
         fprintf(stderr, "Large Block Assessment H_original = %.17g\n", rawResults[0].assessedEntropy);
+
+        localMinIIDminent = rawResults[0].assessedIIDEntropy;
+        fprintf(stderr, "Large Block Assessment H_original (IID) = %.17g\n", rawResults[0].assessedIIDEntropy);
+
         fflush(stdout);
       }
 
       if (configEval != raw) {
         printEntropyTestingResult(binaryResults);
         fprintf(stderr, "Large Block Assessment H_bitstring = %.17g\n", binaryResults[0].assessedEntropy);
+        fprintf(stderr, "Large Block Assessment H_bitstring Per Symbol= %.17g\n", (double)bitWidth * binaryResults[0].assessedEntropy);
         localMinminent = fmin(localMinminent, (double)bitWidth * binaryResults[0].assessedEntropy);
+
+        fprintf(stderr, "Large Block Assessment H_bitstring (IID) = %.17g\n", binaryResults[0].assessedIIDEntropy);
+        fprintf(stderr, "Large Block Assessment H_bitstring Per Symbol (IID) = %.17g\n", (double)bitWidth * binaryResults[0].assessedIIDEntropy);
+        localMinIIDminent = fmin(localMinIIDminent, (double)bitWidth * binaryResults[0].assessedIIDEntropy);
+
         fflush(stdout);
       }
 
-      printf("Large Block Assessment min entropy = %.17g\n\n", localMinminent);
+      printf("Large Block Assessment min entropy = %.17g\n", localMinminent);
+      printf("Large Block Assessment min entropy (IID) = %.17g\n\n", localMinIIDminent);
       fflush(stdout);
+
       minminent = fmin(minminent, localMinminent);
+      minIIDminent = fmin(minIIDminent, localMinIIDminent);
     }
 
     if (configBootstrapAssessments) {
       double localMinminent = DBL_INFINITY;
+      double localMinIIDminent = DBL_INFINITY;
+
       fprintf(stderr, "Starting Assessment Bootstrap\n");
       if (configEval != bitstring) {
         double testRes;
+        double IIDtestRes;
 
-        testRes = bootstrapAssessments(rawResults + 1, configRandomRounds * blockCount, bitWidth, &rstate);
+        testRes = bootstrapAssessments(rawResults + 1, configRandomRounds * blockCount, bitWidth, &IIDtestRes, &rstate);
         localMinminent = testRes;
+	localMinIIDminent = IIDtestRes;
         printf("Assessment Bootstrap H_original = %.17g\n", testRes);
+        printf("Assessment Bootstrap H_original (IID) = %.17g\n", IIDtestRes);
         fflush(stdout);
       }
 
       if (configEval != raw) {
         double testRes;
+        double IIDtestRes;
 
-        testRes = bootstrapAssessments(binaryResults + 1, configRandomRounds * blockCount, 1, &rstate);
+        testRes = bootstrapAssessments(binaryResults + 1, configRandomRounds * blockCount, 1, &IIDtestRes, &rstate);
         printf("Assessment Bootstrap H_bitstring = %.17g\n", testRes);
+        printf("Assessment Bootstrap H_bitstring Per Symbol = %.17g\n", (double)bitWidth * testRes);
         localMinminent = fmin(localMinminent, (double)bitWidth * testRes);
+
+        printf("Assessment Bootstrap H_bitstring (IID) = %.17g\n", IIDtestRes);
+        printf("Assessment Bootstrap H_bitstring Per Symbol (IID) = %.17g\n", (double)bitWidth * IIDtestRes);
+        localMinIIDminent = fmin(localMinIIDminent, (double)bitWidth * IIDtestRes);
+
         fflush(stdout);
       }
 
-      printf("Assessment Bootstrap min entropy = %.17g\n\n", localMinminent);
+      printf("Assessment Bootstrap min entropy = %.17g\n", localMinminent);
+      printf("Assessment Bootstrap min entropy (IID) = %.17g\n\n", localMinIIDminent);
       fflush(stdout);
+
       minminent = fmin(minminent, localMinminent);
+      minIIDminent = fmin(minIIDminent, localMinIIDminent);
     }
 
     if (configBootstrapParams) {
       double localMinminent = DBL_INFINITY;
+      double localMinIIDminent = DBL_INFINITY;
+
       fprintf(stderr, "Starting Parameter Bootstrap\n");
       if (configEval != bitstring) {
         double testRes;
+        double IIDtestRes;
 
-        testRes = bootstrapParameters(rawResults + 1, configRandomRounds * blockCount, bitWidth, &rstate);
+        testRes = bootstrapParameters(rawResults + 1, configRandomRounds * blockCount, bitWidth, &IIDtestRes, &rstate);
         localMinminent = testRes;
+        localMinIIDminent = IIDtestRes;
         printf("Parameter Bootstrap H_original = %.17g\n", testRes);
+        printf("Parameter Bootstrap H_original (IID) = %.17g\n", IIDtestRes);
         fflush(stdout);
       }
 
       if (configEval != raw) {
         double testRes;
+        double IIDtestRes;
 
-        testRes = bootstrapParameters(binaryResults + 1, configRandomRounds * blockCount, 1, &rstate);
+        testRes = bootstrapParameters(binaryResults + 1, configRandomRounds * blockCount, 1, &IIDtestRes, &rstate);
         printf("Parameter Bootstrap H_bitstring = %.17g\n", testRes);
+        printf("Parameter Bootstrap H_bitstring Per Symbol = %.17g\n", (double)bitWidth * testRes);
         localMinminent = fmin(localMinminent, (double)bitWidth * testRes);
+
+        printf("Parameter Bootstrap H_bitstring (IID) = %.17g\n", IIDtestRes);
+        printf("Parameter Bootstrap H_bitstring Per Symbol (IID) = %.17g\n", (double)bitWidth * IIDtestRes);
+        localMinIIDminent = fmin(localMinIIDminent, (double)bitWidth * IIDtestRes);
+
         fflush(stdout);
       }
 
-      printf("Parameter Bootstrap min entropy = %.17g\n\n", localMinminent);
+      printf("Parameter Bootstrap min entropy = %.17g\n", localMinminent);
+      printf("Parameter Bootstrap min entropy (IID) = %.17g\n\n", localMinIIDminent);
       fflush(stdout);
+
       minminent = fmin(minminent, localMinminent);
+      minIIDminent = fmin(minIIDminent, localMinIIDminent);
     }
 
     printf("Final Assessment = %.17g\n", minminent);
+    printf("Final Assessment (IID) = %.17g\n", minIIDminent);
     fflush(stdout);
   }
 

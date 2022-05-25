@@ -59,12 +59,12 @@ int main(int argc, char *argv[]) {
   datalen = readuint32file(infp, &data);
   assert(data != NULL);
   assert(datalen > 0);
-  assert(datalen % 4 == 0);
+  assert((datalen % 4) == 0);
 
-  dataPartition[0] = malloc(sizeof(uint32_t) * datalen / 4);
-  dataPartition[1] = malloc(sizeof(uint32_t) * datalen / 4);
-  dataPartition[2] = malloc(sizeof(uint32_t) * datalen / 4);
-  dataPartition[3] = malloc(sizeof(uint32_t) * datalen / 4);
+  dataPartition[0] = calloc(datalen / 4, sizeof(uint32_t));
+  dataPartition[1] = calloc(datalen / 4, sizeof(uint32_t));
+  dataPartition[2] = calloc(datalen / 4, sizeof(uint32_t));
+  dataPartition[3] = calloc(datalen / 4, sizeof(uint32_t));
 
   if ((dataPartition[0] == NULL) || (dataPartition[1] == NULL) || (dataPartition[2] == NULL) || (dataPartition[3] == NULL)) {
     perror("Can't allocate partitions");
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   }
 
   for (j = 0; j < datalen; j++) {
-    (dataPartition[j % 4])[j / 4] = data[j];
+    (dataPartition[j & 0x3])[j >> 2] = data[j];
   }
 
   fprintf(stderr, "Read in %zu uint32_ts\n", datalen);

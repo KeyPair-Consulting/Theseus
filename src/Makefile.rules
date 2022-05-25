@@ -2,9 +2,9 @@ src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
 
-BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u64-change-endianness u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical double-minmaxdelta shannon linear-interpolate ro-model
+BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample u32-downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u64-change-endianness u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical double-minmaxdelta shannon linear-interpolate ro-model u16-mcv u32-mcv
 
-SIMPLEBINS=hex-to-u32 u16-to-sdbin dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sdbin u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex
+SIMPLEBINS=hex-to-u32 u16-to-sdbin dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sdbin u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex dec-to-u64
 
 all:	$(BINARIES) $(SIMPLEBINS)
 
@@ -75,6 +75,9 @@ u32-regress-to-mean: u32-regress-to-mean.o binio.o
 ro-model: ro-model.o fancymath.o incbeta.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
+u16-mcv: u16-mcv.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
+
 extractbits: extractbits.o binio.o binutil.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
@@ -106,6 +109,9 @@ u32-selectrange: u32-selectrange.o binio.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 u32-to-sd: u32-to-sd.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-mcv: u32-mcv.o binio.o -lm
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 u32-counter-endian: u32-counter-endian.o binio.o binutil.o
@@ -142,6 +148,9 @@ simulate-osc: simulate-osc.o randlib.o SFMT.o fancymath.o incbeta.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 downsample: downsample.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
+u32-downsample: u32-downsample.o binio.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 restart-transpose: restart-transpose.o binio.o

@@ -160,6 +160,7 @@ struct entropyTestingResult {
   struct predictorResult mmc;
   struct predictorResult lz78y;
   double assessedEntropy;
+  double assessedIIDEntropy;
   double runTime;
 };
 

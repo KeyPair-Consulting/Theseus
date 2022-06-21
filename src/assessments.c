@@ -16,7 +16,7 @@
 #include "enttypes.h"
 #include "randlib.h"
 
-double bootstrapAssessments(struct entropyTestingResult *results, size_t count, size_t bitWidth, struct randstate *rstate) {
+double bootstrapAssessments(struct entropyTestingResult *results, size_t count, size_t bitWidth, double *IIDminent, struct randstate *rstate) {
   double *entropyResults;
   double confidenceInterval[2];
   double minminent = DBL_INFINITY;
@@ -27,6 +27,8 @@ double bootstrapAssessments(struct entropyTestingResult *results, size_t count, 
   assert(bitWidth <= STATDATA_BITS);
   assert(rstate != NULL);
   assert(rstate->seeded);
+
+  if(IIDminent != NULL) *IIDminent = -1.0;
 
   if ((entropyResults = malloc(sizeof(double) * count)) == NULL) {
     perror("Can't allocate memory for result data");
@@ -51,6 +53,7 @@ double bootstrapAssessments(struct entropyTestingResult *results, size_t count, 
       testRes = BCaBootstrapPercentile(0.5, entropyResults, localCount, 0.0, (double)bitWidth, confidenceInterval, configBootstrapRounds, 0.99, rstate);
       testRes = fmin(fmin(testRes, confidenceInterval[0]), confidenceInterval[1]);
       fprintf(stderr, "Assessment Bootstrap %s Most Common Value Estimate: min entropy = %.17g\n", results[0].label, testRes);
+      if(IIDminent != NULL) *IIDminent = testRes;
       minminent = fmin(testRes, minminent);
     }
   }
@@ -313,7 +316,7 @@ static double summerizePredictor(double *entropyResults, size_t localCount, size
   return entropy;
 }
 
-double bootstrapParameters(struct entropyTestingResult *results, size_t count, size_t bitWidth, struct randstate *rstate) {
+double bootstrapParameters(struct entropyTestingResult *results, size_t count, size_t bitWidth, double *IIDminent, struct randstate *rstate) {
   double *entropyResults;
   double confidenceInterval[2];
   double minminent = DBL_INFINITY;
@@ -325,6 +328,8 @@ double bootstrapParameters(struct entropyTestingResult *results, size_t count, s
   assert(rstate != NULL);
   assert(rstate->seeded);
   assert(count >= 200);
+
+  if(IIDminent != NULL) *IIDminent = -1.0;
 
   if ((entropyResults = malloc(sizeof(double) * count)) == NULL) {
     perror("Can't allocate memory for result data");
@@ -358,6 +363,8 @@ double bootstrapParameters(struct entropyTestingResult *results, size_t count, s
       entropy = -log2(pu);
       fprintf(stderr, "Parameter Bootstrap %s Most Common Value Estimate: min entropy = %.17g\n", results[0].label, entropy);
       minminent = fmin(entropy, minminent);
+
+      if(IIDminent != NULL) *IIDminent = entropy;
     }
   }
 

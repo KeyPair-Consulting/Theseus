@@ -46,6 +46,7 @@ void initEntropyTestingResult(const char *label, struct entropyTestingResult *re
   result->mmc.done = false;
   result->lz78y.done = false;
   result->assessedEntropy = -1.0;
+  result->assessedIIDEntropy = -1.0;
 }
 
 void printEntropyTestingResult(const struct entropyTestingResult *result) {

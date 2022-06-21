@@ -34,6 +34,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-v Increase verbosity. Can be used multiple times.\n");
   fprintf(stderr, "-m Output in Mathematica-friendly format.\n");
   fprintf(stderr, "-t <value>\tTrim any value that is prior to the first symbol with <value> occurrences or more or after the last symbol with <value> occurrences or more.\n");
+  fprintf(stderr, "-s <value>\tTrim any value with fewer than <value> occurrences.\n");
   fprintf(stderr, "-z\tDon't output zero categories.\n");
   fprintf(stderr, "The values are output using stdout.\n");
   exit(EX_USAGE);
@@ -52,15 +53,17 @@ int main(int argc, char *argv[]) {
   unsigned long long inint;
   uint32_t mindata, maxdata;
   size_t firstDataIndex, lastDataIndex;
+  size_t configDisplayCutoff;
 
   configMathematica = false;
   configOutputZeros = true;
   configCountCutoff = 0;
   configVerbose = 0;
+  configDisplayCutoff = 0;
 
   assert(UINT32_MAX <= SIZE_MAX);
 
-  while ((opt = getopt(argc, argv, "zvmt:")) != -1) {
+  while ((opt = getopt(argc, argv, "zvmt:s:")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -70,6 +73,13 @@ int main(int argc, char *argv[]) {
         break;
       case 'z':
         configOutputZeros = false;
+        break;
+      case 's':
+        inint = strtoull(optarg, NULL, 0);
+        if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > SIZE_MAX)) {
+          useageExit();
+        }
+        configDisplayCutoff = (size_t)inint;
         break;
       case 't':
         inint = strtoull(optarg, NULL, 0);
@@ -165,14 +175,14 @@ int main(int argc, char *argv[]) {
   for (size_t i = firstDataIndex; i <= lastDataIndex; i++) {
     if (configMathematica) {
       if (i < lastDataIndex) {
-        if (configOutputZeros || (categoryTable[i] > 0)) {
+        if (configOutputZeros || (categoryTable[i] > configDisplayCutoff)) {
           printf("{%u, %zu},", (uint32_t)i + mindata, categoryTable[i]);
         }
       } else {
         printf("{%u, %zu}};\n", (uint32_t)i + mindata, categoryTable[i]);
       }
     } else {
-      if (configOutputZeros || (categoryTable[i] > 0)) {
+      if (configOutputZeros || (categoryTable[i] > configDisplayCutoff)) {
         printf("%u: %zu\n", (uint32_t)i + mindata, categoryTable[i]);
       }
     }

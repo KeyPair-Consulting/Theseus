@@ -25,7 +25,7 @@
 
 #define OUTPUTSIZE 1000001
 
-int main(void) {
+__attribute__ ((optnone)) int main(void) {
   FILE *fp;
   uint32_t curoffset = 0;
   uint32_t *data;

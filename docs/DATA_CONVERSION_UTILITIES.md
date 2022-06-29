@@ -84,6 +84,25 @@ Usage:
       00000010: 6162 6364 6566 6768                      abcdefgh
 	  ```
 
+### dec-to-u64
+Usage:
+	`dec-to-u64`
+* Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u64-to-ascii.)
+* Input values in decimal format are provided via stdin, one per line.
+* Output values of type uint64_t are sent to stdout.
+* Example DCU23 - A text file is sent to stdin and stdout is sent to a binary file with command `./dec-to-u64 < dcu23-input.txt > dcu23-output-u64.bin`: 
+    * Input (in dcu23-input.txt, viewed in a text editor):
+	  ```
+      5208208757389214273
+      3978425819141910832
+      7523094288207667809
+	  ```
+    * Output (viewed with command `xxd dcu23-output-u64.bin`): 
+	  ```
+      00000000: 4142 4344 4546 4748 3031 3233 3435 3637  ABCDEFGH01234567
+      00000010: 6162 6364 6566 6768                      abcdefgh
+	  ```
+
 ### hex-to-u32
 Usage:
 	`hex-to-u32`

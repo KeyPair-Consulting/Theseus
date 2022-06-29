@@ -74,6 +74,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 |[u16-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u16-to-u32) | Converts provided binary data from type uint16_t to type uint32_t.|
 |[u64-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-u32) | Converts provided binary data from type uint64_t to type uint32_t.|
 |[dec-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#dec-to-u32) | Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u32-to-ascii.)|
+|[dec-to-u64](./docs/DATA_CONVERSION_UTILITIES.md#dec-to-u64) | Converts provided human-readable decimal values to binary data.  (Note this is the opposite of u64-to-ascii.)|
 |[hex-to-u32](./docs/DATA_CONVERSION_UTILITIES.md#hex-to-u32) | Converts provided human-readable hexidecimal values to binary data.|
 
 #### Functions related to deltas, counters, endianness, and bit width:
@@ -105,7 +106,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 |:--------------|:-------------------------------------------------------------------|
 |[sd-to-hex](./docs/DATA_CONVERSION_UTILITIES.md#sd-to-hex) | Converts provided binary data to human-readable hexidecimal values.|
 |[u32-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-ascii) | Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u32.)|
-|[u64-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-ascii) | Converts provided binary data to human-readable decimal values.|
+|[u64-to-ascii](./docs/DATA_CONVERSION_UTILITIES.md#u64-to-ascii) | Converts provided binary data to human-readable decimal values.  (Note this is the opposite of dec-to-u64.)|
 |[u32-to-categorical](./docs/DATA_CONVERSION_UTILITIES.md#u32-to-categorical) | Produces categorical summary of provided binary data.|
 
 ### Other Data Utilities
@@ -116,6 +117,7 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 |:--------------|:-------------------------------------------------------------------|
 |[downsample](./docs/OTHER_DATA_UTILITIES.md#downsample) | Groups data by index into modular classes mod `<rate>` evenly into the `<block size>`.|
 |[highbin](./docs/OTHER_DATA_UTILITIES.md#highbin) | Attempts to bin input symbols into `2^<outputBits>` bins with equal numbers of adjacent samples.|
+|[u32-downsample](./docs/OTHER_DATA_UTILITIES.md#u32-downsample) | Groups data by index into modular classes mod `<rate>` evenly into the `<block size>`.|
 |[u32-manbin](./docs/OTHER_DATA_UTILITIES.md#u32-manbin) | Assign given binary data to one of the n bin numbers (0, ..., n-1).|
 
 #### Functions to select and extract data:
@@ -159,8 +161,10 @@ Below is a summary of available Theseus functions.  Detailed documentation for e
 |:--------------|:-------------------------------------------------------------------|
 |[double-minmaxdelta](./docs/OTHER_DATA_UTILITIES.md#double-minmaxdelta) | Takes a set of human-readable doubles and provides the mean.|
 |[hweight](./docs/OTHER_DATA_UTILITIES.md#hweight) | Calculates the Hamming weight of `<bitmask>`.  As an example, the bit string 11101000 has a Hamming weight of 4.|
+|[u16-mcv](./docs/OTHER_DATA_UTILITIES.md#u16-mcv) | Finds the most common value in the given binary data.|
 |[u32-anddata](./docs/OTHER_DATA_UTILITIES.md#u32-anddata) | Takes the given binary data and bitwise ANDs each symbol with `<bitmask>`.|
 |[u32-gcd](./docs/OTHER_DATA_UTILITIES.md#u32-gcd) | Finds common divisors and removes these factors from the given binary data.|
+|[u32-mcv](./docs/OTHER_DATA_UTILITIES.md#u32-mcv) | Finds the most common value in the given binary data.|
 |[u32-regress-to-mean](./docs/OTHER_DATA_UTILITIES.md#u32-regress-to-mean) | Calculate the mean, force each `k`-block to have this mean, and then round the resulting values.|
 |[u32-xor-diff](./docs/OTHER_DATA_UTILITIES.md#u32-xor-diff) | Produces the running XOR of adjacent values in provided binary data.|
 

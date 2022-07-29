@@ -231,6 +231,7 @@ static size_t chiSquareBin(struct chiSquareData *chiSquareTable, double *binExpe
   binExpectations[0] = 0.0;
 
   for (j = 0; j < (int64_t)k; j++) {
+    assert(curBin < k);
     chiSquareTable[j].bin = curBin;
     binExpectations[curBin] += chiSquareTable[j].expected;
     if (configVerbose > 3) {
@@ -239,7 +240,7 @@ static size_t chiSquareBin(struct chiSquareData *chiSquareTable, double *binExpe
 
     if (binExpectations[curBin] >= 5.0) {
       curBin++;
-      binExpectations[curBin] = 0.0;
+      if(curBin < k) binExpectations[curBin] = 0.0;
       if (configVerbose > 3) {
         fprintf(stderr, "New bin created\n");
       }
@@ -247,6 +248,8 @@ static size_t chiSquareBin(struct chiSquareData *chiSquareTable, double *binExpe
   }
 
   assert(curBin > 0);
+  if(curBin == k) curBin--;
+  assert(curBin < k);
 
   if ((binExpectations[curBin] >= 0.0) && (binExpectations[curBin] < 5.0)) {
     // need to undo the last bin
@@ -259,6 +262,7 @@ static size_t chiSquareBin(struct chiSquareData *chiSquareTable, double *binExpe
 
     curBin--;
   }
+
 
   qsort(chiSquareTable, k, sizeof(struct chiSquareData), chiSquareIndexSort);
 

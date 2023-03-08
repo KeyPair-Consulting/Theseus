@@ -238,7 +238,6 @@ static double doAssessment(const statData_t *data, size_t datalen, size_t k, uin
   assert(isfinite(minminent) != 0);
   result->assessedEntropy = minminent;
 
-  assert(isfinite(minIIDminent) != 0);
   result->assessedIIDEntropy = minIIDminent;
 
   return minminent;

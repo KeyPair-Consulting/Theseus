@@ -763,14 +763,23 @@ statData_t ringOscillatorNextNonDeterministicSample(double oscFreq, double oscJi
   double oscillatorTransition;
   double maxTransition;
 
-  assert(oscFreq > 0);
   assert(oscJitter >= 0);
   assert(sampleFreq > 0);
-  assert(oscFreq > sampleFreq);
   assert(relOscPhase != NULL);
   assert((*relOscPhase >= 0) && (*relOscPhase < 1.0));
   assert(relSamplePhase != NULL);
   assert((*relSamplePhase >= 0) && (*relSamplePhase < 1.0));
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wfloat-equal"
+  if(oscFreq == 0.0) {
+    return (*relOscPhase >= 0.5)?1:0;
+  }
+  #pragma GCC diagnostic pop
+
+
+  assert(oscFreq > 0);
+  assert(oscFreq > sampleFreq);
 
   samplePeriod = 1.0 / sampleFreq;
   oscillatorPeriod = 1.0 / oscFreq;

@@ -75,11 +75,13 @@ int main(int argc, char *argv[]) {
         configOutputZeros = false;
         break;
       case 's':
+        configOutputZeros = false;
         inint = strtoull(optarg, NULL, 0);
         if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > SIZE_MAX)) {
           useageExit();
         }
         configDisplayCutoff = (size_t)inint;
+        configCountCutoff = (size_t)inint;
         break;
       case 't':
         inint = strtoull(optarg, NULL, 0);
@@ -154,6 +156,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  /* Note that we never decrement 0, so an unsigned value will work here.*/
   for (size_t i = categoryCount; i > 0; i--) {
     if (categoryTable[i - 1] >= configCountCutoff) {
       lastDataIndex = i - 1;
@@ -163,6 +166,11 @@ int main(int argc, char *argv[]) {
 
   if (lastDataIndex < firstDataIndex) {
     fprintf(stderr, "No data is above cutoff.");
+  }
+
+  if (configVerbose > 0) {
+    fprintf(stderr, "First Index: %zu\n", firstDataIndex);
+    fprintf(stderr, "Last Index: %zu\n", lastDataIndex);
   }
 
   if ((configVerbose > 0) && (configCountCutoff > 0)) {

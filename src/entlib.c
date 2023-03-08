@@ -1007,6 +1007,19 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   assert((v > 0) && ((size_t)v < n));
 
   result->v = v;
+  if (configVerbose > 3) {
+    fprintf(stderr, "data: k = %zu\n", k);
+    fprintf(stderr, "LRS: v = %d\n", v);
+  }
+
+  // If the LRS length is bigger than L/256, this could take a while...
+  if(((size_t)v> (n>>8)) && (configVerbose > 0)) {
+    // Note that (c choose 2) is just (c)(c-1)/2.
+    double Pwbound = pow(1.0 / (((double)(n - (size_t)v + 1))*((double)(n-(size_t)v))/2.0), 1.0/((double)v));
+    double pubound = fmin(1.0, Pwbound + ZALPHA * sqrt(Pwbound*(1.0-Pwbound)/((double)(n-1))));
+    double lrsminentbound = - log2(pubound);
+    fprintf(stderr, "LRS length is large as compared to the dataset, so the LRS estimator may take a while. A LRS result upper bound is approximately %g.\n", lrsminentbound);
+  }
 
   Q = malloc(((size_t)v + 1) * sizeof(SAINDEX));
   A = calloc((size_t)v + 2, sizeof(SAINDEX));
@@ -1090,6 +1103,8 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   // At this point u is correct
   result->done = true;
   result->u = u;
+
+  if (configVerbose > 3) fprintf(stderr, "t-Tuple: u = %d\n", u);
 
   // at this point, Q is completely calculated.
   // Q is the count of (one of) the most common j-tuples

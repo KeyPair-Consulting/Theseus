@@ -40,20 +40,21 @@ Usage:
 
 ## simulate-osc
 Usage:
-	`simulate-osc [-v] [-n <samples>] [-p <phase>] [-f] [-u] <ringOscFreq> <ringOscJitterSD> <sampleFreq>`
+	`simulate-osc [-v] [-n <samples>] [-p <phase>] [-f] [-u] <sampleFreq> <ringOscFreq_n> <ringOscJitterSD_n> ... [<ringOscFreq_1> <ringOscJitterSD_1>]`
+
 * Create a random data file for use in testing that simulates a ring oscillator.
-* Input values of type double (>=0) are provided in `<ringOscFreq>`, `<ringOscJitterSD>`, and `<sampleFreq>`.  Frequency values are in Hz. `<sampleFreq>` is either the sampling frequency or "*" followed by the number of nominal ring oscillations per sample cycle. `<ringOscJitterSD>` is in seconds (e.g., 1E-15) or a percentage of the ring oscillator period (ending with %, e.g., 0.001%).
+* Input values of type double (>=0) are provided in `<ringOscFreq>`, `<ringOscJitterSD>`, and `<sampleFreq>`.  Frequency values are in Hz. `<sampleFreq>` is either the sampling frequency or "*" followed by the number of nominal ring oscillations for ringOsc_n per sample cycle. `<ringOscJitterSD>` is in seconds (e.g., 1E-15) or a percentage of the ring oscillator period (ending with %, e.g., 0.001%). If <ringOscFreq_i> is '0', then the oscillator is fixed.
 * Output values of type uint8_t are sent to stdout. LSB is the oscillator output. The next bit (if enabled) tracks deviations from the deterministic value.
 * Options:
-    * `-v`: Verbose mode.
+	* `-v`: Verbose mode.
 	* `-n <samples>`: Number of samples to generate (default: 1000000).
-	* `-p <phase>`: Specify the initial phase of the ring oscillator from the interval [0,1) (relative to the sample clock). Default: generate randomly.
+	* `-p <phase_n>,...<phase_1>`: Specify the initial phase of the ring oscillator from the interval [0,1) (relative to the sample clock). Default: generate randomly.
 	* `-f`: Fudge the ringOscFreq using a normal distribution.
 	* `-u`:  Fudge the average intra-sample phase change. (Fix the number of cycles per sample, and select the ISP fractional part uniformly from [0, 0.25]).
-    * `-s`: Send verbose mode output to stdout.
-    * `-d`: Make any RNG input deterministic.
-    * `-o`: Output deviation from deterministic output in addition to the actual output.
-* Example TDPU02 - A random data file of 32 samples is generated with parameters 1.0E9 0.1% 1.0E6 and stdout is sent to a binary file with command `./simulate-osc -v -n 32 1.0E9 0.1% 1.0E6 > tdpu02-output-u8.bin`: 
+	* `-s`: Send verbose mode output to stdout.
+	* `-d`: Make any RNG input deterministic.
+	* `-o`: Output deviation from deterministic output in addition to the actual output.
+* Example TDPU02 - A random data file of 32 samples is generated with parameters 1.0E6 1.0E9 0.1% and stdout is sent to a binary file with command `./simulate-osc -v -n 32 1.0E6 1.0E9 0.1% > tdpu02-output-u8.bin`: 
     * Output (viewed with command `xxd tdpu02-output-u8.bin`):
 	  ```
       00000000: 0000 0000 0101 0100 0000 0000 0000 0000  ................

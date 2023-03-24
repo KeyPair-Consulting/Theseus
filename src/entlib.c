@@ -108,7 +108,7 @@ void printEntropyTestingResult(const struct entropyTestingResult *result) {
   if (result->sa.done) {
     if (configVerbose > 0) {
       if (result->sa.u > 1) {
-        fprintf(stderr, "%s t-Tuple Estimate: t = %d\n", result->label, result->sa.u - 1);
+        fprintf(stderr, "%s t-Tuple Estimate: t = %zu\n", result->label, result->sa.u - 1);
       } else {
         fprintf(stderr, "%s t-Tuple Estimate: t does not exist\n", result->label);
       }
@@ -124,8 +124,8 @@ void printEntropyTestingResult(const struct entropyTestingResult *result) {
       fprintf(stderr, "%s LRS Estimate: Can't run LRS test as v<u\n", result->label);
     } else {
       if (configVerbose > 0) {
-        fprintf(stderr, "%s LRS Estimate: u = %d\n", result->label, result->sa.u);
-        fprintf(stderr, "%s LRS Estimate: v = %d\n", result->label, result->sa.v);
+        fprintf(stderr, "%s LRS Estimate: u = %zu\n", result->label, result->sa.u);
+        fprintf(stderr, "%s LRS Estimate: v = %zu\n", result->label, result->sa.v);
         fprintf(stderr, "%s LRS Estimate: p-hat = %.17g\n", result->label, result->sa.lrsPmax);
         fprintf(stderr, "%s LRS Estimate: p_u = %.17g\n", result->label, result->sa.lrsPu);
       }
@@ -393,7 +393,7 @@ double collisionEstimate(const statData_t *S, size_t L, struct colsResult *resul
     result->meanbound = result->mean - ZALPHA * result->stddev / sqrt((double)result->v);
     // Values less than 2 don't make sense; the mean can't be that low (and these values would correspond to values of p>1).
     if (result->meanbound < 2.0) {
-      if (configVerbose > 3) fprintf(stderr, "Collision Estimate: Meanbound reduced under 2 (the minimum possible value). Correcting to 2.\n");
+      if (configVerbose > 3) fprintf(stderr, "Collision Estimate: Mean bound reduced under 2 (the minimum possible value). Correcting to 2.\n");
       result->meanbound = 2.0;
     }
     assert(fetestexcept(FE_UNDERFLOW) == 0);
@@ -942,19 +942,19 @@ double compressionEstimate(const statData_t *S, size_t L, struct compResult *res
  * This is described here:
  * http://www.untruth.org/~josh/sp80090b/Kaufer%20Further%20Improvements%20for%20SP%20800-90B%20Tuple%20Counts.pdf
  */
-void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result) {
-  SAINDEX *SA;  // each value is at most n-1
-  SAINDEX *L;  // each value is at most n-1
-  SAINDEX *LCP;  // each value is at most n-1
-  SAINDEX *I;  // 0 <= I[i] <= v+2 <= n+1
+static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult *result) {
+  saidx_t *SA;  // each value is at most n-1
+  saidx_t *L;  // each value is at most n-1
+  saidx_t *LCP;  // each value is at most n-1
+  saidx_t *I;  // 0 <= I[i] <= v+2 <= n+1
 
-  SAINDEX j;  // 0 <= j <= v+1 <= n
-  SAINDEX c;  // contains a count from A. c <= n
-  SAINDEX t;  // Takes values from LCP array. 0 <= t < n
-  SAINDEX v;  // The length of the LRS. -1 <= v <= n-1
-  SAINDEX u;  // The length of a string: 0 <= u <= v+1 <= n
-  SAINDEX *Q;  // Contains an accumulation of positive counts 1 <= Q[i] <= n
-  SAINDEX *A;  // Contains an accumulation of positive counts 0 <= A[i] <= n
+  saidx_t j;  // 0 <= j <= v+1 <= n
+  saidx_t c;  // contains a count from A. c <= n
+  saidx_t t;  // Takes values from LCP array. 0 <= t < n
+  saidx_t v;  // The length of the LRS. -1 <= v <= n-1
+  saidx_t u;  // The length of a string: 0 <= u <= v+1 <= n
+  saidx_t *Q;  // Contains an accumulation of positive counts 1 <= Q[i] <= n
+  saidx_t *A;  // Contains an accumulation of positive counts 0 <= A[i] <= n
   double Pmax;
   double pu;
   uint64_t *S;  // Each value 0 <= S[i] < n^3
@@ -963,30 +963,29 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   assert(n > 0);
   assert(k > 0);
   assert(data != NULL);
+  assert(n < SAIDX_MAX);
 
-  if ((n >= SAINDEX_MAX)) {
-    n = SAINDEX_MAX - 1;
-    fprintf(stderr, "Truncating data within the SA estimator so that it can be processed\n");
-  }
-
-  //We ultimately need to be able to compute using values of the scale n choose 2
-  // Note that n choose 2 is just (n)(n-1)/2. 
+  // We ultimately need to be able to compute using values of the scale n choose 2
+  // Note that n choose 2 is just (n)(n-1)/2.
   // We can fit the numerator of this expression in a size_t type variable variable works iff
   // SIZE_MAX >= n * (n-1) iff
   // SIZE_MAX / n >= n-1, which is is surely true if
   // floor(SIZE_MAX / n) >= n-1.
   assert((SIZE_MAX / n) >= (n-1)); // (mult assert)
 
-  assert(n <= SAINDEX_MAX - 1);
+  assert(n <= SAIDX_MAX - 1);
   assert(fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW) == 0);
   feclearexcept(FE_ALL_EXCEPT);
 
   /*First, allocate the necessary structures*/
-  SA = (SAINDEX *)malloc((n + 1) * sizeof(SAINDEX));
-  LCP = (SAINDEX *)malloc((n + 2) * sizeof(SAINDEX));
+  if((SA = (saidx_t *)malloc((n + 1) * sizeof(saidx_t)))==NULL) {
+    perror("Cannot allocate memory for SA array.\n");
+    exit(EX_OSERR);
+  }
 
-  if ((SA == NULL) || (LCP == NULL)) {
-    perror("Cannot allocate memory for SA and LCP array.\n");
+  if((LCP = (saidx_t *)malloc((n + 2) * sizeof(saidx_t)))==NULL) {
+    free(SA);
+    perror("Cannot allocate memory for LCP array.\n");
     exit(EX_OSERR);
   }
 
@@ -1006,14 +1005,28 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   }
   assert((v > 0) && ((size_t)v < n));
 
-  result->v = v;
+  result->v = (size_t)v;
   if (configVerbose > 3) {
-    fprintf(stderr, "data: k = %zu\n", k);
     fprintf(stderr, "LRS: v = %d\n", v);
   }
 
   // If the LRS length is bigger than L/256, this could take a while...
-  if(((size_t)v> (n>>8)) && (configVerbose > 0)) {
+  if(((size_t)v> (n/256)) && (configVerbose > 0)) {
+    // One way the data can be very flawed is a long repeated substring.
+    // In this instance, the runtime can become unmanageably long, so it
+    // could be useful to tell the tester about this condition before the
+    // test completes.
+    //
+    // We can create a *upper* bound for the *entropy* by
+    // creating a *lower* bound for the probability.
+    //
+    // In this estimator, P_W is an unbiased estimator of the W-tuple
+    // collision probability. We know that p-hat >= P_v^(1/v) >= 1/((L-W+1)*(L-W))
+    // (as there are at least 2 instances of the LRS).
+    //
+    // We print out this estimate to allow the tester to exit out if the result
+    // is essentially 0.
+    //
     // Note that (c choose 2) is just (c)(c-1)/2.
     double Pwbound = pow(1.0 / (((double)(n - (size_t)v + 1))*((double)(n-(size_t)v))/2.0), 1.0/((double)v));
     double pubound = fmin(1.0, Pwbound + ZALPHA * sqrt(Pwbound*(1.0-Pwbound)/((double)(n-1))));
@@ -1021,13 +1034,29 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
     fprintf(stderr, "LRS length is large as compared to the dataset, so the LRS estimator may take a while. A LRS result upper bound is approximately %g.\n", lrsminentbound);
   }
 
-  Q = malloc(((size_t)v + 1) * sizeof(SAINDEX));
-  A = calloc((size_t)v + 2, sizeof(SAINDEX));
+  if((Q=malloc(((size_t)v + 1) * sizeof(saidx_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    perror("Cannot allocate memory for state data.\n");
+    exit(EX_OSERR);
+  }
+
+  if((A = calloc((size_t)v + 2, sizeof(saidx_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    free(Q);
+    perror("Cannot allocate memory for state data.\n");
+    exit(EX_OSERR);
+  }
+
   // j takes the value 0 to v+1
   // Note that I is indexed by at most j+1. (so I[v+2] should work)
   // I stores indices of A, and there are only v+2 of these
-  I = calloc((size_t)v + 3, sizeof(SAINDEX));
-  if ((Q == NULL) || (A == NULL) || (I == NULL)) {
+  if((I = calloc((size_t)v + 3, sizeof(saidx_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    free(Q);
+    free(A);
     perror("Cannot allocate memory for state data.\n");
     exit(EX_OSERR);
   }
@@ -1102,7 +1131,7 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   assert(((u == 1) || (Q[u - 1] >= 35)));
   // At this point u is correct
   result->done = true;
-  result->u = u;
+  result->u = (size_t)u;
 
   if (configVerbose > 3) fprintf(stderr, "t-Tuple: u = %d\n", u);
 
@@ -1148,6 +1177,7 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   }
 
   if (v < u) {
+    fprintf(stderr, "v < u, so we skip the lrs test.\n");
     free(SA);
     free(LCP);
     free(Q);
@@ -1165,12 +1195,12 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
     perror("Cannot allocate memory to sum P_W.\n");
     exit(EX_OSERR);
   }
-  memset(A, 0, sizeof(SAINDEX) * ((size_t)v + 2));
+  memset(A, 0, sizeof(saidx_t) * ((size_t)v + 2));
 
   // O(nv) operations
   for (size_t i = 1; i <= n; i++) {  // n iterations
     if ((L[i - 1] >= u) && (L[i] < L[i - 1])) {
-      SAINDEX b = L[i];
+      saidx_t b = L[i];
 
       // A[u] stores the number of u-length tuples. We need to eventually clear down to A[u]=A[b+1].
       if (b < u) b = u - 1;
@@ -1187,8 +1217,8 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
         // Check for overflows when adding to Psum element (unsigned 64 bit integers)
         // The logic here is just
         // S[t] += (((uint64_t)(A[t]+1) * (uint64_t)(A[t]))/2); /* update sum */
-	// A[t] is the number of times the value _repeats_, so the total count of such symbols is A[t]+1.
-	// As such, we want to add (A[t] + 1 choose 2) = (A[t]+1)*A[t]/2.
+        // A[t] is the number of times the value _repeats_, so the total count of such symbols is A[t]+1.
+        // As such, we want to add (A[t] + 1 choose 2) = (A[t]+1)*A[t]/2.
         // Note, A[t] < n, so the assert marked "(mult assert)" tells us that the multiplication won't rollover.
         safeAdduint64(S[t], (((uint64_t)A[t]) * ((uint64_t)A[t] + 1U)) >> 1, &S[t]);
       }
@@ -1210,7 +1240,7 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
     curP = ((double)S[j]) / (double)choices;
     curPMax = pow(curP, 1.0 / ((double)j));
     // curP is now an estimate for the probability of collision across all j-tuples.
-    // This was calculated using an unbiased estimator for the _distribution's_ 2-moment; 
+    // This was calculated using an unbiased estimator for the _distribution's_ 2-moment;
     // see "Improvised Estimation of Collision Entropy..." by Skorski, equation (1)
     // or "The Complexity of Estimating Rényi Entropy" by Acharya, Orlitsky, Suresh and Tyagi Section 1.5.
     if (configVerbose > 3) {
@@ -1269,6 +1299,375 @@ void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result)
   }
 
   return;
+}
+
+static void SAalgs64(const statData_t *data, size_t n, size_t k, struct SAresult *result) {
+  saidx64_t *SA=NULL;// each value is at most n-1
+  saidx64_t *L=NULL;  // each value is at most n-1
+  saidx64_t *LCP=NULL;  // each value is at most n-1
+  saidx64_t *I=NULL;  // 0 <= I[i] <= v+2 <= n+1
+
+  saidx64_t j;  // 0 <= j <= v+1 <= n
+  saidx64_t c;  // contains a count from A. c <= n
+  saidx64_t t;  // Takes values from LCP array. 0 <= t < n
+  saidx64_t v;  // The length of the LRS. -1 <= v <= n-1
+  saidx64_t u;  // The length of a string: 0 <= u <= v+1 <= n
+  saidx64_t *Q=NULL;  // Contains an accumulation of positive counts 1 <= Q[i] <= n
+  saidx64_t *A=NULL;  // Contains an accumulation of positive counts 0 <= A[i] <= n
+  long double Pmax;
+  long double pu;
+  uint128_t *S=NULL;  // Each value 0 <= S[i] < n^3
+  int exceptions;
+
+  assert(n > 0);
+  assert(k > 0);
+  assert(data != NULL);
+  assert(n < SAIDX64_MAX);
+
+  // We ultimately need to be able to compute using values of the scale n choose 2
+  // Note that n choose 2 is just (n)(n-1)/2.
+  // We can fit the numerator of this expression in a size_t type variable variable works iff
+  // UINT128_MAX >= n * (n-1) iff
+  // UINT128_MAX / n >= n-1, which is is surely true if
+  // floor(UINT128_MAX / n) >= n-1.
+  assert((UINT128_MAX / n) >= (n-1)); // (mult assert)
+
+  assert(n <= SAIDX64_MAX - 1);
+  assert(fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW) == 0);
+  feclearexcept(FE_ALL_EXCEPT);
+
+  /*First, allocate the necessary structures*/
+  if((SA = (saidx64_t *)malloc((n + 1) * sizeof(saidx64_t)))==NULL) {
+    perror("Cannot allocate memory for SA array.\n");
+    exit(EX_OSERR);
+  }
+
+  if((LCP = (saidx64_t *)malloc((n + 2) * sizeof(saidx64_t)))==NULL) {
+    free(SA);
+    perror("Cannot allocate memory for LCP array.\n");
+    exit(EX_OSERR);
+  }
+
+  if (configVerbose > 3) {
+    fprintf(stderr, "Calculate SA/LCP, size: %zu, symbols: %zu\n", n, k);
+  }
+  calcSALCP64(data, n, k, SA, LCP);
+  // to conform with Kaufer's conventions
+  assert(LCP[1] == 0);
+  LCP[n + 1] = 0;
+  L = LCP + 1;
+
+  // Find the length of the LRS, v
+  v = 0;
+  for (size_t i = 0; i <= n; i++) {
+    if (L[i] > v) v = L[i];
+  }
+  assert((v > 0) && ((size_t)v < n));
+
+  result->v = (size_t)v;
+  if (configVerbose > 3) {
+    fprintf(stderr, "LRS: v = %" PRId64 "\n", v);
+  }
+
+  // If the LRS length is bigger than L/256, this could take a while...
+  if(((size_t)v> (n/256)) && (configVerbose > 0)) {
+    // One way the data can be very flawed is a long repeated substring.
+    // In this instance, the runtime can become unmanageably long, so it
+    // could be useful to tell the tester about this condition before the
+    // test completes.
+    //
+    // We can create a *upper* bound for the *entropy* by
+    // creating a *lower* bound for the probability.
+    //
+    // In this estimator, P_W is an unbiased estimator of the W-tuple
+    // collision probability. We know that p-hat >= P_v^(1/v) >= 1/((L-W+1)*(L-W))
+    // (as there are at least 2 instances of the LRS).
+    //
+    // We print out this estimate to allow the tester to exit out if the result
+    // is essentially 0.
+    //
+    // Note that (c choose 2) is just (c)(c-1)/2.
+    long double Pwbound = powl(1.0L / (((long double)(n - (size_t)v + 1))*((long double)(n-(size_t)v))/2.0L), 1.0L/((long double)v));
+    long double pubound = fminl(1.0L, Pwbound + ZALPHA_L * sqrtl(Pwbound*(1.0L-Pwbound)/((long double)(n-1))));
+    long double lrsminentbound = - log2l(pubound);
+    fprintf(stderr, "LRS length is large as compared to the dataset, so the LRS estimator may take a while. A LRS result upper bound is approximately %Lg.\n", lrsminentbound);
+  }
+
+  if((Q=malloc(((size_t)v + 1) * sizeof(saidx64_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    perror("Cannot allocate memory for state data.\n");
+    exit(EX_OSERR);
+  }
+
+  if((A = calloc((size_t)v + 2, sizeof(saidx64_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    free(Q);
+    perror("Cannot allocate memory for state data.\n");
+    exit(EX_OSERR);
+  }
+
+  // j takes the value 0 to v+1
+  // Note that I is indexed by at most j+1. (so I[v+2] should work)
+  // I stores indices of A, and there are only v+2 of these
+  if((I = calloc((size_t)v + 3, sizeof(saidx64_t)))==NULL) {
+    free(SA);
+    free(LCP);
+    free(Q);
+    free(A);
+    perror("Cannot allocate memory for state data.\n");
+    exit(EX_OSERR);
+  }
+
+  for (j = 0; j <= v; j++) Q[j] = 1;
+
+  j = 0;
+  // O(nv) operations
+  for (size_t i = 1; i <= n; i++) {  // n iterations
+    c = 0;
+    // Note L[0] is already verified to be 0
+    assert(L[i] >= 0);
+
+    if (L[i] < L[i - 1]) {
+      t = L[i - 1];
+      assert(j > 0);
+      j--;
+      assert(j <= v);
+
+      while (t > L[i]) {  // At most v
+        assert((t > 0) && (t <= v));
+        if ((j > 0) && (I[j] == t)) {
+          /* update count for non-zero entry of A */
+          A[I[j]] += A[I[j + 1]];
+          A[I[j + 1]] = 0;
+          j--;
+        }
+
+        if (Q[t] >= A[I[j + 1]] + 1) {
+          /*
+           * Q[t] is at least as large as current count,
+           * and since Q[t] <= Q[t-1] <= ... <= Q[1],
+           * there is no need to check zero entries of A
+           * until next non-zero entry
+           */
+          if (j > 0) {
+            /* skip to next non-zero entry of A */
+            t = I[j];
+          } else {
+            /*
+             * no more non-zero entries of A,
+             * so skip to L[i] (terminate while loop)
+             */
+            t = L[i];
+          }
+        } else {
+          /* update Q[t] with new maximum count */
+          Q[t--] = A[I[j + 1]] + 1;
+        }
+      }
+
+      c = A[I[j + 1]]; /* store carry over count */
+      A[I[j + 1]] = 0;
+    }
+
+    if (L[i] > 0) {
+      if ((j < 1) || (I[j] < L[i])) {
+        /* insert index of next non-zero entry of A */
+        assert(j <= v);
+        I[++j] = L[i];
+      }
+      A[I[j]] += c + 1; /* update count for t = I[j] = L[i] */
+    }
+  }
+
+  // Calculate u
+  for (u = 1; (u <= v) && (Q[u] >= 35); u++)
+    ;
+
+  assert(u > 0);
+  assert(((u == v + 1) || ((u <= v) && (Q[u] < 35))));
+  assert(((u == 1) || (Q[u - 1] >= 35)));
+  // At this point u is correct
+  result->done = true;
+  result->u = (size_t)u;
+
+  if (configVerbose > 3) fprintf(stderr, "t-Tuple: u = %" PRId64 "\n", u);
+
+  // at this point, Q is completely calculated.
+  // Q is the count of (one of) the most common j-tuples
+  /*Calculate the various Pmax[i] values. We need not save the actual values, only the largest*/
+  Pmax = -1.0L;
+  for (j = 1; j < u; j++) {
+    long double curP = ((long double)(Q[j])) / ((long double)((int64_t)n - j + 1));
+    long double curPMax = powl(curP, 1.0L / (long double)j);
+
+    assert(Q[j] >= 35);
+    if (configVerbose > 3) {
+      fprintf(stderr, "t-Tuple Estimate: Q[%" PRId64  "] = %" PRId64  "\n", j, Q[j]);
+      fprintf(stderr, "t-Tuple Estimate: P[%" PRId64 "] = %.22Lg\n", j, curP);
+      fprintf(stderr, "t-Tuple Estimate: P_max[%" PRId64 "] = %.22Lg\n", j, curPMax);
+    }
+    if (curPMax > Pmax) {
+      Pmax = curPMax;
+    }
+  }
+
+  if (Pmax > 0.0L) {
+    result->tTuplePmax = (double)Pmax;
+    // Note, this is a local guess at a confidence interval, under the assumption that the inferred most probable symbol proportion is distributed
+    // as per the normal distribution. This parameter is a maximum of a sequence of inferred parameters. The individual inferred parameters may
+    // be thought of as a sort of inferred probability of the MLS (which is, as mentioned above, not expected to be normal, even with IID data).
+    // Even if these individual inferred parameters were themselves normal, taking the maximum of several such parameters won't be.
+
+    pu = Pmax + ZALPHA_L * sqrtl(Pmax * (1.0L - Pmax) / ((long double)(n - 1)));
+    if (pu > 1.0L) {
+      pu = 1.0L;
+    }
+    result->tTuplePu = (double)pu;
+
+    result->tTupleEntropy = (double)-log2l(pu);
+    result->tTupleDone = true;
+  } else {
+    result->tTuplePmax = -1.0;
+    result->tTuplePu = -1.0;
+    result->tTupleEntropy = -1.0;
+    result->tTupleDone = false;
+  }
+
+  if (v < u) {
+    fprintf(stderr, "v < u, so we skip the lrs test.\n");
+    free(SA);
+    free(LCP);
+    free(Q);
+    free(A);
+    free(I);
+    result->lrsEntropy = -1.0;
+    result->lrsPmax = -1.0;
+    result->lrsPu = -1.0;
+    result->lrsDone = false;
+
+    return;
+  }
+
+  if ((S = calloc((size_t)(v + 1), sizeof(uint128_t))) == NULL) {
+    perror("Cannot allocate memory to sum P_W.\n");
+    exit(EX_OSERR);
+  }
+  memset(A, 0, sizeof(saidx64_t) * ((size_t)v + 2));
+
+  // O(nv) operations
+  for (size_t i = 1; i <= n; i++) {  // n iterations
+    if ((L[i - 1] >= u) && (L[i] < L[i - 1])) {
+      saidx64_t b = L[i];
+
+      // A[u] stores the number of u-length tuples. We need to eventually clear down to A[u]=A[b+1].
+      if (b < u) b = u - 1;
+
+      for (t = L[i - 1]; t > b; t--) {  // at most v
+        A[t] += A[t + 1];
+        A[t + 1] = 0;
+
+        assert(A[t] >= 0);
+        // update sum
+        // Note that (c choose 2) is just (c)(c-1)/2.
+        // The numerator of this expression is necessarily even
+        // Dividing an even quantity by 2 is the same as right shifting by 1.
+        // Check for overflows when adding to Psum element (unsigned 64 bit integers)
+        // The logic here is just
+        // S[t] += (((uint64_t)(A[t]+1) * (uint64_t)(A[t]))/2); /* update sum */
+        // A[t] is the number of times the value _repeats_, so the total count of such symbols is A[t]+1.
+        // As such, we want to add (A[t] + 1 choose 2) = (A[t]+1)*A[t]/2.
+        // Note, A[t] < n, so the assert marked "(mult assert)" tells us that the multiplication won't rollover.
+        safeAdduint128(S[t], (((uint128_t)A[t]) * ((uint128_t)A[t] + 1ULL)) >> 1, &S[t]);
+      }
+      if (b >= u) A[b] += A[b + 1]; /* carry over count for t = L[i] */
+      A[b + 1] = 0;
+    }
+    if (L[i] >= u) A[L[i]]++; /* update count for t = L[i] */
+  }
+
+  Pmax = 0.0L;
+  for (j = u; j <= v; j++) {
+    // Note:
+    // j>=u>0, so (n-j) * (n-j+1) <= (n-1)*(n)
+    // By the assert marked "(mult assert)", floor(UINT128_MAX / n) >= (n-1), so the multiplication won't rollover.
+    uint128_t choices = (((n - (uint128_t)j) * (n - (uint128_t)j + 1U)) >> 1);
+    long double curP, curPMax;
+    assert(S[j] <= choices);
+
+    curP = ((long double)S[j]) / (long double)choices;
+    curPMax = powl(curP, 1.0L / ((long double)j));
+    // curP is now an estimate for the probability of collision across all j-tuples.
+    // This was calculated using an unbiased estimator for the _distribution's_ 2-moment;
+    // see "Improvised Estimation of Collision Entropy..." by Skorski, equation (1)
+    // or "The Complexity of Estimating Rényi Entropy" by Acharya, Orlitsky, Suresh and Tyagi Section 1.5.
+    if (configVerbose > 3) {
+      char buffer1[40];
+      char buffer2[40];
+      fprintf(stderr, "LRS Estimate: P_%" PRId64 " = %.22Lg ( %s / %s )\n", j, curP, uint128ToString(S[j], buffer1), uint128ToString(choices, buffer2));
+      fprintf(stderr, "LRS Estimate: P_{max,%" PRId64 "} = %.22Lg\n", j, curPMax);
+    }
+    if (Pmax < curPMax) {
+      Pmax = curPMax;
+    }
+  }
+
+  // Note, this is a local guess at a confidence interval, under the assumption that the inferred most probable symbol proportion is distributed
+  // as per the normal distribution. This parameter is a maximum of a sequence of inferred parameters. The individual inferred parameters may
+  // be thought of as a sort of inferred probability of the MLS (which is, as mentioned above, not expected to be normal, even with IID data).
+  // Even if these individual inferred parameters were themselves normal, taking the maximum of several such parameters won't be.
+  result->lrsPmax = (double)Pmax;
+  pu = Pmax + ZALPHA_L * sqrtl(Pmax * (1.0L - Pmax) / ((long double)(n - 1)));
+  if (pu > 1.0L) {
+    pu = 1.0L;
+  }
+  result->lrsPu = (double)pu;
+
+  result->lrsEntropy = (double)-log2l(pu);
+  result->lrsDone = true;
+
+  free(S);
+  S = NULL;
+  free(I);
+  I = NULL;
+  free(SA);
+  SA = NULL;
+  free(LCP);
+  L = NULL;
+  free(Q);
+  Q = NULL;
+  free(A);
+  A = NULL;
+
+  exceptions = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW | FE_UNDERFLOW);
+  if (exceptions != 0) {
+    fprintf(stderr, "Math error in Suffix-Array based estimators: ");
+    if (exceptions & FE_INVALID) {
+      fprintf(stderr, "FE_INVALID ");
+    }
+    if (exceptions & FE_DIVBYZERO) {
+      fprintf(stderr, "Divided by 0 ");
+    }
+    if (exceptions & FE_OVERFLOW) {
+      fprintf(stderr, "Found an overflow ");
+    }
+    if (exceptions & FE_UNDERFLOW) {
+      fprintf(stderr, "Found an Underflow");
+    }
+    fprintf(stderr, "\n");
+    exit(EX_DATAERR);
+  }
+
+  return;
+}
+
+void SAalgs(const statData_t *data, size_t n, size_t k, struct SAresult *result) {
+    if(n < INT_MAX) {
+      SAalgs32(data, n, k, result);
+    } else {
+      SAalgs64(data, n, k, result);
+    }
 }
 
 struct multiMCWPredictorState {

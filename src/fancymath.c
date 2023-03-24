@@ -992,3 +992,42 @@ void safeAdduint64(uint64_t a, uint64_t b, uint64_t *res) {
     exit(EX_DATAERR);
   }
 }
+
+void safeAdduint128(uint128_t a, uint128_t b, uint128_t *res) {
+  bool sumOverflow;
+
+#ifdef UADDL_OVERFLOW
+  sumOverflow = __builtin_add_overflow(a, b, res);
+#else
+  *res = a+b;
+  if (*res < a) {
+    sumOverflow = true;
+  } else {
+    sumOverflow = false;
+  }
+#endif
+  if(sumOverflow) {
+    fprintf(stderr, "Integer overflow in calculation.\n");
+    exit(EX_DATAERR);
+  }
+}
+
+char *uint128ToString(uint128_t in, char *buffer) {
+  char *curPos = buffer+39;
+  const char *asciiArray = "0123456789";
+
+  *curPos = '\0';
+
+  if(in==0) {
+    curPos--;
+    *curPos = asciiArray[0];
+  } else {
+    while(in>0) {
+      curPos--;
+      *curPos = asciiArray[in % 10];
+      in = in / 10;
+    }
+  }
+
+  return(curPos);
+}

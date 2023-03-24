@@ -10,13 +10,14 @@
 #ifndef SA_H
 #define SA_H
 
-#include <stdint.h>  // for INT32_MAX, uint32_t
-#include <sys/types.h>  // for int32_t
+#include <divsufsort.h>
+#include <divsufsort64.h>
 
 #include "entlib.h"
 
-#define SAINDEX int32_t
-#define SAINDEX_MAX INT32_MAX
+#define SAIDX_MAX INT32_MAX
+#define SAIDX64_MAX INT64_MAX
 
-void calcSALCP(const statData_t *inData, size_t n, size_t k, SAINDEX *SA, SAINDEX *LCP);
+void calcSALCP(const statData_t *inData, size_t n, size_t k, saidx_t *SA, saidx_t *LCP);
+void calcSALCP64(const statData_t *inData, size_t n, size_t k, saidx64_t *SA, saidx64_t *LCP);
 #endif

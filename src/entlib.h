@@ -106,8 +106,8 @@ double compressionEstimate(const statData_t *S, size_t L, struct compResult *res
 struct SAresult {
   bool done;
   bool tTupleDone;
-  int32_t u;  // t = u-1
-  int32_t v;
+  size_t u;  // t = u-1
+  size_t v;
   double tTuplePmax;  // Take the upper 99% confidence interval of this parameter
   double tTuplePu;
   double tTupleEntropy;

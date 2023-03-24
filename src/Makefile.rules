@@ -2,7 +2,7 @@ src = $(wildcard *.c)
 obj = $(src:.c=.o)
 dep = $(obj:.o=.d)  # one dependency file for each source
 
-BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data simulate-osc downsample u32-downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u64-change-endianness u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical u32-health-tests double-minmaxdelta shannon linear-interpolate ro-model u16-mcv u32-mcv
+BINARIES=selectbits extractbits highbin u32-to-sd u32-counter-endian markov discard-fixed-bits u32-discard-fixed-bits u128-discard-fixed-bits u32-selectdata u32-selectrange bits-in-use lrs-test non-iid-main randomfile translate-data interleave-data simulate-osc downsample u32-downsample permtests chisquare restart-transpose restart-sanity percentile failrate u32-counter-bitwidth u32-counter-raw u64-counter-raw u32-delta u32-manbin u64-jent-to-delta u64-counter-endian u64-change-endianness u32-gcd u64-to-u32 u128-bit-select u32-bit-select u32-bit-permute u32-translate-data u32-keep-most-common u32-expand-bitwidth u32-regress-to-mean double-sort double-merge mean u32-to-categorical u32-health-tests double-minmaxdelta shannon linear-interpolate ro-model u16-mcv u32-mcv
 
 SIMPLEBINS=hex-to-u32 u16-to-sdbin dec-to-u32 u32-to-ascii u8-to-u32 u8-to-sd blocks-to-sdbin u32-xor-diff hweight u32-anddata u16-to-u32 u32-xor u64-to-ascii sd-to-hex dec-to-u64 sd-to-dec
 
@@ -118,19 +118,22 @@ u32-counter-endian: u32-counter-endian.o binio.o binutil.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 markov: markov.o binio.o entlib.o translate.o fancymath.o poolalloc.o dictionaryTree.o sa.o incbeta.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lm -ldivsufsort
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -ldivsufsort -ldivsufsort64
 
 shannon: shannon.o binio.o entlib.o translate.o fancymath.o poolalloc.o dictionaryTree.o sa.o incbeta.o
-	$(CC) -o $@ $^ $(LDFLAGS) -lm -ldivsufsort
+	$(CC) -o $@ $^ $(LDFLAGS) -lm -ldivsufsort -ldivsufsort64
+
+interleave-data: interleave-data.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 translate-data: translate-data.o binio.o translate.o
-	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 u32-translate-data: u32-translate-data.o binio.o
-	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 u32-keep-most-common: u32-keep-most-common.o binio.o
-	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 u32-to-categorical: u32-to-categorical.o binio.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lm
@@ -139,7 +142,7 @@ u32-health-tests: u32-health-tests.o binio.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 lrs-test: lrs-test.o binio.o translate.o sa.o randlib.o SFMT.o fancymath.o incbeta.o
-	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -ldivsufsort64 -lm
 
 chisquare: chisquare.o binio.o cephes.o fancymath.o translate.o randlib.o SFMT.o incbeta.o
 	$(CC) -o $@ $^ $(LDFLAGS) -lm
@@ -177,7 +180,7 @@ selectbits.o: selectbits.c binio.h translate.h precision.h fancymath.h binutil.h
 	$(CC) -c $(CFLAGS) -pthread -o $@ $<
 
 selectbits: selectbits.o binio.o translate.o entlib.o fancymath.o poolalloc.o dictionaryTree.o sa.o binutil.o incbeta.o
-	$(CC) -pthread -o $@ $^ $(LDFLAGS) -lm -ldivsufsort
+	$(CC) -pthread -o $@ $^ $(LDFLAGS) -lm -ldivsufsort -ldivsufsort64
 
 permtests.o: permtests.c binio.h precision.h randlib.h SFMT.h translate.h
 	$(CC) -c $(CFLAGS) -pthread -o $@ $<
@@ -209,7 +212,7 @@ failrate: failrate.o binio.o cephes.o fancymath.o bootstrap.o randlib.o SFMT.o i
 	$(CC) -o $@ $^ $(LDFLAGS) -lm -fopenmp
 
 non-iid-main: non-iid-main.o binio.o entlib.o fancymath.o sa.o translate.o randlib.o SFMT.o dictionaryTree.o poolalloc.o assessments.o bootstrap.o cephes.o incbeta.o binutil.o
-	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm -fopenmp
+	$(CC) -o $@ $^ $(LDFLAGS) -ldivsufsort -lm -fopenmp -ldivsufsort64
 
 %.style-check-stamp:    %.c
 	clang-format-13 -i $< && touch $@

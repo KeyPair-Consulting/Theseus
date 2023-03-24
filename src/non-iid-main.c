@@ -73,7 +73,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-P\tEstablish an overall assessment based on bootstrap of individual test parameters.\n");
   fprintf(stderr, "-F\tEstablish an overall assessment based on bootstrap of final assessments.\n");
   fprintf(stderr, "-S\tEstablish an overall assessment using a large block assessment.\n");
-  fprintf(stderr, "-X <s>\tSerially XOR s consecutative random values.\n");
+  fprintf(stderr, "-X <s>\tSerially XOR s consecutive random values.\n");
   fprintf(stderr, "The final assessment is the minimum of the overall assessments.\n");
   exit(EX_USAGE);
 }
@@ -716,7 +716,7 @@ int main(int argc, char *argv[]) {
           threadrstate.deterministic = rstate.deterministic;
           seedGenerator(&threadrstate);
 
-          // We thread across generationBlocks, so configRandDataSize should be made large to allow for multithreading speedups.
+          // We thread across generationBlocks, so configRandDataSize should be made large to allow for multi threading speedups.
 #pragma omp for
           for (size_t l = 0; l < generationBlocks; l++) {
             double localSampleFreq;
@@ -776,7 +776,7 @@ int main(int argc, char *argv[]) {
     #pragma omp parallel
     {
       if (configEval != bitstring) {
-        // We thread across blockCount, so datalen should be made large to allow for multithreading speedups.
+        // We thread across blockCount, so datalen should be made large to allow for multi threading speedups.
         #pragma omp for
         for (size_t j = startIndex; j <= blockCount; j++) {
           if (j != 0)

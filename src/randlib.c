@@ -727,7 +727,7 @@ static uint64_t packageCycles(double target, double *start, double mean, double 
         fprintf(stderr, "Killed a sad-faced time traveler.\n");
       } else if ((configVerbose > 1) && (currentAdjustment >= maxAdjustment)) {
         fprintf(stderr, "Killed a happy-faced overachiever.\n");
-      } else {
+      } else if(configVerbose > 1) {
         fprintf(stderr, "I killed someone just to watch them die.\n");
       }
     }

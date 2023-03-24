@@ -13,8 +13,10 @@
 #include <assert.h>
 #include <float.h>
 #include <inttypes.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <limits.h>
 #include "globals.h"
 
 #ifndef DBL_INFINITY
@@ -23,6 +25,7 @@
 
 #define NORMALOUTLIER 7.0477002566644087
 #define ZALPHA 2.5758293035489008
+#define ZALPHA_L 2.575829303548900384158L
 #define INTDOUBLE_MAX 9007199254740992.0
 #define ROUGHEPISILON 1.0E-6
 // This is the smallest practical value (one can't do better with the double type)
@@ -55,6 +58,16 @@
     assert(relEpsilonEqual((A), (B), ROUGHEPISILON, ROUGHEPISILON, 4));                                                    \
   } while (0)
 
+//Make uint128_t a supported type (standard as of C23)
+#ifdef __SIZEOF_INT128__
+typedef unsigned __int128 uint128_t;
+typedef unsigned __int128 uint_least128_t;
+# define UINT128_MAX         ((uint128_t)-1)
+# define UINT128_WIDTH       128
+# define UINT_LEAST128_WIDTH 128
+# define UINT_LEAST128_MAX   UINT128_MAX
+# define UINT128_C(N)        ((uint_least128_t)+N ## WBU)
+#endif
 static inline double square(double x) {
   return x * x;
 }
@@ -157,4 +170,6 @@ double binomialCDF(size_t k, size_t n, double p);
 int doublecompare(const void *in1, const void *in2);
 double monotonicBinarySearch(double (*fval)(double, const size_t *), double ldomain, double hdomain, double target, const size_t *params, bool decreasing);
 void safeAdduint64(uint64_t a, uint64_t b, uint64_t *res);
+void safeAdduint128(uint128_t a, uint128_t b, uint128_t *res);
+char *uint128ToString(uint128_t in, char *buffer);
 #endif

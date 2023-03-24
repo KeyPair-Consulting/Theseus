@@ -40,18 +40,125 @@ noreturn static void useageExit(void) {
   exit(EX_USAGE);
 }
 
+static size_t lrs32(const statData_t *data, size_t L, size_t k) {
+  saidx_t *SA=NULL, *LCP=NULL;
+  saidx_t W;
+  saidx_t loc;
+
+  assert(L>k);
+  assert(L<SAIDX_MAX);
+
+/* Allocate 9n bytes of memory. */
+  SA = (saidx_t *)malloc((size_t)(L + 1) * sizeof(saidx_t));  // +1 for computing LCP
+  LCP = (saidx_t *)malloc((size_t)(L + 1) * sizeof(saidx_t));
+  if ((SA == NULL) || (LCP == NULL)) {
+    if(SA!=NULL) free(SA);
+    if(LCP!=NULL) free(LCP);
+    perror("Cannot allocate memory.\n");
+    exit(EX_OSERR);
+  }
+
+  calcSALCP(data, L, k, SA, LCP);
+
+  // Now, look for the LRS.
+  W = 0;
+  loc = 0;
+  for (saidx_t i = 1; i <= (saidx_t)L; i++) {
+    if (W < LCP[i]) {
+      W = LCP[i];
+      loc = i;
+    }
+  }
+
+  // Note, W is necessarily positive (so long as L>k), and at most L-1
+  assert(W > 0);
+  // Note, this also assures that loc>=1.
+  assert((size_t)W < L);
+
+  if (configVerbose > 0) {
+    fprintf(stderr, "Longest repeated substring length: %d\n", W);
+    fprintf(stderr, "Repeated string at positions %d and %d\n", SA[loc - 1], SA[loc]);
+  }
+
+  /* Deallocate memory. */
+  assert(SA != NULL);
+  free(SA);
+  SA = NULL;
+  assert(LCP != NULL);
+  free(LCP);
+  LCP = NULL;
+
+  return (size_t)W;
+}
+
+static size_t lrs64(const statData_t *data, size_t L, size_t k)
+{
+  saidx64_t *SA=NULL, *LCP=NULL;
+  saidx64_t W;
+  saidx64_t loc;
+
+  assert(L>k);
+  assert(L<SAIDX_MAX);
+
+/* Allocate 9n bytes of memory. */
+  SA = (saidx64_t *)malloc((size_t)(L + 1) * sizeof(saidx64_t));  // +1 for computing LCP
+  LCP = (saidx64_t *)malloc((size_t)(L + 1) * sizeof(saidx64_t));
+  if ((SA == NULL) || (LCP == NULL)) {
+    if(SA!=NULL) free(SA);
+    if(LCP!=NULL) free(LCP);
+    perror("Cannot allocate memory.\n");
+    exit(EX_OSERR);
+  }
+
+  calcSALCP64(data, L, k, SA, LCP);
+
+  // Now, look for the LRS.
+  W = 0;
+  loc = 0;
+  for (saidx64_t i = 1; i <= (saidx64_t)L; i++) {
+    if (W < LCP[i]) {
+      W = LCP[i];
+      loc = i;
+    }
+  }
+
+  // Note, W is necessarily positive (so long as L>k), and at most L-1
+  assert(W > 0);
+  // Note, this also assures that loc>=1.
+  assert((size_t)W < L);
+
+  if (configVerbose > 0) {
+    fprintf(stderr, "Longest repeated substring length: %ld\n", W);
+    fprintf(stderr, "Repeated string at positions %ld and %ld\n", SA[loc - 1], SA[loc]);
+  }
+
+  /* Deallocate memory. */
+  assert(SA != NULL);
+  free(SA);
+  SA = NULL;
+  assert(LCP != NULL);
+  free(LCP);
+  LCP = NULL;
+
+  return (size_t)W;
+}
+
+static size_t lrs(const statData_t *data, size_t L, size_t k) {
+  if(L<SAIDX_MAX) return lrs32(data, L, k);
+  else return lrs64(data, L, k);
+}
+
+
 int main(int argc, char *argv[]) {
   FILE *infp;
   size_t L;
   statData_t *data = NULL;
   size_t j;
-  SAINDEX W;
-  SAINDEX *SA, *LCP;
-  SAINDEX loc;
   size_t *dataCount;
   long double p_col;
-  int64_t N;
+  size_t N;
   size_t k;
+  size_t W;
   double median;
   size_t configSubsetIndex;
   size_t configSubsetSize;
@@ -165,13 +272,9 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Testing %zu samples with %zu symbols\n", L, k);
   }
 
-  if ((dataCount = (size_t *)malloc(k * sizeof(size_t))) == NULL) {
+  if ((dataCount = (size_t *)calloc(k, sizeof(size_t))) == NULL) {
     perror("Cannot allocate memory.\n");
     exit(EX_OSERR);
-  }
-
-  for (j = 0; j < k; j++) {
-    dataCount[j] = 0;
   }
 
   for (j = 0; j < L; j++) {
@@ -211,43 +314,8 @@ int main(int argc, char *argv[]) {
   free(dataCount);
   dataCount = NULL;
 
-  /* Allocate 9n bytes of memory. */
-  SA = (SAINDEX *)malloc((size_t)(L + 1) * sizeof(SAINDEX));  // +1 for computing LCP
-  LCP = (SAINDEX *)malloc((size_t)(L + 1) * sizeof(SAINDEX));
-  if ((SA == NULL) || (LCP == NULL)) {
-    perror("Cannot allocate memory.\n");
-    exit(EX_OSERR);
-  }
+  W = lrs(data, L, k);
 
-  calcSALCP(data, L, k, SA, LCP);
-
-  // Now, look for the LRS.
-  W = 0;
-  loc = 0;
-  for (SAINDEX i = 1; i <= (SAINDEX)L; i++) {
-    if (W < LCP[i]) {
-      W = LCP[i];
-      loc = i;
-    }
-  }
-
-  // Note, W is necessarily positive (so long as L>k), and at most L-1
-  assert(W > 0);
-  // Note, this also assures that loc>=1.
-  assert((size_t)W < L);
-  if (configVerbose > 0) fprintf(stderr, "Longest repeated substring length: %d\n", W);
-
-  if (configVerbose > 0) {
-    fprintf(stderr, "Repeated string at positions %d and %d\n", SA[loc - 1], SA[loc]);
-  }
-
-  /* Deallocate memory. */
-  assert(SA != NULL);
-  free(SA);
-  SA = NULL;
-  assert(LCP != NULL);
-  free(LCP);
-  LCP = NULL;
   assert(data != NULL);
   free(data);
   data = NULL;
@@ -278,7 +346,7 @@ int main(int argc, char *argv[]) {
   //(L - W + 1) is the number of overlapping contiguous substrings of length W in a string of length L.
   // The number of pairs of such overlapping substrings is N = (L - W + 1) choose 2.
   // This is the number of ways of choosing 2 substrings of length W from a string of length L.
-  N = ((int64_t)L - W + 1) * ((int64_t)L - W) / 2;
+  N = (L - W + 1) * (L - W) / 2;
   if (configVerbose > 0) fprintf(stderr, "N = %zu\n", N);
 
   // Calculate the probability of not encountering a collision after N sets of independent pairs;

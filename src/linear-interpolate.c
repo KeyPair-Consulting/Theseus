@@ -285,7 +285,7 @@ static double linearInterpolate(double x, double *points, size_t n, bool constan
   }
 
   // At this point, we know that there is some interval that applies. Find it.
-  for (size_t j = 1; j < n - 1; j++) {
+  for (size_t j = 1; j < n; j++) {
     double x1 = points[2 * j];
     double y1 = points[2 * j + 1];
     // Is it equal to the upper end point?

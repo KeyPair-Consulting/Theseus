@@ -1031,3 +1031,11 @@ char *uint128ToString(uint128_t in, char *buffer) {
 
   return(curPos);
 }
+
+void verboseDoubleAssertEquality(double a, double b, const char *file, const char *function, int line) {
+  if(!relEpsilonEqual(a, b, ABSEPSILON, RELEPSILON, ULPEPSILON)) {
+    fprintf(stderr, "Assert failed in %s: %s: %d. %.17g != %.17g\n", file, function, line, a, b);
+    abort();
+  }
+  return;
+}

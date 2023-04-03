@@ -150,6 +150,8 @@ struct compensatedState {
 
 #define PARTIALBLOCK 1024
 
+#define DOUBLEASSERTEQUALITY(a, b) verboseDoubleAssertEquality((a), (b), __FILE__, __func__, __LINE__)
+
 bool relEpsilonEqual(double A, double B, double maxAbsFactor, double maxRelFactor, uint64_t maxULP);
 bool relEpsilonEquall(long double A, long double B, long double maxAbsFactor, long double maxRelFactor, uint64_t maxULP);
 
@@ -172,4 +174,5 @@ double monotonicBinarySearch(double (*fval)(double, const size_t *), double ldom
 void safeAdduint64(uint64_t a, uint64_t b, uint64_t *res);
 void safeAdduint128(uint128_t a, uint128_t b, uint128_t *res);
 char *uint128ToString(uint128_t in, char *buffer);
+void verboseDoubleAssertEquality(double a, double b, const char *file, const char *function, int line);
 #endif

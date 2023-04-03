@@ -955,8 +955,8 @@ static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult
   saidx_t u;  // The length of a string: 0 <= u <= v+1 <= n
   saidx_t *Q;  // Contains an accumulation of positive counts 1 <= Q[i] <= n
   saidx_t *A;  // Contains an accumulation of positive counts 0 <= A[i] <= n
-  double Pmax;
-  double pu;
+  long double Pmax;
+  long double pu;
   uint64_t *S;  // Each value 0 <= S[i] < n^3
   int exceptions;
 
@@ -1028,10 +1028,10 @@ static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult
     // is essentially 0.
     //
     // Note that (c choose 2) is just (c)(c-1)/2.
-    double Pwbound = pow(1.0 / (((double)(n - (size_t)v + 1))*((double)(n-(size_t)v))/2.0), 1.0/((double)v));
-    double pubound = fmin(1.0, Pwbound + ZALPHA * sqrt(Pwbound*(1.0-Pwbound)/((double)(n-1))));
-    double lrsminentbound = - log2(pubound);
-    fprintf(stderr, "LRS length is large as compared to the dataset, so the LRS estimator may take a while. A LRS result upper bound is approximately %g.\n", lrsminentbound);
+    long double Pwbound = powl(1.0L / (((long double)(n - (size_t)v + 1))*((long double)(n-(size_t)v))/2.0L), 1.0L/((long double)v));
+    long double pubound = fminl(1.0L, Pwbound + ZALPHA_L * sqrtl(Pwbound*(1.0L-Pwbound)/((long double)(n-1))));
+    long double lrsminentbound = - log2l(pubound);
+    fprintf(stderr, "LRS length is large as compared to the dataset, so the LRS estimator may take a while. A LRS result upper bound is approximately %Lg.\n", lrsminentbound);
   }
 
   if((Q=malloc(((size_t)v + 1) * sizeof(saidx_t)))==NULL) {
@@ -1138,36 +1138,36 @@ static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult
   // at this point, Q is completely calculated.
   // Q is the count of (one of) the most common j-tuples
   /*Calculate the various Pmax[i] values. We need not save the actual values, only the largest*/
-  Pmax = -1.0;
+  Pmax = -1.0L;
   for (j = 1; j < u; j++) {
-    double curP = ((double)(Q[j])) / ((double)((int64_t)n - j + 1));
-    double curPMax = pow(curP, 1.0 / (double)j);
+    long double curP = ((long double)(Q[j])) / ((long double)((int64_t)n - j + 1));
+    long double curPMax = powl(curP, 1.0L / (long double)j);
 
     assert(Q[j] >= 35);
     if (configVerbose > 3) {
       fprintf(stderr, "t-Tuple Estimate: Q[%d] = %d\n", j, Q[j]);
-      fprintf(stderr, "t-Tuple Estimate: P[%d] = %.17g\n", j, curP);
-      fprintf(stderr, "t-Tuple Estimate: P_max[%d] = %.17g\n", j, curPMax);
+      fprintf(stderr, "t-Tuple Estimate: P[%d] = %.22Lg\n", j, curP);
+      fprintf(stderr, "t-Tuple Estimate: P_max[%d] = %.22Lg\n", j, curPMax);
     }
     if (curPMax > Pmax) {
       Pmax = curPMax;
     }
   }
 
-  if (Pmax > 0.0) {
-    result->tTuplePmax = Pmax;
+  if (Pmax > 0.0L) {
+    result->tTuplePmax = (double)Pmax;
     // Note, this is a local guess at a confidence interval, under the assumption that the inferred most probable symbol proportion is distributed
     // as per the normal distribution. This parameter is a maximum of a sequence of inferred parameters. The individual inferred parameters may
     // be thought of as a sort of inferred probability of the MLS (which is, as mentioned above, not expected to be normal, even with IID data).
     // Even if these individual inferred parameters were themselves normal, taking the maximum of several such parameters won't be.
 
-    pu = Pmax + ZALPHA * sqrt(Pmax * (1.0 - Pmax) / ((double)(n - 1)));
-    if (pu > 1.0) {
-      pu = 1.0;
+    pu = Pmax + ZALPHA_L * sqrtl(Pmax * (1.0L - Pmax) / ((long double)(n - 1)));
+    if (pu > 1.0L) {
+      pu = 1.0L;
     }
-    result->tTuplePu = pu;
+    result->tTuplePu = (double)pu;
 
-    result->tTupleEntropy = -log2(pu);
+    result->tTupleEntropy = (double)-log2l(pu);
     result->tTupleDone = true;
   } else {
     result->tTuplePmax = -1.0;
@@ -1228,24 +1228,24 @@ static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult
     if (L[i] >= u) A[L[i]]++; /* update count for t = L[i] */
   }
 
-  Pmax = 0.0;
+  Pmax = 0.0L;
   for (j = u; j <= v; j++) {
     // Note:
     // j>=u>0, so (n-j) * (n-j+1) <= (n-1)*(n)
     // By the assert marked "(mult assert)", floor(SIZE_MAX / n) >= (n-1), so the multiplication won't rollover.
     size_t choices = (((n - (size_t)j) * (n - (size_t)j + 1U)) >> 1);
-    double curP, curPMax;
+    long double curP, curPMax;
     assert(S[j] <= choices);
 
-    curP = ((double)S[j]) / (double)choices;
-    curPMax = pow(curP, 1.0 / ((double)j));
+    curP = ((long double)S[j]) / (long double)choices;
+    curPMax = powl(curP, 1.0L / ((long double)j));
     // curP is now an estimate for the probability of collision across all j-tuples.
     // This was calculated using an unbiased estimator for the _distribution's_ 2-moment;
     // see "Improvised Estimation of Collision Entropy..." by Skorski, equation (1)
     // or "The Complexity of Estimating Rényi Entropy" by Acharya, Orlitsky, Suresh and Tyagi Section 1.5.
     if (configVerbose > 3) {
-      fprintf(stderr, "LRS Estimate: P_%d = %.17g ( %zu / %zu )\n", j, curP, S[j], choices);
-      fprintf(stderr, "LRS Estimate: P_{max,%d} = %.17g\n", j, curPMax);
+      fprintf(stderr, "LRS Estimate: P_%d = %.22Lg ( %zu / %zu )\n", j, curP, S[j], choices);
+      fprintf(stderr, "LRS Estimate: P_{max,%d} = %.22Lg\n", j, curPMax);
     }
     if (Pmax < curPMax) {
       Pmax = curPMax;
@@ -1256,14 +1256,14 @@ static void SAalgs32(const statData_t *data, size_t n, size_t k, struct SAresult
   // as per the normal distribution. This parameter is a maximum of a sequence of inferred parameters. The individual inferred parameters may
   // be thought of as a sort of inferred probability of the MLS (which is, as mentioned above, not expected to be normal, even with IID data).
   // Even if these individual inferred parameters were themselves normal, taking the maximum of several such parameters won't be.
-  result->lrsPmax = Pmax;
-  pu = Pmax + ZALPHA * sqrt(Pmax * (1.0 - Pmax) / ((double)(n - 1)));
-  if (pu > 1.0) {
-    pu = 1.0;
+  result->lrsPmax = (double)Pmax;
+  pu = Pmax + ZALPHA_L * sqrtl(Pmax * (1.0L - Pmax) / ((long double)(n - 1)));
+  if (pu > 1.0L) {
+    pu = 1.0L;
   }
-  result->lrsPu = pu;
+  result->lrsPu = (double)pu;
 
-  result->lrsEntropy = -log2(pu);
+  result->lrsEntropy = (double)-log2l(pu);
   result->lrsDone = true;
 
   free(S);

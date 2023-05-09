@@ -196,6 +196,9 @@ uint32_t randomRange(uint32_t s, struct randstate *rstate) {
 
   assert(rstate != NULL);
 
+  //If the high value equals the low value, then we can only return that value.
+  if(s==0) return 0;
+
   x = randomu32(rstate);
 
   if (unlikely(UINT32_MAX == s)) {

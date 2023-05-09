@@ -34,6 +34,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-v\tVerbose mode.\n");
   fprintf(stderr, "-l <index>,<samples>\tRead the <index> substring of length <samples>.\n");
   fprintf(stderr, "-r \t instead of doing testing on provided data use a random iid variable.\n");
+  fprintf(stderr, "-b <x> \t Produce biased bits with bias <x> (where Pr(output = 0) = (1+x)/2). Requires k=2.\n");
   fprintf(stderr, "-k <m> \t Use an alphabet of <m> values. (default k=2)\n");
   fprintf(stderr, "-s <m> \t Use a sample set of <m> values. (default m=1000000)\n");
 
@@ -162,6 +163,7 @@ int main(int argc, char *argv[]) {
   double median;
   size_t configSubsetIndex;
   size_t configSubsetSize;
+  double configBias = -1.0;
   bool configUseFile;
   size_t configRandDataSize;
   size_t configK;
@@ -170,6 +172,7 @@ int main(int argc, char *argv[]) {
   char *nextOption;
   int opt;
   struct randstate rstate;
+  double indouble;
 
   long double p_colPower;
   long double logProbNoColsPerPair;
@@ -186,7 +189,7 @@ int main(int argc, char *argv[]) {
 
   initGenerator(&rstate);
 
-  while ((opt = getopt(argc, argv, "vl:rk:s:")) != -1) {
+  while ((opt = getopt(argc, argv, "vl:rk:s:b:")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -208,7 +211,7 @@ int main(int argc, char *argv[]) {
         break;
       case 'k':
         inparam = strtol(optarg, NULL, 0);
-        if ((inparam <= 0) || (inparam > 0xFFFFFFFF)) {
+        if ((inparam <= 0) || (inparam > 256)) {
           useageExit();
         }
         configK = (size_t)inparam;
@@ -222,6 +225,14 @@ int main(int argc, char *argv[]) {
           useageExit();
         }
         configRandDataSize = (size_t)inparam;
+        break;
+      case 'b':
+        configUseFile = false;
+        indouble = strtod(optarg, &nextOption);
+        if ((indouble > 1.0) || (indouble < 0.0)) {
+          useageExit();
+        }
+        configBias = indouble;
         break;
       default: /* ? */
         useageExit();
@@ -259,9 +270,16 @@ int main(int argc, char *argv[]) {
       exit(EX_OSERR);
     }
 
-    genRandInts(data, configRandDataSize, (uint32_t)(configK - 1), &rstate);
-    k = configK;
-    L = configRandDataSize;
+    if(configBias >= 0) {
+      k = 2;
+      L = configRandDataSize;
+      for(j=0; j<L; j++) 
+        data[j] = (statData_t) genRandBiasedBit(configBias, &rstate);
+    } else {
+      genRandInts(data, configRandDataSize, (uint32_t)(configK - 1), &rstate);
+      k = configK;
+      L = configRandDataSize;
+    }
   }
 
   translate(data, L, &k, &median);

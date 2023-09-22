@@ -26,12 +26,10 @@
 #include "precision.h"
 #include "health-tests.h"
 
-// This test is useful for RO-based designs, where each RO is of the same design
+// This test is useful for RO-based designs, in particular where each RO is of the same design
 // (i.e., has the same number of delay elements).
 // In such cases, the nominal frequencies may be close, so there is possibly an
 // entrainment problem, both at the output and per-delay element levels.
-// In this particular case, a per-delay-element entrainment fixes the outputs
-// as either identical, or logical complements.
 //
 // This Crosswise Repetition Count Test (CRCT) takes each 8-bit symbol, and treats each of the bits as parallel outputs of a noise source copy.
 // There is an RCT on the literal outputs of each noise source copy, and also on the

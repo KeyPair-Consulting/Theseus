@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-16 --use-cc=/usr/bin/clang-16 make
+#scan-build-17 --use-cc=/usr/bin/clang-17 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-16
+CC=clang-17
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -35,7 +35,7 @@ DEBUGLDFLAGS=-flto
 #DEBUGCFLAGS=-O1 -fsanitize=thread
 #DEBUGLDFLAGS=-fsanitize=thread
 
-CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -O2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -fno-optimize-sibling-calls -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto
+CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto
 LDFLAGS=$(DEBUGLDFLAGS)
 
 include Makefile.rules

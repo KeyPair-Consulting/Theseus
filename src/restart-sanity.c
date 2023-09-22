@@ -39,7 +39,6 @@ struct threadData {
   double alpha;
   size_t k;
   double p;
-  size_t MLScount;
   size_t subsetSize;
   size_t simulationRounds;
   bool configFixedSymbol;
@@ -72,7 +71,6 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-i <rounds>\t Use <rounds> simulation rounds. (Default is 2000000).\n");
   fprintf(stderr, "-t <n> \t uses <n> computing threads. (default: number of cores * 1.3)\n");
   fprintf(stderr, "-j <n> \t Each restart sanity vector is <n> elements long. (default: min(1000,samples,restart))\n");
-  fprintf(stderr, "-m <t>,<simsym>\t For simulation, Use <t> maximal size symbols (the residual probability is evenly distributed amoungst the remaining simsym-t symbols).\n");
   exit(EX_USAGE);
 }
 
@@ -144,53 +142,50 @@ static size_t maxSelected(const statData_t *data, size_t step, size_t num, size_
   return max;
 }
 
-static size_t simulateBoundRound(size_t k, double p, size_t MLScount, size_t subsetSize, size_t *counts, bool configFixedSymbol, struct randstate *rstate) {
-  double MLSprob;
-  double extradelta;
+// Here, we simulate a "worst case" for the restart sanity test. This is "worst case" in the sense that the adopted distribution
+// results in the largest acceptable collision bound for a given assessed entropy level, so if a data sample fails this
+// test, it is likely to indicate an underlying problem.
+//
+// This "worst case" uses the "inverted near-uniform" family (see Hagerty-Draper "Entropy Bounds and Statistical Tests" for
+// a full definition of this distribution and justification for its use here).
+//
+// This distribution has as many maximal probability symbols as possible (each occurring with probability p), and possibly one
+// additional symbol that contains all the residual probability.
+//
+// If the probability for the most likely symbol is p, then there are floor(1/p) most likely symbols,
+// each occurring with probability p and possibly one additional symbol that has all the remaining (1 - p floor(1/p)) chance.
+// In this code, we generate a random unit value in the range [0, 1), and we need to map this to one of the ceil(1/p) possible
+// output symbols.
+//
+// Note that the function x -> floor(x/p) yields
+// [0p,1p) -> 0
+// [1p, 2p) -> 1
+// [2p, 3p) -> 2
+// ...
+// [(floor(1/p)-1)p, floor(1/p)p) -> floor(1/p)-1
+// [ floor(1/p)p, 1 ) -> floor(1/p)
+//
+// As such, each of the first floor(1/p) symbols (0 through floor(1/p)-1) have probability p of occurring, and
+// the symbol floor(1/p) has probability 1-floor(1/p)p of occurring, as desired.
+//
+// Note that if floor(1/p) = ceil(1/p) = 1/p, then there is no "residual" symbol, only 1/p most likely symbols.
+//
+// The array is 0-indexed, so we can use this map to establish the index directly.
+static size_t simulateBoundRound(size_t k, double p, size_t subsetSize, size_t *counts, bool configFixedSymbol, struct randstate *rstate) {
   statData_t curSymbol;
   size_t curMax = 0;
   size_t j;
-  double r;
-  int64_t intOut;
 
-  assert(MLScount > 0);
-  assert(k >= MLScount);
-  assert(k - 1 <= STATDATA_MAX);
-  assert(p > 0.0);
-
-  if (MLScount == k) {
-    MLSprob = 1.0;
-    extradelta = 0.0;
-  } else {
-    MLSprob = ((double)MLScount) * p;
-    extradelta = (1.0 - MLSprob) / ((double)(k - MLScount));
-  }
-
-  assert((MLSprob <= 1.0) && (MLSprob >= 0.0));
-
-  for (j = 0; j < k; j++) counts[j] = 0;
+  memset(counts, 0, sizeof(size_t)*k);
 
   for (j = 0; j < subsetSize; j++) {
-    r = randomUnit(rstate);
-    if (r < MLSprob) {
-      intOut = (int64_t)floor(r / p);
-      assert(intOut >= 0);
-      assert(intOut <= STATDATA_MAX);
-
-      curSymbol = (statData_t)intOut;
-    } else {
-      intOut = ((int64_t)floor((r - MLSprob) / extradelta)) + (int64_t)MLScount;
-      assert(intOut >= 0);
-      assert(intOut <= STATDATA_MAX);
-
-      curSymbol = (statData_t)intOut;
-    }
+    // Note that (int)floor(randomUnit(xoshiro256starstarState) / p) is the index map discussed in the above comments.
+    curSymbol = (statData_t)floor(randomUnit(rstate)/p);
 
     if (configVerbose > 3) {
       fprintf(stderr, "Restart Sanity Test: Simulation Current Symbol = %u\n", curSymbol);
     }
 
-    assert(curSymbol < k);
     counts[curSymbol]++;
     if (configFixedSymbol) {
       if (curSymbol == 0) curMax++;
@@ -223,9 +218,12 @@ static void *simulateBoundThread(void *ptr) {
 
   assert((localThreadData->alpha > 0.0) && (localThreadData->alpha <= 1.0));
   assert(localThreadData->k > 1);
+  assert(localThreadData->k - 1 <= STATDATA_MAX);
   assert((localThreadData->p > 0.0) && (localThreadData->p <= 1.0));
-  assert(localThreadData->MLScount <= localThreadData->k);
+  assert((size_t)ceil(1/localThreadData->p) <= localThreadData->k);
   assert(localThreadData->results != NULL);
+
+
 
   if ((counts = malloc(localThreadData->k * sizeof(size_t))) == NULL) {
     perror("Can't allocate simulation counts array");
@@ -235,7 +233,7 @@ static void *simulateBoundThread(void *ptr) {
   seedGenerator(&rstate);
 
   for (j = 0; j < localThreadData->simulationRounds; j++) {
-    localThreadData->results[j] = simulateBoundRound(localThreadData->k, localThreadData->p, localThreadData->MLScount, localThreadData->subsetSize, counts, localThreadData->configFixedSymbol, &rstate);
+    localThreadData->results[j] = simulateBoundRound(localThreadData->k, localThreadData->p, localThreadData->subsetSize, counts, localThreadData->configFixedSymbol, &rstate);
   }
 
   if (configVerbose > 2) {
@@ -249,14 +247,13 @@ static void *simulateBoundThread(void *ptr) {
 
 /*Returns the tightest bound such that the fail rate is less than alpha*/
 /*The value returned should be treated as a pass. Any value larger than the returned value is a failue*/
-static size_t simulateBound(double alpha, size_t k, double p, size_t MLScount, size_t subsetSize, size_t simulationRounds, bool configFixedSymbol) {
+static size_t simulateBound(double alpha, size_t k, double p, size_t subsetSize, size_t simulationRounds, bool configFixedSymbol) {
   pthread_t *threads;
   struct threadData baseThreadData;
   struct threadData *threadDataArray;
   size_t returnIndex;
   size_t j;
   size_t result;
-  double extradelta;
   size_t taskRemainder, taskQuotient;
   size_t curIndex;
 
@@ -265,31 +262,12 @@ static size_t simulateBound(double alpha, size_t k, double p, size_t MLScount, s
 
   assert(configThreadCount > 0);
 
-  if (MLScount == 0) {
-    MLScount = (size_t)floor(1.0 / p);
-  }
-
   if (k == 0) {
-    if (((double)MLScount) * p < 1.0) {
-      k = MLScount + 1;
-    } else {
-      k = MLScount;
-    }
+    k = (size_t)ceil(1/p);
   }
-
-  assert(k >= MLScount);
 
   if (configVerbose > 1) {
-    if (MLScount == k) {
-      extradelta = 0.0;
-    } else {
-      extradelta = (1.0 - (((double)MLScount) * p)) / ((double)(k - MLScount));
-    }
-
-    fprintf(stderr, "Restart Sanity Test: Simulation MLS Count = %zu\n", MLScount);
     fprintf(stderr, "Restart Sanity Test: Simulation Symbols = %zu\n", k);
-    fprintf(stderr, "Restart Sanity Test: Simulation MLS probability = %.17g\n", p);
-    fprintf(stderr, "Restart Sanity Test: Simulation other symbol probability = %.17g\n", extradelta);
   }
 
   if ((threads = malloc(sizeof(pthread_t) * configThreadCount)) == NULL) {
@@ -310,7 +288,6 @@ static size_t simulateBound(double alpha, size_t k, double p, size_t MLScount, s
   baseThreadData.alpha = alpha;
   baseThreadData.k = k;
   baseThreadData.p = p;
-  baseThreadData.MLScount = MLScount;
   baseThreadData.subsetSize = subsetSize;
   baseThreadData.configFixedSymbol = configFixedSymbol;
 
@@ -393,7 +370,6 @@ int main(int argc, char *argv[]) {
   bool configSimulateCutoff = true;
   size_t configSimulationRounds;
   size_t configSimulationSymbols;
-  size_t configMLSCount;
   size_t configXmaxCutoff;
   long cpuCount;
 
@@ -410,7 +386,6 @@ int main(int argc, char *argv[]) {
   alpha = 1.0 - exp(log(0.99) / ((double)(configRestarts + configSamplesPerRestart)));
 
   configSimulationRounds = (size_t)ceil(10.0 / alpha);
-  configMLSCount = 0;
   configSimulationSymbols = 0;
   configXmaxCutoff = 0;
 
@@ -463,21 +438,6 @@ int main(int argc, char *argv[]) {
           useageExit();
         }
         configSimulationRounds = (uint32_t)inparam;
-        break;
-      case 'm':
-        inint = strtoull(optarg, &nextOption, 0);
-        if ((inint == ULLONG_MAX) || (errno == EINVAL) || (nextOption == NULL) || (*nextOption != ',')) {
-          useageExit();
-        }
-        configMLSCount = inint;
-
-        nextOption++;
-
-        inint = strtoull(nextOption, NULL, 0);
-        if ((inint == ULLONG_MAX) || (errno == EINVAL)) {
-          useageExit();
-        }
-        configSimulationSymbols = inint;
         break;
       case 'r':
         configUseFile = false;
@@ -617,7 +577,7 @@ int main(int argc, char *argv[]) {
     if (configVerbose > 0) {
       fprintf(stderr, "Restart Sanity Test: Simulation Rounds = %zu\n", configSimulationRounds);
     }
-    configXmaxCutoff = simulateBound(alpha, configSimulationSymbols, p, configMLSCount, configSubsetSize, configSimulationRounds, configFixedSymbol);
+    configXmaxCutoff = simulateBound(alpha, configSimulationSymbols, p, configSubsetSize, configSimulationRounds, configFixedSymbol);
     if ((configVerbose > 0)) {
       fprintf(stderr, "Restart Sanity Test: Simulated XmaxCutoff = %zu\n", configXmaxCutoff);
     }

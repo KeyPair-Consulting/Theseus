@@ -58,7 +58,6 @@ int main(int argc, char *argv[]) {
   struct APTstate healthTest;
   bool configSuggestCutoffs = false;
   uint32_t configAlphaExp = 0;
-  size_t maxRunLength = 0;
   uint32_t configBitWidth = 0;
 
   configVerbose = 0;
@@ -93,7 +92,6 @@ int main(int argc, char *argv[]) {
           useageExit();
         }
         configBitWidth = (uint32_t)inint;
-        if ((configAlphaExp < 20) || (configAlphaExp > 40)) fprintf(stderr, "Desired alphaExp of %u is outside of the recommended interval [20, 40].\n", configAlphaExp);
         break;
       case 't':
         // Estimate the appropriate cutoffs.
@@ -182,7 +180,10 @@ int main(int argc, char *argv[]) {
     exit(EX_OSERR);
   }
 
-
+  if((configVerbose > 0) && (configAPTC > 0) && (configAPTW > 0)) {
+    printf("APT cutoff: %zu, APT Window Size: %zu\n", configAPTC, configAPTW);
+  }
+  
   initAPT(configAPTC, configAPTW, &healthTest);
 
   // If configVerbose > 1, then we'll keep track of the window statistics.
@@ -221,8 +222,6 @@ int main(int argc, char *argv[]) {
     }
     if (configVerbose > 1) printf("};\n");
   }
-
-  if(maxRunLength > 0) printf("Longest encountered run: %zu\n", maxRunLength);
 
   if (configSuggestCutoffs) {
     long double alpha = powl(2.0L, -(long double)configAlphaExp);

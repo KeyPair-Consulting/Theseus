@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-16 --use-cc=/usr/bin/clang-16 make
+#scan-build-17 --use-cc=/usr/bin/clang-17 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-16
+CC=clang-17
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -25,7 +25,7 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsaf
 #DEBUGCFLAGS=-O2
 #DEBUGLDFLAGS=-lprofiler
 #undefined flag and ASAN
-DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined
+DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined -fno-optimize-sibling-calls -g
 DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
 #For sanitize memory
 #DEBUGCFLAGS=-O1 -fsanitize-memory-track-origins -fsanitize=memory
@@ -34,7 +34,7 @@ DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
 #DEBUGCFLAGS=-O1 -fsanitize=thread
 #DEBUGLDFLAGS=-fsanitize=thread
 
-CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -O2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -fno-optimize-sibling-calls -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS)
+CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS)
 LDFLAGS=$(DEBUGLDFLAGS)
 
 include Makefile.rules

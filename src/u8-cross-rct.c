@@ -75,12 +75,13 @@ int main(int argc, char *argv[]) {
   size_t maxRunLength = 0;
   size_t *consolidatedLiteralRunCounts = NULL;
   size_t *consolidatedCrosswiseRunCounts = NULL;
+  size_t totalFailures = 0;
 
   configVerbose = 0;
   configRCTC_literal = 0;
   configRCTC_cross = 0;
 
-  while ((opt = getopt(argc, argv, "vC:c:t:")) != -1) {
+  while ((opt = getopt(argc, argv, "fvC:c:t:")) != -1) {
     switch (opt) {
       case 'v':
         // Output more debug information.
@@ -125,6 +126,11 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
+  if(configVerbose > 0) {
+    if(configRCTC_cross > 0) printf("Cross RCT cross cutoff: %zu\n", configRCTC_cross);
+    if(configRCTC_literal > 0) printf("Cross RCT literal cutoff: %zu\n", configRCTC_literal);
+  }
+
   // Read in the data
   if ((infp = fopen(argv[0], "rb")) == NULL) {
     perror("Can't open file");
@@ -159,7 +165,7 @@ int main(int argc, char *argv[]) {
 
   // Feed in all the data to the RCT test.
   for (size_t i = 0; i < datalen; i++) {
-    crossRCT(data[i], &healthTests);
+    if(!crossRCT(data[i], &healthTests)) totalFailures++;
   }
 
   // Report on the results of the test.
@@ -253,12 +259,13 @@ int main(int argc, char *argv[]) {
         // Remember which bytes we use.
         if (maxShiftIndex < shiftByteIndex) maxShiftIndex = shiftByteIndex;
 
-	printf("RCT %s: ", label);
+        if((healthTests.RCT_C[bitloc] > 0) || (configVerbose > 1)) printf("RCT %s: ", label);
 
-        if (healthTests.RCT_C[bitloc] > 0) {
+        assert(healthTests.RCT_Input >= healthTests.RCT_C[bitloc]);
+        RCT_Count = healthTests.RCT_Input - healthTests.RCT_C[bitloc] + 1;
+
+        if(healthTests.RCT_C[bitloc] > 0) {
           // We were asked to report on this RCT and the failure rates might mean something.
-          assert(healthTests.RCT_Input >= healthTests.RCT_C[bitloc]);
-          RCT_Count = healthTests.RCT_Input - healthTests.RCT_C[bitloc] + 1;
           printf("Failure Rate: %zu / %zu = %g", healthTests.RCT_Failures[bitloc], RCT_Count, ((double)(healthTests.RCT_Failures[bitloc])) / ((double)RCT_Count));
           if (healthTests.RCT_Failures[bitloc] > 0) {
             printf(" ≈ 2^%g\n", log2(((double)(healthTests.RCT_Failures[bitloc])) / ((double)RCT_Count)));
@@ -306,11 +313,15 @@ int main(int argc, char *argv[]) {
   }
 
   if(maxRunLength > 0) printf("Longest encountered run: %zu\n", maxRunLength);
-  if(healthTests.maxLiteralFailures > 0) printf("Most simultaneous literal failures: %u\n", healthTests.maxLiteralFailures);
-  else printf("No recorded literal failures.\n");
+  if(configRCTC_literal > 0) {
+    if(healthTests.maxLiteralFailures > 0) printf("Most simultaneous literal failures: %u\n", healthTests.maxLiteralFailures);
+    else printf("No recorded literal failures.\n");
+  }
 
-  if(healthTests.maxCrossFailures > 0) printf("Most simultaneous cross failures: %u\n", healthTests.maxCrossFailures);
-  else printf("No recorded cross failures.\n");
+  if(configRCTC_cross > 0) {
+    if(healthTests.maxCrossFailures > 0) printf("Most simultaneous cross failures: %u\n", healthTests.maxCrossFailures);
+    else printf("No recorded cross failures.\n");
+  }
 
   if (configSuggestCutoffs) {
     // Just add to either the crosswise or literal bucket list.
@@ -327,7 +338,7 @@ int main(int argc, char *argv[]) {
     if (allowedCrosswiseFailures < 10) fprintf(stderr, "The bound for the desired number of consolidated crosswise failures (%zu < 10) may not yield statistically meaningful results.\n", allowedCrosswiseFailures);
 
     if (configVerbose > 0) {
-      fprintf(stderr, "Per test literal alpha is approximately 2^%0.22Lg\n", log2l(perTestAlpha));
+      fprintf(stderr, "Targeted per-test alpha is approximately 2^%0.22Lg\n", log2l(perTestAlpha));
     }
 
     accumulatedFailures = 0;
@@ -346,6 +357,15 @@ int main(int argc, char *argv[]) {
         printf("Empirical crosswise cutoff: %zu\n", j + 1);
         break;
       }
+    }
+  }
+
+  if((configRCTC_literal > 0) && (configRCTC_cross > 0)) {
+    printf("Overall test failure rate: %zu / %zu = %g", totalFailures, datalen, ((double)totalFailures) / ((double)datalen));
+    if (totalFailures > 0) {
+      printf(" ≈ 2^%g\n", log2(((double)totalFailures) / ((double)datalen)));
+    } else {
+      printf("\n");
     }
   }
 

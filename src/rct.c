@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
           useageExit();
         }
         configBitWidth = (uint32_t)inint;
-        if ((configAlphaExp < 20) || (configAlphaExp > 40)) fprintf(stderr, "Desired alphaExp of %u is outside of the recommended interval [20, 40].\n", configAlphaExp);
         break;
       case 't':
         // Estimate the appropriate cutoffs.
@@ -96,7 +95,7 @@ int main(int argc, char *argv[]) {
           useageExit();
         }
         configAlphaExp = (uint32_t)inint;
-        if ((configAlphaExp < 20) || (configAlphaExp > 40)) fprintf(stderr, "Desired alphaExp of %u is outside of the recommended interval [20, 40].\n", configAlphaExp);
+	if ((configAlphaExp < 20) || (configAlphaExp > 40)) fprintf(stderr, "Desired alphaExp of %u is outside of the recommended interval [20, 40].\n", configAlphaExp);
         break;
       default: /* ? */
         useageExit();
@@ -172,6 +171,10 @@ int main(int argc, char *argv[]) {
   if (fclose(infp) != 0) {
     perror("Couldn't close input data file");
     exit(EX_OSERR);
+  }
+
+  if((configVerbose > 0) && (configRCTC > 0)) {
+    printf("RCT cutoff: %zu\n", configRCTC);
   }
 
 

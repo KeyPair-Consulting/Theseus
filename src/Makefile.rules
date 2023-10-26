@@ -111,8 +111,8 @@ u32-selectrange: u32-selectrange.o binio.o
 u32-to-sd: u32-to-sd.o binio.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-u32-mcv: u32-mcv.o binio.o -lm
-	$(CC) -o $@ $^ $(LDFLAGS)
+u32-mcv: u32-mcv.o binio.o
+	$(CC) -o $@ $^ $(LDFLAGS) -lm
 
 u32-counter-endian: u32-counter-endian.o binio.o binutil.o
 	$(CC) -o $@ $^ $(LDFLAGS)

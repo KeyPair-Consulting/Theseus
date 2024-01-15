@@ -31,8 +31,8 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsaf
 #DEBUGCFLAGS=-O1 -fsanitize-memory-track-origins -fsanitize=memory
 #DEBUGLDFLAGS=-fsanitize=memory
 #for thread san
-DEBUGCFLAGS=-O1 -fsanitize=thread
-DEBUGLDFLAGS=-fsanitize=thread
+DEBUGCFLAGS=-O1 -fsanitize=thread -g -fno-optimize-sibling-calls
+DEBUGLDFLAGS=-fsanitize=thread -g
 
 CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -O2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -fno-optimize-sibling-calls -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS)
 LDFLAGS=$(DEBUGLDFLAGS)

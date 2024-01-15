@@ -26,7 +26,7 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsaf
 #DEBUGLDFLAGS=-lprofiler
 #undefined flag and ASAN
 DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined -fno-optimize-sibling-calls -g
-DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
+DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined -g
 #For sanitize memory
 #DEBUGCFLAGS=-O1 -fsanitize-memory-track-origins -fsanitize=memory
 #DEBUGLDFLAGS=-fsanitize=memory

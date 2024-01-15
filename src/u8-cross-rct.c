@@ -323,6 +323,8 @@ int main(int argc, char *argv[]) {
     else printf("No recorded cross failures.\n");
   }
 
+  fflush(stdout);
+
   if (configSuggestCutoffs) {
     // Just add to either the crosswise or literal bucket list.
     long double alpha = powl(2.0L, -(long double)configAlphaExp);

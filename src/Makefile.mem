@@ -29,7 +29,7 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsaf
 #DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
 #For sanitize memory
 DEBUGCFLAGS=-O1 -fsanitize-memory-track-origins -fsanitize=memory -fno-optimize-sibling-calls -g
-DEBUGLDFLAGS=-fsanitize=memory
+DEBUGLDFLAGS=-fsanitize=memory -g
 #for thread san
 #DEBUGCFLAGS=-O1 -fsanitize=thread
 #DEBUGLDFLAGS=-fsanitize=thread

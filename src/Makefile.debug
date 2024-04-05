@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-17 --use-cc=/usr/bin/clang-17 make
+#scan-build-18 --use-cc=/usr/bin/clang-18 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-17
+CC=clang-18
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -24,7 +24,7 @@ MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsaf
 #standard debug
 DEBUGCFLAGS=-O2
 #DEBUGLDFLAGS=-flto -lprofiler
-DEBUGLDFLAGS=-flto
+DEBUGLDFLAGS=
 #undefined flag and ASAN
 #DEBUGCFLAGS=-O1 -fsanitize=address -fsanitize=undefined
 #DEBUGLDFLAGS=-fsanitize=address -fsanitize=undefined
@@ -36,6 +36,6 @@ DEBUGLDFLAGS=-flto
 #DEBUGLDFLAGS=-fsanitize=thread
 
 CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto
-LDFLAGS=$(DEBUGLDFLAGS)
+LDFLAGS=-flto -fuse-ld=lld $(DEBUGLDFLAGS)
 
 include Makefile.rules

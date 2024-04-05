@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2024 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -1782,7 +1782,7 @@ static double predictionEstFct(double pin, const size_t *params) {
 
   r = (uint32_t)(params[1]);
   if (r > N + 1) return 0.0;
-  assert(r > 1);
+  assert(r >= 1);
 
   p = (long double)pin;
   // We now know that 0 < p < 1
@@ -1870,10 +1870,12 @@ double calcPrun(double Pglobal, size_t N, size_t r) {
   params[1] = r;
 
   // For gathering statistical data on the target value that should be selected.
-  if (Pglobal < 1.0) {
-    pRun = exp(predictionEstFct(Pglobal, params));
-  } else {
+  if (Pglobal <= 0.0) {
+    pRun = 0.0;
+  } else if(Pglobal >= 1.0) {
     pRun = 1.0;
+  } else {
+    pRun = exp(predictionEstFct(Pglobal, params));
   }
 
   if (fetestexcept(FE_UNDERFLOW) != 0) {

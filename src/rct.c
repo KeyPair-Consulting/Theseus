@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2023 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2023-2024 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -41,6 +41,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-c <value>\tThe RCT cutoff value is <value>.\n");
   fprintf(stderr, "-t <value>\tTry to find suggested cutoff values, if the desired (per-symbol) false positive rate is 2^-<value>.\n");
   fprintf(stderr, "-d <value>\tData is presumed to be <value>-bit wide symbols. (supported values are 8, 32, and 64-bits).\n");
+  fprintf(stderr, "-b <value>\tData is bitwise ANDed with <value>.\n");
   exit(EX_USAGE);
 }
 
@@ -51,37 +52,54 @@ int main(int argc, char *argv[]) {
   size_t datalen;
   statData_t *u8Data = NULL;
   uint32_t *u32Data = NULL;
-  uint64_t *data = NULL;
+  uint64_t *u64Data = NULL;
   size_t configRCTC;
   int opt;
   unsigned long long inint;
+  double indouble;
   struct RCTstate healthTest;
   size_t RCT_Count;
   bool configSuggestCutoffs = false;
-  uint32_t configAlphaExp = 0;
   size_t maxRunLength = 0;
+  double configAlphaExp = 0;
   uint32_t configBitWidth = 0;
+  uint64_t configAND = 0xffffffffffffffffULL;
+  char *endptr=NULL;
 
   configVerbose = 0;
   configRCTC = 0;
 
-  while ((opt = getopt(argc, argv, "vc:t:d:")) != -1) {
+  while ((opt = getopt(argc, argv, "vc:t:d:b:")) != -1) {
     switch (opt) {
       case 'v':
         // Output more debug information.
         configVerbose++;
         break;
+      case 'b':
+        // AND with the provided 64-bit value
+        endptr=NULL;
+        inint = strtoull(optarg, &endptr, 0);
+        if (((inint == ULLONG_MAX) && (errno == ERANGE)) || ((inint == 0) && (endptr == optarg))) {
+          fprintf(stderr, "Can't interpret bitmask value\n");
+          useageExit();
+        }
+        configAND = (size_t)inint;
+        break;
       case 'c':
-        // Set the RCT cutoff bound.
-        inint = strtoull(optarg, NULL, 0);
-        if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > SIZE_MAX)) {
+        // Set the RCT bound.
+        endptr=NULL;
+        inint = strtoull(optarg, &endptr, 0);
+        if (((inint == 0) && (endptr == optarg)) || ((inint == ULLONG_MAX) && (errno == EINVAL)) || (inint > SIZE_MAX)) {
+          fprintf(stderr, "Can't interpret cutoff value\n");
           useageExit();
         }
         configRCTC = (size_t)inint;
         break;
       case 'd':
-        inint = strtoull(optarg, NULL, 0);
-        if ((errno == EINVAL) || ((inint != 8) && (inint != 32) &&(inint != 64))) {
+        endptr=NULL;
+        inint = strtoull(optarg, &endptr, 0);
+        if (((inint == 0) && (endptr == optarg)) || ((inint == ULLONG_MAX) && (errno == ERANGE)) || ((inint != 8) && (inint != 32) &&(inint != 64))) {
+          fprintf(stderr, "Unsupported symbol size\n");
           useageExit();
         }
         configBitWidth = (uint32_t)inint;
@@ -90,12 +108,18 @@ int main(int argc, char *argv[]) {
         // Estimate the appropriate cutoffs.
         configSuggestCutoffs = true;
 
-        inint = strtoull(optarg, NULL, 0);
-        if ((inint == ULLONG_MAX) || (errno == EINVAL) || (inint > SIZE_MAX)) {
+        endptr=NULL;
+        indouble = strtod(optarg, &endptr);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+        //These double values are flags set by "strtod", so exact comparison is correct.
+        if (((indouble == 0.0) && (endptr == optarg)) || (((indouble == HUGE_VAL) || (indouble == -HUGE_VAL)) && errno == ERANGE)) {
+          fprintf(stderr, "Can't interpret target alphaExp value\n");
           useageExit();
         }
-        configAlphaExp = (uint32_t)inint;
-	if ((configAlphaExp < 20) || (configAlphaExp > 40)) fprintf(stderr, "Desired alphaExp of %u is outside of the recommended interval [20, 40].\n", configAlphaExp);
+#pragma GCC diagnostic pop
+        configAlphaExp = indouble;
+        if ((configAlphaExp < 20.0) || (configAlphaExp > 40.0)) fprintf(stderr, "Desired alphaExp of %g is outside of the recommended interval [20, 40].\n", configAlphaExp);
         break;
       default: /* ? */
         useageExit();
@@ -143,26 +167,17 @@ int main(int argc, char *argv[]) {
   if(configBitWidth == 8) {
     datalen = readuintfile(infp, &u8Data);
     assert(u8Data != NULL);
-    assert(datalen > 0);
-    data = calloc(datalen, sizeof(uint64_t));
-    assert(data!=NULL);
-    for(size_t j=0; j<datalen; j++) data[j] = u8Data[j];
-    free(u8Data);
   } else if(configBitWidth == 32) {
     datalen = readuint32file(infp, &u32Data);
     assert(u32Data != NULL);
-    assert(datalen > 0);
-    data = calloc(datalen, sizeof(uint64_t));
-    assert(data!=NULL);
-    for(size_t j=0; j<datalen; j++) data[j] = u32Data[j];
-    free(u32Data);
   } else if(configBitWidth == 64) {
-    datalen = readuint64file(infp, &data);
-    assert(data != NULL);
-    assert(datalen > 0);
+    datalen = readuint64file(infp, &u64Data);
+    assert(u64Data != NULL);
   } else {
     useageExit();
   }
+
+  assert(datalen > 0);
 
   if (configVerbose > 0) {
     fprintf(stderr, "Read in %zu integers\n", datalen);
@@ -191,7 +206,12 @@ int main(int argc, char *argv[]) {
 
   // Feed in all the data to the RCT test.
   for (size_t i = 0; i < datalen; i++) {
-    RCT(data[i], &healthTest);
+    uint64_t curData;
+    if(configBitWidth==8) curData = (uint64_t)u8Data[i];
+    else if(configBitWidth==32) curData = (uint64_t)u32Data[i];
+    else curData = u64Data[i];
+
+    RCT((curData & configAND), &healthTest);
   }
 
   // Report on the results of the test.
@@ -249,6 +269,9 @@ int main(int argc, char *argv[]) {
     healthTest.runCounts = NULL;
   }
 
-  free(data);
+  if(u64Data!=NULL) free(u64Data);
+  if(u32Data!=NULL) free(u32Data);
+  if(u8Data!=NULL) free(u8Data);
+
   return EX_OK;
 }

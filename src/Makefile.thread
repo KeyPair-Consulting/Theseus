@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-15 --use-cc=/usr/bin/clang-17 make
+#scan-build-18 --use-cc=/usr/bin/clang-18 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-17
+CC=clang-18
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.

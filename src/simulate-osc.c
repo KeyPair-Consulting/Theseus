@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2024 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -42,7 +42,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "\t\t\tThe source oscillator can be inverted using a '~', so \"-e 1,~0\" denotes that the output of osc1 is the bitwise complement of osc0.\n");
   fprintf(stderr, "Frequency values are in Hz.\n");
   fprintf(stderr, "Jitter Standard Deviations are in seconds (e.g. 1E-15) or a percentage of the ring oscillator period (ending with %%, e.g., 0.001%%).\n");
-  fprintf(stderr, "Output is " STATDATA_STRING " integers if the ROs fit, expanding to uint32_t if needed; lsb is the output of ringOsc_1, to msb ringOsc_n.\n");
+  fprintf(stderr, "Output is " STATDATA_STRING " integers if the ROs fit, expanding to uint32_t if needed; lsb is the output of ringOsc_0, to msb ringOsc_{n-1}.\n");
   exit(EX_USAGE);
 }
 

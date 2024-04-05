@@ -26,6 +26,7 @@
 
 #define PIL 3.141592653589793238463L
 #define SQRTPIINVL 0.5641895835477562869481L  // 1/sqrt(Pi)
+#define KSMAXFLIPQUALITY 0.1054040645372386121207L
 
 noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
@@ -310,6 +311,10 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
   long double centerProb;
   long double lastMaxValue = 0.0L;
 
+  if(configVerbose > 4) fprintf(stderr, "KS flip-sigma: %.22Lg\n", flipSigma);
+
+  if(flipSigma > KSMAXFLIPQUALITY) return 1.0L;
+
   // The cycle count distribution is asymptotically normal, but the standard deviation isn't that easy to compute
   //(See equation 28 for details)
   // This re-computes some of the same terms more than once (which makes me feel bad about myself), but it
@@ -319,7 +324,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
   // some asserts. By being somewhat less ambitious on our accuracy goal, we avoid a bunch of bad behavior.
   // We also ultimately only print out results using a double's accuracy.
   while (cycleProbFunction(expectedCycles + delta, flipSigma) > (long double)DBL_EPSILON) delta++;
-  while (cycleProbFunction(expectedCycles - delta, flipSigma) > (long double)DBL_EPSILON) delta++;
+  while ((delta <= expectedCycles) && (cycleProbFunction(expectedCycles - delta, flipSigma) > (long double)DBL_EPSILON)) delta++;
   if (configVerbose > 2) fprintf(stderr, "Final delta: %" PRIu64 "\n", delta);
 
   // We don't expect strict symmetry, but the distribution is vaguely symmetric, distributed around its center bin.
@@ -327,16 +332,22 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
   // This should help reduce floating point accumulation error.
   for (uint64_t j = delta; j > 0; j--) {
     long double roundPHigh = cycleProbFunction(expectedCycles + j, flipSigma);
-    long double roundPLow = cycleProbFunction(expectedCycles - j, flipSigma);
+    long double roundPLow;
     long double roundCombined;
     long double curMaxValue;
+
+    if(j <= expectedCycles) {
+      roundPLow = cycleProbFunction(expectedCycles - j, flipSigma);
+    } else {
+      roundPLow = 0.0L;
+    }
 
     // Note that (expectedCycles + j) and (expectedCycles - j) have the same lsb
     // That is, they are both even or both odd.
     roundCombined = roundPHigh + roundPLow;
 
     curMaxValue = fmax(roundPHigh, roundPLow);
-    assert(lastMaxValue <= curMaxValue);  // Verify that we're generally increasing
+    assert((fabsl(curMaxValue-lastMaxValue)/fmax(curMaxValue,lastMaxValue) <= (long double)DBL_EPSILON) || (lastMaxValue <= curMaxValue));  // Verify that we're generally increasing
     lastMaxValue = curMaxValue;
 
     if (((expectedCycles + j) & 1) == 0) {
@@ -349,7 +360,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
   // Now add in the probability for the center bin
   centerProb = cycleProbFunction(expectedCycles, flipSigma);
 
-  assert(lastMaxValue <= centerProb);  // Verify that we're generally increasing
+  assert((fabsl(centerProb-lastMaxValue)/fmax(centerProb,lastMaxValue) <= (long double)DBL_EPSILON) || (lastMaxValue <= centerProb));  // Verify that we're generally increasing
 
   if ((expectedCycles & 1) == 0) {
     evenP += centerProb;
@@ -360,7 +371,7 @@ static long double cycleCountLsbNormalizedMinEnt(long double flipSigma, long dou
   extraP = 1.0L - evenP - oddP;
   if (configVerbose > 1) fprintf(stderr, "evenP: %.22Lg, oddP: %.22Lg, extraP: %.22Lg\n", evenP, oddP, extraP);
 
-  return -log2l(fmax(evenP, oddP) + extraP);
+  return -log2l(fmin(fmax(evenP, oddP) + extraP, 1.0L));
 }
 
 /* This follows Killmann-Schindler "A Design for a Physical RNG with Robust Entropy Estimators".

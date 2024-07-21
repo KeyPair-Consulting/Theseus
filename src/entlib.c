@@ -2165,6 +2165,13 @@ double lagPredictionEstimate(const statData_t *S, size_t L, size_t k, struct pre
 
   free(ringBuffers);
 
+  if(configVerbose > 3) {
+    fprintf(stderr, "Lag Prediction Estimate: Winner lag is %zu (High score is %zu)\n", winner+1, highScore);
+    if(configVerbose > 4) {
+      for(size_t i=0; i<LAGD; i++) if(scoreboard[i] > (highScore*9)/10) fprintf(stderr, "Notable lag %zu (score %zu)\n", i+1, scoreboard[i]);
+    }
+  }
+
   return (predictionEstimateResult(correctCount, L - 1, maxRunOfCorrects + 1, k, result));
 }
 

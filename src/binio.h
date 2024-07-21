@@ -21,4 +21,5 @@ size_t readdoublefile(FILE *input, double **buffer);
 size_t readasciidoubles(FILE *input, double **buffer);
 void mergeSortedLists(const double *in1, size_t len1, const double *in2, size_t len2, double *out);
 size_t readasciidoublepoints(FILE *input, double **buffer);
+size_t readasciiuint64s(FILE *input, uint64_t **buffer);
 #endif

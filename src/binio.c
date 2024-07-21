@@ -347,3 +347,50 @@ size_t readasciidoublepoints(FILE *input, double **buffer) {
 
   return readdoubles / 2;
 }
+
+size_t readasciiuint64s(FILE *input, uint64_t **buffer) {
+  uint64_t *newbuffer;
+  long int scdata;
+  size_t curbuflen = 0;
+  size_t pagesize;
+  size_t readuints = 0;
+  char curline[4096];
+  unsigned long long inInt;
+  char *afterInt;
+
+  assert(buffer != NULL);
+
+  scdata = sysconf(_SC_PAGESIZE);
+  assert(scdata > 0);
+  pagesize = (size_t)scdata;
+
+  while (feof(input) == 0) {
+    if (((readuints + 1) * sizeof(uint64_t)) > curbuflen) {
+      if ((newbuffer = realloc(*buffer, curbuflen + pagesize)) == NULL) {
+        perror("Cannot allocate new memory block");
+        exit(EX_OSERR);
+      } else {
+        *buffer = newbuffer;
+        curbuflen += pagesize;
+      }
+    }
+
+    if (fgets(curline, sizeof(curline), input) != NULL) {
+      inInt = strtoull(curline, &afterInt, 0);
+
+      if (((*afterInt != '\r') && (*afterInt != '\n') && (*afterInt != '\0')) || ((inInt == ULLONG_MAX) && (errno == ERANGE))) {
+        fprintf(stderr, "data error\n");
+        exit(EX_DATAERR);
+      }
+      (*buffer)[readuints] = inInt;
+      readuints++;
+    }
+
+    if (ferror(input) != 0) {
+      perror("Error reading input file");
+      exit(EX_OSERR);
+    }
+  }
+
+  return readuints;
+}

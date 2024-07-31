@@ -20,13 +20,13 @@
 #define statData_t uint32_t
 #define signedStatData_t int64_t
 #define STATDATA_MAX UINT32_MAX
-#define STATDATA_BITS 32
+#define STATDATA_BITS 32U
 #define STATDATA_STRING "uint32_t"
 #else
 #define statData_t uint8_t
 #define signedStatData_t int16_t
 #define STATDATA_MAX UINT8_MAX
-#define STATDATA_BITS 8
+#define STATDATA_BITS 8U
 #define STATDATA_STRING "uint8_t"
 #endif
 

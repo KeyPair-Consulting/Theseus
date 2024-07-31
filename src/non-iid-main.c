@@ -15,7 +15,7 @@
 #include <omp.h>
 #include <signal.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -704,7 +704,7 @@ int main(int argc, char *argv[]) {
               fprintf(stderr, "sampleFreq in the interval [%.17g, %.17g]\n", oscFreq / (1000.25), oscFreq / (1000.0));
             }
           }
-          fprintf(stderr, "%lu Generate %zu bits from a simulated ring oscillator for round %zu. ", time(NULL), configRandDataSize, i + 1);
+          fprintf(stderr, "%" PRIdMAX " Generate %zu bits from a simulated ring oscillator for round %zu. ", (intmax_t)time(NULL), configRandDataSize, i + 1);
         }
 
 #pragma omp parallel
@@ -740,7 +740,7 @@ int main(int argc, char *argv[]) {
           }
         } // end parallel
       } else {
-        if (configVerbose > 0) fprintf(stderr, "%lu Generate %zu integers for round %zu. ", time(NULL), configRandDataSize, i + 1);
+        if (configVerbose > 0) fprintf(stderr, "%" PRIdMAX " Generate %zu integers for round %zu. ", (intmax_t)time(NULL), configRandDataSize, i + 1);
 #pragma omp parallel
         {
           struct randstate threadrstate;

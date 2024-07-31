@@ -11,7 +11,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -60,7 +59,7 @@ int main(int argc, char *argv[]) {
     exit(EX_OSERR);
   }
 
-  fprintf(stderr, "Read in %" PRId64 " uint32_ts\n", datalen);
+  fprintf(stderr, "Read in %zu uint32_ts\n", datalen);
 
   if (datalen < 2) {
     fprintf(stderr, "Too little data\n");
@@ -78,7 +77,7 @@ int main(int argc, char *argv[]) {
   rawmax |= rawmax >> 16;
   nextpower = rawmax + 1;
 
-  fprintf(stderr, "Next binary power: %" PRId64 " (assuming a %u bit value)\n", nextpower, __builtin_popcount(rawmax));
+  fprintf(stderr, "Next binary power: %" PRIu64 " (assuming a %i bit value)\n", nextpower, __builtin_popcount(rawmax));
 
   if ((transdata = malloc(datalen * sizeof(uint64_t))) == NULL) {
     perror("Can't allocate extra memory");

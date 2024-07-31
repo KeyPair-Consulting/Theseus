@@ -65,8 +65,13 @@ int main(int argc, char *argv[]) {
         perror("Can't write output to stdout");
         exit(EX_OSERR);
       }
+    } else {
+      perror("Can't read input from file");
+      exit(EX_OSERR);
     }
   }
+
+  fclose(infp);
 
   return EX_OK;
 }

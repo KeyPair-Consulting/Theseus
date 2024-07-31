@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   currentData1 = currentData2 = 0;
   ready1 = ready2 = false;
 
-  while ((feof(fp1) == 0) && feof(fp2) == 0) {
+  while ((feof(fp1) == 0) && (feof(fp2) == 0) && (ferror(fp1) == 0) && (ferror(fp2) == 0)) {
     if (!ready1 && (fread(&currentData1, sizeof(uint32_t), 1, fp1) == 1)) {
       ready1 = true;
     }
@@ -60,6 +60,9 @@ int main(int argc, char *argv[]) {
       ready2 = false;
     }
   }
+
+  fclose(fp1);
+  fclose(fp2);
 
   return 0;
 }

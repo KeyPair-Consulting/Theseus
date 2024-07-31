@@ -15,6 +15,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
 #include <sysexits.h>
@@ -235,7 +236,7 @@ static size_t chiSquareBin(struct chiSquareData *chiSquareTable, double *binExpe
     chiSquareTable[j].bin = curBin;
     binExpectations[curBin] += chiSquareTable[j].expected;
     if (configVerbose > 3) {
-      fprintf(stderr, "Adding index %zu (expectation %.17g) to bin %zu (new expectation %.17g)\n", j, chiSquareTable[j].expected, curBin, binExpectations[curBin]);
+      fprintf(stderr, "Adding index %" PRIi64 " (expectation %.17g) to bin %zu (new expectation %.17g)\n", j, chiSquareTable[j].expected, curBin, binExpectations[curBin]);
     }
 
     if (binExpectations[curBin] >= 5.0) {

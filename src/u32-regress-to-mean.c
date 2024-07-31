@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     useageExit();
   }
 
-  fprintf(stderr, "Read in %" PRId64 " uint32_ts\n", datalen);
+  fprintf(stderr, "Read in %zu uint32_ts\n", datalen);
   if (fclose(infp) != 0) {
     perror("Can't close intput file");
     exit(EX_OSERR);

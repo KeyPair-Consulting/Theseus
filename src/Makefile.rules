@@ -248,7 +248,7 @@ rct-sim: rct-sim.o randlib.o SFMT.o fancymath.o cephes.o incbeta.o
 	$(CC) -o $@ $^ $(LDFLAGS) -fopenmp -lm
 
 %.style-check-stamp:    %.c
-	clang-format-18 -i $< && touch $@
+	clang-format-19 -i $< && touch $@
 
 install:	$(BINARIES) $(SIMPLEBINS)
 	mv $(BINARIES) $(SIMPLEBINS) ../bin

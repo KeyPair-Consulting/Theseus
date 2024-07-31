@@ -13,7 +13,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -384,12 +384,12 @@ int main(int argc, char *argv[]) {
       maxIndex = curCanonicalLabel & 0x07;
       if ((minIndex != maxIndex) && (outputPair[curCanonicalLabel] == MAX_CROSSWISE_PAIR_LABEL)) {
         completeTestCoverage = false;
-        fprintf(stderr, "Missing pair (%u, %u) via bitIndex %u\n", (curCanonicalLabel >> 3), curCanonicalLabel & 0x07, j);
+        fprintf(stderr, "Missing pair (%" PRIu8 ", %" PRIu8 ") via bitIndex %u\n", (uint8_t)(curCanonicalLabel >> 3), (uint8_t)(curCanonicalLabel & 0x07), j);
       }
     }
 
     if (completeTestCoverage) {
-      if (CROSS_RCT_SHIFT_BYTES != maxShiftIndex + 1) fprintf(stderr, "CROSS_RCT_SHIFT_BYTES should be set to %u\n", maxShiftIndex + 1);
+      if (CROSS_RCT_SHIFT_BYTES != maxShiftIndex + 1) fprintf(stderr, "CROSS_RCT_SHIFT_BYTES should be set to %" PRIu8 "\n", (uint8_t)(maxShiftIndex + 1));
     } else {
       fprintf(stderr, "CROSS_RCT_SHIFT_BYTES should be increased.\n");
     }

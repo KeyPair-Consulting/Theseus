@@ -26,7 +26,6 @@
 #include <unistd.h>
 
 #include <inttypes.h>
-#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -832,12 +831,12 @@ static void permTestingResults(struct curData *inData) {
   permResult(inData, LONGESTCOLLISIONDISTINDEX);
 
   for (i = 0; i < NUMOFOFFSETS; i++) {
-    printf("Periodicity Test, p=%d, ", offsets[i]);
+    printf("Periodicity Test, p=%" PRIu32 ", ", offsets[i]);
     permResult(inData, PERIODICITYINDEX + i);
   }
 
   for (i = 0; i < NUMOFOFFSETS; i++) {
-    printf("Covariance Test, p=%d, ", offsets[i]);
+    printf("Covariance Test, p=%" PRIu32 ", ", offsets[i]);
     permResult(inData, COVARIANCEINDEX + i);
   }
 

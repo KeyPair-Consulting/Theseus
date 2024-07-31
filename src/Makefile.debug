@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-18 --use-cc=/usr/bin/clang-18 make
+#scan-build-19 --use-cc=/usr/bin/clang-19 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-18
+CC=clang-19
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -18,7 +18,7 @@ CC=clang-18
 #
 #-Wno-unsafe-buffer-usage
 #This seems to exist to push users toward a C++ feature, but this is in C.
-MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage
+MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage -Wno-pre-c11-compat
 
 #For general debugging (e.g., with static analyzer)
 #standard debug

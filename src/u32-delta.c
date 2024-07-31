@@ -11,7 +11,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdnoreturn.h>
@@ -53,7 +52,7 @@ int main(int argc, char *argv[]) {
   datalen = readuint32file(infp, &data);
   assert(data != NULL);
 
-  fprintf(stderr, "Read in %" PRId64 " uint32_ts\n", datalen);
+  fprintf(stderr, "Read in %zu uint32_ts\n", datalen);
   if (fclose(infp) != 0) {
     perror("Can't close intput file");
     exit(EX_OSERR);

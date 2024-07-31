@@ -9,7 +9,7 @@
  */
 #include <assert.h>
 #include <stdbool.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>

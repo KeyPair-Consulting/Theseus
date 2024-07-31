@@ -64,7 +64,7 @@ void extractbitsArray(const uint32_t *input, statData_t *output, const size_t da
   uint32_t mv0, mv1, mv2, mv3, mv4;
   uint32_t q, m, zm, x;
 
-  assert(__builtin_popcount(bitMask) <= STATDATA_BITS);
+  assert((unsigned)__builtin_popcount(bitMask) <= STATDATA_BITS);
 
   /*Prep the mv0 to mv4 constants for the eventual reuse throughout the array*/
   m = ~bitMask;

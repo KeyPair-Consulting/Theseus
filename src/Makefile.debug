@@ -18,7 +18,12 @@ CC=clang-19
 #
 #-Wno-unsafe-buffer-usage
 #This seems to exist to push users toward a C++ feature, but this is in C.
-MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage -Wno-pre-c11-compat
+#
+#-Wno-pre-c11-compat
+#This codebase is fundamentally c99 targeted (it uses some of the floating point fanciness introduced in C99,
+#and declares variables in for loop initializers). _Noreturn is used, which is a c11 feature.
+#Such warnings about such uses aren't useful.
+MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage -Wno-pre-c11-compat -Wno-format-nonliteral
 
 #For general debugging (e.g., with static analyzer)
 #standard debug
@@ -35,7 +40,7 @@ DEBUGLDFLAGS=
 #DEBUGCFLAGS=-O1 -fsanitize=thread
 #DEBUGLDFLAGS=-fsanitize=thread
 
-CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto
+CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto -I/usr/lib/llvm-19/lib/clang/19/include
 LDFLAGS=-flto -fuse-ld=lld $(DEBUGLDFLAGS)
 
 include Makefile.rules

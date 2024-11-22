@@ -28,6 +28,7 @@
 
 
 #include "assessments.h"
+#include "bootstrap.h"
 #include "binio.h"
 #include "binutil.h"
 #include "entlib.h"
@@ -68,6 +69,7 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-f\tGenerate a random <nu> value only once, rather than on a per-evaluation-block basis.\n");
   fprintf(stderr, "-d\tMake all RNG operations deterministic.\n");
   fprintf(stderr, "-L <x>\tPerform evaluations on blocks of size x. Prevents a single assessment of the entire file (but this can be turned back on using the \"-S\" option).\n");
+  fprintf(stderr, "-M\tReport the median result of block assessments and identify the block that is closest to this result.\n");
   fprintf(stderr, "-N <x>\tPerform <x> rounds of testing (only makes sense for randomly generated data).\n");
   fprintf(stderr, "-B <c>,<rounds>\tPerform bootstrapping for a <c>-confidence interval using <rounds>.\n");
   fprintf(stderr, "-P\tEstablish an overall assessment based on bootstrap of individual test parameters.\n");
@@ -253,6 +255,7 @@ int main(int argc, char *argv[]) {
   int opt;
   unsigned long long int inint;
   size_t configSerialXOR;
+  bool configBlockAssessmentMedian;
   size_t configSubsetIndex;
   size_t configSubsetSize;
   char *nextOption;
@@ -280,6 +283,9 @@ int main(int argc, char *argv[]) {
   double configRONu;
   bool configRingOscillator;
   double configJitterPercentage;
+  double *blockResultsNonIID;
+  double *blockResultsIID;
+  double confidenceInterval[2];
 
   configVerbose = 0;
   configSubsetIndex = 0;
@@ -295,16 +301,18 @@ int main(int argc, char *argv[]) {
   configRONu = 0.0;
   configRingOscillator = false;
   configJitterPercentage = 0.0;
+  configFixedRandomNu = false;
+  configSerialXOR = 1;
+
   // Assessment strategies
   configBootstrapParams = false;
   configLargeBlockAssessment = false;
   configBootstrapAssessments = false;
-  configFixedRandomNu = false;
-  configSerialXOR = 1;
+  configBlockAssessmentMedian = false;
 
   initGenerator(&rstate);
 
-  while ((opt = getopt(argc, argv, "fvsicrl:b:gR:L:B:PFSN:O:dX:")) != -1) {
+  while ((opt = getopt(argc, argv, "fvsicrl:b:gR:L:B:PFSN:O:dX:M")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -348,6 +356,9 @@ int main(int argc, char *argv[]) {
         break;
       case 'f':
         configFixedRandomNu = true;
+        break;
+      case 'M':
+        configBlockAssessmentMedian = true;
         break;
       case 'g':
         configLittleEndian = true;
@@ -636,10 +647,23 @@ int main(int argc, char *argv[]) {
   }
 
   // Now perform some sanity checks to see if we should actually run the multi-block tests.
-  if ((configRandomRounds * blockCount <= 1) && (configBootstrapParams || configBootstrapAssessments)) {
+  if ((configRandomRounds * blockCount <= 1) && (configBootstrapParams || configBootstrapAssessments || configBlockAssessmentMedian)) {
     fprintf(stderr, "Multi-block assessment strategies are only compatible with multiple blocks of testing. Reverting to a single round of testing.\n");
     configBootstrapParams = false;
     configBootstrapAssessments = false;
+    configBlockAssessmentMedian = false;
+  }
+
+  //Similarly, the LBA only makes sense if we have more than one block of data.
+  if (configLargeBlockAssessment && (evaluationBlockSize >= datalen)) {
+    fprintf(stderr, "Large Block Assessment is only valid for multi-block testing.\n");
+    configLargeBlockAssessment = false;
+  }
+
+  if(configLargeBlockAssessment) {
+    startIndex = 0;
+  } else {
+    startIndex = 1;
   }
 
   if ((datalen <= evaluationBlockSize) && configLargeBlockAssessment) {
@@ -675,15 +699,24 @@ int main(int argc, char *argv[]) {
     binaryResults = NULL;
   }
 
-  if (configLargeBlockAssessment && (evaluationBlockSize != datalen)) {
-    startIndex = 0;
+  if(configBlockAssessmentMedian) {
+    if ((blockResultsNonIID = calloc(configRandomRounds * blockCount, sizeof(double))) == NULL) {
+      perror("Can't allocate buffer for block non-IID results");
+      exit(EX_OSERR);
+    } else if ((blockResultsIID = calloc(configRandomRounds * blockCount, sizeof(double))) == NULL) {
+      free(blockResultsNonIID);
+      perror("Can't allocate buffer for block IID results");
+      exit(EX_OSERR);
+    }
   } else {
-    startIndex = 1;
+      blockResultsNonIID = NULL;
+      blockResultsIID = NULL;
   }
 
   // Note, we do not thread across the round count
   for (size_t i = 0; i < configRandomRounds; i++) {
 
+    // Create random data (if required)
     if (!configUseFile) {
       size_t generationBlocks = configRandDataSize / (evaluationBlockSize*configSerialXOR);
 
@@ -800,7 +833,7 @@ int main(int argc, char *argv[]) {
 
   } // round for loop
 
-  if (configVerbose > 0) fprintf(stderr, "Done with calculation\n");
+  if (configVerbose > 0) fprintf(stderr, "Done with calculation\n\n");
 
   // output results
   for (size_t j = 1; j <= configRandomRounds * blockCount; j++) {
@@ -835,8 +868,75 @@ int main(int argc, char *argv[]) {
 
     printf("Assessed min entropy = %.17g\n", minminent);
     printf("Assessed min entropy (IID) = %.17g\n\n", minIIDminent);
+
+    //Remember the overall results for later processing
+    if(configBlockAssessmentMedian) {
+      blockResultsNonIID[j-1] = minminent;
+      blockResultsIID[j-1] = minIIDminent;
+    }
+
     fflush(stdout);
   }
+
+  if(configBlockAssessmentMedian) {
+    double medianNonIIDAssessment, medianIIDAssessment;
+    double closestAssessmentDistance = (double)bitWidth;
+    size_t closestAssessmentIndex = configRandomRounds * blockCount;
+    //The BCaBootstrapPercentile call sorts the data as a side effect, so we'll copy it first.
+    double *blockResultsNonIIDSorted, *blockResultsIIDSorted;
+
+    if(configVerbose > 0) fprintf(stderr, "Calculating block median assessment\n");
+
+    if((blockResultsNonIIDSorted = malloc(sizeof(double)*configRandomRounds * blockCount))==NULL) {
+      perror("Can't allocate buffer for block sorted non-IID results");
+      exit(EX_OSERR);
+    }
+    memcpy(blockResultsNonIIDSorted, blockResultsNonIID, sizeof(double)*configRandomRounds * blockCount);
+
+    medianNonIIDAssessment = BCaBootstrapPercentile(0.5, blockResultsNonIIDSorted, configRandomRounds * blockCount, 0.0, (double)bitWidth, confidenceInterval, configBootstrapRounds, 0.99, &rstate);
+    printf("Median Assessed min entropy = %.17g\n", medianNonIIDAssessment);
+    if(configVerbose > 0) fprintf(stderr, "Following blocks have assessments within median confidence interval: ");
+    for (size_t j = 0; j < configRandomRounds * blockCount; j++) {
+      double curAssessmentDistance = fabs(blockResultsNonIID[j] - medianNonIIDAssessment);
+      if(curAssessmentDistance < closestAssessmentDistance) {
+        closestAssessmentDistance = curAssessmentDistance;
+        closestAssessmentIndex = j;
+      }
+
+      if((configVerbose > 0) && (blockResultsNonIID[j] >= confidenceInterval[0]) && (blockResultsNonIID[j] <= confidenceInterval[1])) fprintf(stderr, "%zu ", j+1);
+    }
+
+    if(configVerbose > 0) fprintf(stderr, "\nClosest block assessment is %.17g for block %zu (delta is %.17g)\n", blockResultsNonIID[closestAssessmentIndex], closestAssessmentIndex+1, closestAssessmentDistance);
+    free(blockResultsNonIIDSorted);
+    blockResultsNonIIDSorted = NULL;
+
+    if(configVerbose > 0) fprintf(stderr, "Calculating block median IID assessment\n");
+    if((blockResultsIIDSorted = malloc(sizeof(double)*configRandomRounds * blockCount))==NULL) {
+      perror("Can't allocate buffer for block sorted IID results");
+      exit(EX_OSERR);
+    }
+    memcpy(blockResultsIIDSorted, blockResultsIID, sizeof(double)*configRandomRounds * blockCount);
+
+    medianIIDAssessment = BCaBootstrapPercentile(0.5, blockResultsIIDSorted, configRandomRounds * blockCount, 0.0, (double)bitWidth, confidenceInterval, configBootstrapRounds, 0.99, &rstate);
+    printf("Median Assessed min entropy (IID) = %.17g\n", medianIIDAssessment);
+    if(configVerbose > 0) fprintf(stderr, "Following blocks have assessments within median confidence interval: ");
+    for (size_t j = 0; j < configRandomRounds * blockCount; j++) {
+      double curAssessmentDistance = fabs(blockResultsIID[j] - medianIIDAssessment);
+      if(curAssessmentDistance < closestAssessmentDistance) {
+        closestAssessmentDistance = curAssessmentDistance;
+        closestAssessmentIndex = j;
+      }
+
+      if((configVerbose > 0) && (blockResultsIID[j] >= confidenceInterval[0]) && (blockResultsIID[j] <= confidenceInterval[1])) fprintf(stderr, "%zu ", j+1);
+    }
+
+    if(configVerbose > 0) fprintf(stderr, "\nClosest block assessment is %.17g for block %zu (delta is %.17g)\n", blockResultsIID[closestAssessmentIndex], closestAssessmentIndex+1, closestAssessmentDistance);
+    free(blockResultsIIDSorted);
+    blockResultsIIDSorted = NULL;
+
+    printf("\n");
+  }
+  fflush(stdout);
 
   // Find a final assessment (if applicable)
   if (configLargeBlockAssessment || configBootstrapParams || configBootstrapAssessments) {
@@ -981,6 +1081,14 @@ int main(int argc, char *argv[]) {
   if (binaryResults != NULL) {
     free(binaryResults);
     binaryResults = NULL;
+  }
+  if (blockResultsNonIID != NULL) {
+    free(blockResultsNonIID);
+    blockResultsNonIID = NULL;
+  }
+  if (blockResultsIID != NULL) {
+    free(blockResultsIID);
+    blockResultsIID = NULL;
   }
 
   return 0;

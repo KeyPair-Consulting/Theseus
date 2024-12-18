@@ -104,7 +104,7 @@ void extractbitsArray(const uint32_t *input, statData_t *output, const size_t da
   }
 
 #else
-  assert(__builtin_popcount(bitMask) <= STATDATA_BITS);
+  assert((unsigned int)__builtin_popcount(bitMask) <= STATDATA_BITS);
   for (i = 0; i < datalen; i++) {
     output[i] = (statData_t)_pext_u32(input[i], bitMask);
   }

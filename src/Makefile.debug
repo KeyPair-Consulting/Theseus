@@ -1,11 +1,11 @@
 #for static analysis, use 
-#scan-build-19 --use-cc=/usr/bin/clang-19 make
+#scan-build-20 --use-cc=/usr/bin/clang-20 make
 #and setup the compiler as clang
 
 RDRND=-mrdrnd
 
 #debugging
-CC=clang-19
+CC=clang-20
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -40,7 +40,7 @@ DEBUGLDFLAGS=
 #DEBUGCFLAGS=-O1 -fsanitize=thread
 #DEBUGLDFLAGS=-fsanitize=thread
 
-CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto -I/usr/lib/llvm-19/lib/clang/19/include
+CFLAGS=-Wall -Wextra -Weverything -march=native -mfpmath=sse -msse2 -msse4.2 -g -fno-omit-frame-pointer -Wformat -Wformat-security -Werror=format-security -Werror $(RDRND) $(MUTE) -DUADDL_OVERFLOW -fdenormal-fp-math=ieee $(DEBUGCFLAGS) -flto -I/usr/lib/llvm-20/lib/clang/20/include
 LDFLAGS=-flto -fuse-ld=lld $(DEBUGLDFLAGS)
 
 include Makefile.rules

@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
   size_t datalen;
   int64_t cutoffs[255];
   int64_t lowbound;
+  size_t symbolCount[256] = {0};
 
   for (i = 0; i < 255; i++) cutoffs[i] = -1;
   // The total number of bins must <= 256, so
@@ -108,11 +109,16 @@ int main(int argc, char *argv[]) {
     }
 
     assert(symbol <= bounds);
+    symbolCount[symbol] ++;
 
     if (fwrite(&symbol, sizeof(uint8_t), 1, stdout) != 1) {
       perror("Can't write output to stdout");
       exit(EX_OSERR);
     }
+  }
+
+  for(size_t j = 0; j < 256; j++) {
+    if(symbolCount[j] > 0) fprintf(stderr, "%zu: %zu\n", j, symbolCount[j]);
   }
 
   free(data);

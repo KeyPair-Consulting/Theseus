@@ -37,8 +37,8 @@
 
 // If we have k intervals, interval arrays are stored as:
 // intervals[3j+0] is the untranslated (raw) data interval start (inclusive)
-// intervals[3j+0] is the untranslated (raw) data interval end (inclusive)
-// intervals[3j+1] is the population of that interval
+// intervals[3j+1] is the untranslated (raw) data interval end (inclusive)
+// intervals[3j+2] is the population of that interval
 
 struct intervalNode {
   uint64_t treeKey;
@@ -576,8 +576,10 @@ static double bucketByMedianSplitting(uint32_t *symbolTable, size_t symbolCount,
     expBuckets++;
   }
 
+  assert(expBuckets > 0);
+
   /*Set up interval table*/
-  if ((lastIntervals = malloc(sizeof(uint32_t) * 3 * 2 * expBuckets)) == NULL) {
+  if ((lastIntervals = calloc(3 * 2 * expBuckets, sizeof(uint32_t))) == NULL) {
     perror("Can't allocate array for previous interval table");
     exit(EX_OSERR);
   }
@@ -697,7 +699,7 @@ static uint32_t *generateSymbolTable(uint32_t *data, size_t L, size_t *outNumOfS
     fprintf(stderr, "Using a look-up table approach\n");
     /*A table based approach is likely better*/
     /*3m + L ops*/
-    if ((lookupTable = malloc((m + 1) * sizeof(uint32_t))) == NULL) {
+    if ((lookupTable = calloc((m + 1), sizeof(uint32_t))) == NULL) {
       perror("Can't allocate array for look-up array");
       exit(EX_OSERR);
     }
@@ -721,7 +723,7 @@ static uint32_t *generateSymbolTable(uint32_t *data, size_t L, size_t *outNumOfS
     }
 
     assert(numOfSymbols > 0);
-    if ((symbolTable = malloc(numOfSymbols * 3 * sizeof(uint32_t))) == NULL) {
+    if ((symbolTable = calloc(numOfSymbols * 3, sizeof(uint32_t))) == NULL) {
       perror("Can't allocate array for symbol table");
       exit(EX_OSERR);
     }
@@ -749,7 +751,7 @@ static uint32_t *generateSymbolTable(uint32_t *data, size_t L, size_t *outNumOfS
 
     fprintf(stderr, "Using a sorting approach\n");
 
-    if ((sortedData = malloc(L * sizeof(uint32_t))) == NULL) {
+    if ((sortedData = calloc(L, sizeof(uint32_t))) == NULL) {
       perror("Can't allocate array for sorted data");
       exit(EX_OSERR);
     }
@@ -766,7 +768,7 @@ static uint32_t *generateSymbolTable(uint32_t *data, size_t L, size_t *outNumOfS
 
     fprintf(stderr, "Tabulating symbols...\n");
 
-    if ((symbolTable = malloc(L * 3 * sizeof(uint32_t))) == NULL) {
+    if ((symbolTable = calloc(L * 3, sizeof(uint32_t))) == NULL) {
       perror("Can't allocate array for symbol table");
       exit(EX_OSERR);
     }
@@ -879,7 +881,8 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "Targeting %g samples per bucket\n", targetPopulation);
 
   fprintf(stderr, "Bucketing by grouping symbols...\n");
-  if ((BBGGintervals = malloc(datalen * 3 * sizeof(uint32_t))) == NULL) {
+  assert(datalen > 0);
+  if ((BBGGintervals = calloc(datalen * 3, sizeof(uint32_t))) == NULL) {
     perror("Can't allocate array for BBGG intervals table");
     exit(EX_OSERR);
   }
@@ -899,7 +902,7 @@ int main(int argc, char *argv[]) {
   assert(testIntervals(BBGGintervals, BBGGoutputBuckets, datalen));
 
   fprintf(stderr, "Bucketing by median splitting...\n");
-  if ((BBMSintervals = malloc(datalen * 3 * sizeof(uint32_t))) == NULL) {
+  if ((BBMSintervals = calloc(datalen * 3, sizeof(uint32_t))) == NULL) {
     perror("Can't allocate array for BBMS intervals table");
     exit(EX_OSERR);
   }
@@ -909,6 +912,7 @@ int main(int argc, char *argv[]) {
   BBMSoutputBuckets = outputBuckets;
   BBMSscore = bucketByMedianSplitting(symbolTable, numOfSymbols, BBMSintervals, &BBMSoutputBuckets, targetPopulation);
   fprintf(stderr, "Score: %.17g (%zu bins created.)\n", BBMSscore, BBMSoutputBuckets);
+  assert(BBMSoutputBuckets > 0);
 
   if ((BBMSintervals = realloc(BBMSintervals, BBMSoutputBuckets * sizeof(uint32_t) * 3)) == NULL) {
     perror("Cannot shrink to length of BBMSintervals");
@@ -918,7 +922,7 @@ int main(int argc, char *argv[]) {
   assert(testIntervals(BBMSintervals, BBMSoutputBuckets, datalen));
 
   fprintf(stderr, "Bucketing by greedy binning...\n");
-  if ((BBOGintervals = malloc(datalen * 3 * sizeof(uint32_t))) == NULL) {
+  if ((BBOGintervals = calloc(datalen * 3, sizeof(uint32_t))) == NULL) {
     perror("Can't allocate array for BBOG intervals table");
     exit(EX_OSERR);
   }

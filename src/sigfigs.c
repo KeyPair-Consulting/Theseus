@@ -1,3 +1,12 @@
+/* This file is part of the Theseus distribution.
+ * Copyright 2024 Joshua E. Hill <josh@keypair.us>
+ *
+ * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
+ *
+ * Author(s)
+ * Joshua E. Hill, KeyPair Consulting, Inc.  <josh@keypair.us>
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sysexits.h>

@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020-2021 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2025 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -69,7 +69,8 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "-u \t Don't simulate the cutoff.\n");
   fprintf(stderr, "-c <Xmaxcutoff> \t Use the provided cutoff.\n");
   fprintf(stderr, "-i <rounds>\t Use <rounds> simulation rounds. (Default is 2000000).\n");
-  fprintf(stderr, "-t <n> \t uses <n> computing threads. (default: number of cores * 1.3)\n");
+  fprintf(stderr, "-t <n> \t uses <n> computing threads.\n");
+  fprintf(stderr, "-t <p>%% \t uses <p>%% of the computing threads. (default: 130%%)\n");
   fprintf(stderr, "-j <n> \t Each restart sanity vector is <n> elements long. (default: min(1000,samples,restart))\n");
   exit(EX_USAGE);
 }
@@ -365,6 +366,7 @@ int main(int argc, char *argv[]) {
   size_t configSubsetSize;
   bool configUseFile;
   bool configFixedSymbol;
+  double configThreadMult = 130.0;
 
   statData_t maxSymbol;
   bool configSimulateCutoff = true;
@@ -415,11 +417,30 @@ int main(int argc, char *argv[]) {
         k = (uint32_t)inparam;
         break;
       case 't':
-        inparam = strtol(optarg, NULL, 10);
-        if ((inparam <= 0) || (inparam > 10000)) {
+        if(optarg != NULL) {
+          size_t optlen = strlen(optarg);
+          double indouble;
+          if(optarg[optlen-1]=='%') {
+            char *nextarg;
+            indouble = strtod(optarg, &nextarg);
+            if ((nextarg == optarg) || (indouble >= HUGE_VAL) || (indouble <= -HUGE_VAL) || (errno == ERANGE) || (indouble < 0.0) ) {
+              fprintf(stderr, "Thread percentage is out of range.\n");
+              useageExit();
+            }
+            configThreadMult = indouble;
+            configThreadCount = 0;
+          } else {
+            inparam = strtol(optarg, NULL, 10);
+            if ((inparam <= 0) || (inparam > 10000)) {
+              useageExit();
+            }
+            configThreadMult = -1.0;
+            configThreadCount = (size_t)inparam;
+          }
+        } else {
+          fprintf(stderr, "Thread specifier is required.\n");
           useageExit();
         }
-        configThreadCount = (uint32_t)inparam;
         break;
       case 'u':
         configSimulateCutoff = false;
@@ -518,7 +539,7 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "CPU Count: %ld\n", cpuCount);
     }
 
-    configThreadCount = (size_t)floor(1.3 * (double)cpuCount);
+    configThreadCount = (uint32_t)floor((configThreadMult / 100.0) * (double)cpuCount);
   }
 
   if (configVerbose > 0) {

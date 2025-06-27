@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020-2024 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2025 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -2885,7 +2885,7 @@ double NSAMarkovEstimate(const statData_t *S, size_t L, size_t k, const char *la
 
   countCutoff = (size_t)floor(probCutoff * (double)L);
 
-  if (configVerbose > 0) {
+  if (configVerbose > 1) {
     fprintf(stderr, "%s NSA Markov Estimate: Symbol cutoff probability is %.17g.\n", label, probCutoff);
     fprintf(stderr, "%s NSA Markov Estimate: Symbol cutoff count is %zu.\n", label, countCutoff);
   }

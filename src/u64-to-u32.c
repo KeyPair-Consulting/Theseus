@@ -1,10 +1,9 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2024 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
  * Author(s)
- * Joshua E. Hill, UL VS LLC.
  * Joshua E. Hill, KeyPair Consulting, Inc.  <josh@keypair.us>
  */
 #include <assert.h>

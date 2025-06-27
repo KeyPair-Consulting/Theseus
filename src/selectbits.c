@@ -1,5 +1,5 @@
 /* This file is part of the Theseus distribution.
- * Copyright 2020 Joshua E. Hill <josh@keypair.us>
+ * Copyright 2020-2025 Joshua E. Hill <josh@keypair.us>
  *
  * Licensed under the 3-clause BSD license. For details, see the LICENSE file.
  *
@@ -37,6 +37,7 @@ static size_t datalen;
 static pthread_mutex_t threadsWaitingMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_barrier_t joinBarrier;
 static bool configConservative = false;
+static bool configTenacious = false;
 
 static uint32_t threadsWaiting;
 
@@ -321,12 +322,12 @@ static uint32_t nextFixedHammingWeight(unsigned in) {
   }
 }
 
-static void setupThreads(uint32_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
-  uint32_t curThread;
+static void setupThreads(size_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
+  size_t curThread;
   int localFDs[2];
 
   // first, the barrier for join steps
-  if (pthread_barrier_init(&joinBarrier, NULL, threadCount + 1) < 0) {
+  if (pthread_barrier_init(&joinBarrier, NULL, (uint32_t)threadCount + 1) < 0) {
     perror("Can't init barrier");
     exit(EX_OSERR);
   }
@@ -376,8 +377,8 @@ static uint32_t processorCount(void) {
 }
 
 // Ask all the threads to exit after calculation results are all collected
-static void killThreads(uint32_t threadCount, struct threadInfoType *threadInfo) {
-  for (uint32_t curThread = 0; curThread < threadCount; curThread++) {
+static void killThreads(size_t threadCount, struct threadInfoType *threadInfo) {
+  for (size_t curThread = 0; curThread < threadCount; curThread++) {
     uint32_t inMask;
     double assessedEnt;
     enum workerResponse response;
@@ -400,7 +401,7 @@ static void killThreads(uint32_t threadCount, struct threadInfoType *threadInfo)
 //    Send all the assignments
 //    Wait for the last few to finish; ask all finished compute threads to join the barrier
 //    Once all the threads have joined the barrier, have the base thread (here) join the barrier (releasing all the compute threads for the next computation)
-static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t activeBits, size_t *usedBits, struct bestMaskData *bestMasks, double bitAssessments[8][16], uint32_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
+static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t activeBits, size_t *usedBits, struct bestMaskData *bestMasks, double bitAssessments[8][16], size_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
   double assessedEnt, bestHammingEnt;
   uint32_t curMask;
   uint32_t expandedCurrentMask;
@@ -412,7 +413,7 @@ static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t a
   bestEnt = -1.0;
   bestEntMask = 0;
 
-  if (curHammingWeight != 1) {
+  if ((curHammingWeight != 1) && !configTenacious) {
     for (uint32_t j = 0; j < curHammingWeight - 1; j++) {
       if ((bestMasks[j].mask != 0) && (bestMasks[j].entropy > bestEnt)) {
         bestEnt = bestMasks[j].entropy;
@@ -446,7 +447,7 @@ static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t a
     }
 
     // Find the first thread waiting for work
-    for (uint32_t curThread = 0; curThread < threadCount; curThread++) {
+    for (size_t curThread = 0; curThread < threadCount; curThread++) {
       if ((pfds[curThread].revents & POLLIN) != 0) {
         enum workerResponse response;
         uint32_t inMask;
@@ -549,7 +550,7 @@ static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t a
       exit(EX_OSERR);
     }
 
-    for (uint32_t curThread = 0; curThread < threadCount; curThread++) {
+    for (size_t curThread = 0; curThread < threadCount; curThread++) {
       if ((pfds[curThread].revents & POLLIN) != 0) {
         enum workerResponse response;
         uint32_t inMask;
@@ -634,7 +635,7 @@ static bool findBestSymbol(FILE *statfile, uint32_t curHammingWeight, uint32_t a
   }
 }
 
-static void doNibbleAssessments(double bitAssessments[8][16], uint32_t activeBits, uint32_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
+static void doNibbleAssessments(double bitAssessments[8][16], uint32_t activeBits, size_t threadCount, struct threadInfoType *threadInfo, struct pollfd *pfds) {
   uint32_t curMask;
   int res;
   uint32_t nominalBits;
@@ -663,7 +664,7 @@ static void doNibbleAssessments(double bitAssessments[8][16], uint32_t activeBit
     }
 
     // Find the first thread waiting for work
-    for (uint32_t curThread = 0; curThread < threadCount; curThread++) {
+    for (size_t curThread = 0; curThread < threadCount; curThread++) {
       if ((pfds[curThread].revents & POLLIN) != 0) {
         enum workerResponse response;
         uint32_t inMask;
@@ -745,7 +746,7 @@ static void doNibbleAssessments(double bitAssessments[8][16], uint32_t activeBit
       exit(EX_OSERR);
     }
 
-    for (uint32_t curThread = 0; curThread < threadCount; curThread++) {
+    for (size_t curThread = 0; curThread < threadCount; curThread++) {
       if ((pfds[curThread].revents & POLLIN) != 0) {
         enum workerResponse response;
         uint32_t inMask;
@@ -797,9 +798,11 @@ noreturn static void useageExit(void) {
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "selectbits [-l logging dir] [-v] [-t <n>] [-c] inputfile outputBits\n");
   fprintf(stderr, "inputfile is assumed to be a stream of uint32_ts\n");
-  fprintf(stderr, "-t <n> \t uses <n> computing threads. (default: ceiling(number of cores * 1.3))\n");
+  fprintf(stderr, "-t <n> \t uses <n> computing threads.\n");
+  fprintf(stderr, "-t <p>%% \t uses <p> %% of the available computing cores. (default: 130%%))\n");
   fprintf(stderr, "-l <dir> \t uses <dir> to contain the log (default: current working directory)\n");
   fprintf(stderr, "-v \t verbose mode.\n");
+  fprintf(stderr, "-T \t Always look at all possible hamming weights. (Tenacious mode)\n");
   fprintf(stderr, "-c \t Conservative mode (use confidence intervals with the Markov estimation).\n");
   exit(EX_USAGE);
 }
@@ -818,7 +821,7 @@ int main(int argc, char *argv[]) {
   struct pollfd *pfds;
   int opt;
   long inparam;
-  uint32_t threadCount;
+  double configThreadMult = 130.0;
   struct threadInfoType *threadInfo;
   uint32_t activeBitsHammingWeight;
   char logdir[4096];
@@ -838,7 +841,6 @@ int main(int argc, char *argv[]) {
     bestMasks[j].mask = 0;
   }
 
-  threadCount = 0;
   datalen = 0;
   configVerbose = 0;
   strncpy(logdir, ".", sizeof(logdir));
@@ -846,7 +848,7 @@ int main(int argc, char *argv[]) {
   assert(PRECISION(UINT_MAX) >= 32);
 
   // Process the command line
-  while ((opt = getopt(argc, argv, "l:vt:c")) != -1) {
+  while ((opt = getopt(argc, argv, "l:vt:cT")) != -1) {
     switch (opt) {
       case 'v':
         configVerbose++;
@@ -854,12 +856,34 @@ int main(int argc, char *argv[]) {
       case 'c':
         configConservative = true;
         break;
+      case 'T':
+        configTenacious = true;
+        break;
       case 't':
-        inparam = strtol(optarg, NULL, 10);
-        if ((inparam <= 0) || (inparam > 10000)) {
+	if(optarg != NULL) {
+	  size_t optlen = strlen(optarg);
+          double indouble;
+	  if(optarg[optlen-1]=='%') {
+            char *nextarg;
+            indouble = strtod(optarg, &nextarg);
+            if ((nextarg == optarg) || (indouble >= HUGE_VAL) || (indouble <= -HUGE_VAL) || (errno == ERANGE) || (indouble < 0.0) ) {
+              fprintf(stderr, "Thread percentage is out of range.\n");
+              useageExit();
+            }
+            configThreadMult = indouble;
+            configThreadCount = 0;
+          } else {
+            inparam = strtol(optarg, NULL, 10);
+            if ((inparam <= 0) || (inparam > 10000)) {
+              useageExit();
+            }
+            configThreadMult = -1.0;
+            configThreadCount = (size_t)inparam;
+          }
+        } else {
+          fprintf(stderr, "Thread specifier is required.\n");
           useageExit();
         }
-        threadCount = (uint32_t)inparam;
         break;
       case 'l':
         strncpy(logdir, optarg, sizeof(logdir));
@@ -929,32 +953,32 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "Shifted mask: 0x%08X\n", nominalBits);
 
   // Try to figure out how many threads to use
-  if (threadCount == 0) {
-    threadCount = (uint32_t)floor(1.3 * (double)processorCount());
+  if (configThreadCount == 0) {
+    configThreadCount = (uint32_t)floor((configThreadMult / 100.0) * (double)processorCount());
   }
 
-  assert(threadCount >= 1);
+  assert(configThreadCount >= 1);
 
-  fprintf(stderr, "Using %u threads\n", threadCount);
+  fprintf(stderr, "Using %zu threads\n", configThreadCount);
 
   // Setup the threads
-  if ((threadInfo = malloc(sizeof(struct threadInfoType) * threadCount)) == NULL) {
+  if ((threadInfo = malloc(sizeof(struct threadInfoType) * configThreadCount)) == NULL) {
     perror("Can't get memory for thread structures (1)");
     exit(EX_OSERR);
   }
 
-  if ((pfds = malloc(sizeof(struct pollfd) * threadCount)) == NULL) {
+  if ((pfds = malloc(sizeof(struct pollfd) * configThreadCount)) == NULL) {
     perror("Can't get memory for thread structures (2)");
     exit(EX_OSERR);
   }
 
-  setupThreads(threadCount, threadInfo, pfds);
+  setupThreads(configThreadCount, threadInfo, pfds);
 
   // Populate the per-nibble patterns used for bounding the min entropy.
   fprintf(stderr, "Pre-calculating nibble entropy for estimation\n");
 
   // Calculate our guess for the entropy associated with each nibble
-  doNibbleAssessments(bitAssessments, activeBits, threadCount, threadInfo, pfds);
+  doNibbleAssessments(bitAssessments, activeBits, configThreadCount, threadInfo, pfds);
 
   // Now process the various bitmasks, explored by hamming weight
   fprintf(stderr, "Starting main assessments.\n");
@@ -962,11 +986,12 @@ int main(int argc, char *argv[]) {
   notDone = true;
 
   for (curHammingWeight = 1; notDone && (curHammingWeight <= outputBits); curHammingWeight++) {
-    notDone = findBestSymbol(statfile, curHammingWeight, activeBits, usedBits, bestMasks, bitAssessments, threadCount, threadInfo, pfds);
+    notDone = findBestSymbol(statfile, curHammingWeight, activeBits, usedBits, bestMasks, bitAssessments, configThreadCount, threadInfo, pfds);
+    if(configTenacious) notDone=true;
   }
 
   // Kill the threads, and don't move on until they are all gone.
-  killThreads(threadCount, threadInfo);
+  killThreads(configThreadCount, threadInfo);
 
   // All the worker threads are done, the poor dears.
   fprintf(statfile, "Final Best Masks: \n");

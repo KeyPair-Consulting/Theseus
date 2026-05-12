@@ -18,22 +18,22 @@
 
 /*A simple pool (block) allocator to deal with all the small allocs in the code*/
 
-static void allocSegment(struct memSegment *new) {
+static void allocSegment(struct memSegment *newSegment) {
   size_t j;
   char *curLoc;
   char *nextLoc;
 
-  assert(new != NULL);
+  assert(newSegment != NULL);
 
-  if (configVerbose > 4) fprintf(stderr, "Allocate a new segment (bsize = %zu)\n", new->blockSize);
+  if (configVerbose > 4) fprintf(stderr, "Allocate a new segment (bsize = %zu)\n", newSegment->blockSize);
 
-  if ((new->segmentStart = malloc(new->blockSize *new->blockCount)) == NULL) {
+  if ((newSegment->segmentStart = malloc(newSegment->blockSize *newSegment->blockCount)) == NULL) {
     perror("Can't allocate data for segment backing");
     exit(EX_OSERR);
   }
-  for (j = 0, curLoc = new->segmentStart; j < new->blockCount - 1; j++, curLoc += new->blockSize) {
+  for (j = 0, curLoc = newSegment->segmentStart; j < newSegment->blockCount - 1; j++, curLoc += newSegment->blockSize) {
     // populate the list with pointers to the next location.
-    nextLoc = curLoc + new->blockSize;
+    nextLoc = curLoc + newSegment->blockSize;
     memcpy(curLoc, &nextLoc, sizeof(char *));
   }
 

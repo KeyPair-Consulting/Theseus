@@ -6,6 +6,7 @@ RDRND=-mrdrnd
 
 #debugging
 CC=clang-20
+
 #Silence selected warnings:
 #-Wno-padded
 #It is not clear why I should care about padding the compiler is adding.
@@ -23,7 +24,18 @@ CC=clang-20
 #This codebase is fundamentally c99 targeted (it uses some of the floating point fanciness introduced in C99,
 #and declares variables in for loop initializers). _Noreturn is used, which is a c11 feature.
 #Such warnings about such uses aren't useful.
-MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage -Wno-pre-c11-compat -Wno-format-nonliteral
+#
+#-Wno-format-nonliteral
+#These are used in a few places
+#
+#-Wno-implicit-void-ptr-cast
+# We use void pointers to refer to abstract memory regions,
+# and performing an explicit task doesn't make anyting better.
+#
+# -Wno-disabled-macro-expansion
+# tolower implementation seems like a problem, but this isn't actually a bug.
+
+MUTE=-Wno-padded -Wno-bad-function-cast -Wno-gnu-statement-expression -Wno-unsafe-buffer-usage -Wno-pre-c11-compat -Wno-format-nonliteral -Wno-implicit-void-ptr-cast -Wno-disabled-macro-expansion
 
 #For general debugging (e.g., with static analyzer)
 #standard debug

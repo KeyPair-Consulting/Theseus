@@ -72,7 +72,8 @@ static inline double square(double x) {
   return x * x;
 }
 
-static inline size_t nextBinaryPower(size_t x) {
+static inline size_t nextBinaryPower(size_t y) {
+  size_t x = y;
   x--;
   x |= x >> 1;
   x |= x >> 2;
@@ -81,6 +82,7 @@ static inline size_t nextBinaryPower(size_t x) {
   x |= x >> 16;
   x |= x >> 32;
   x++;
+  assert(x>y);
   return (x);
 }
 

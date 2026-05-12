@@ -21,6 +21,7 @@ struct randstate {
   uint32_t buffered32;
   sfmt_t sfmt;
   uint64_t xoshiro256starstarState[4];
+  bool quick;
 };
 
 struct SUMSstate {

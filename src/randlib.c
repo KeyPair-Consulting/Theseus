@@ -54,6 +54,7 @@ void initGenerator(struct randstate *rstate) {
   rstate->seeded = false;
   rstate->deterministic = false;
   rstate->buffered32Avail = false;
+  rstate->quick = false;
 }
 
 void seedGenerator(struct randstate *rstate) {
@@ -93,17 +94,18 @@ void seedGenerator(struct randstate *rstate) {
   rstate->seeded = true;
 }
 
-/*There are 3 basic modes here:
+/*There are 4 basic modes here:
  *1) deterministic mode, where the output is the XOR of deterministically seeded SFMT and xoshiro256** generators
  *2) non-deterministic mode on a platform that supports RdRand, where the output is the XOR of the RdRand and xoshiro256** generators
  *3) non-deterministic mode on a platform with no RdRand support, where the output is the XOR of independently seeded SFMT and xoshiro256** generators
+ *4) In "quick" mode, where only xoshiro256** is used.
  *
  * xoshiro256** is modern, fast, and fairly well regarded, but it doesn't have some of the nicer equidistribution properties of the SFMT.
  * SFMT is well analyzed, very well regarded (it's a MT variant) but somewhat slow.
  * RDRAND is a high quality DRBG implementation.
  */
 uint64_t randomu64(struct randstate *rstate) {
-  uint64_t out;
+  uint64_t out = 0;
 #ifdef RDRND
   int rdrndres;
 #endif
@@ -111,19 +113,23 @@ uint64_t randomu64(struct randstate *rstate) {
   assert(rstate != NULL);
   assert(rstate->seeded);
 
-  if (rstate->deterministic) {
-    out = sfmt_genrand_uint64(&(rstate->sfmt));
-    out ^= xoshiro256starstar(rstate->xoshiro256starstarState);
-  } else {
+  out = xoshiro256starstar(rstate->xoshiro256starstarState);
+
+  if(!rstate->quick) {
+    if (rstate->deterministic) {
+      out ^= sfmt_genrand_uint64(&(rstate->sfmt));
+    } else {
 #ifdef RDRND
-    do {
-      rdrndres = (int)__builtin_ia32_rdrand64_step((unsigned long long *)&out);
-    } while (rdrndres != 1);
+      uint64_t hwout=0;
+      do {
+        rdrndres = (int)__builtin_ia32_rdrand64_step((unsigned long long *)&hwout);
+      } while (rdrndres != 1);
+      out ^= hwout;
 #else
-    out = sfmt_genrand_uint64(&(rstate->sfmt));
+      out ^= sfmt_genrand_uint64(&(rstate->sfmt));
 #endif
-    out ^= xoshiro256starstar(rstate->xoshiro256starstarState);
-  }
+    }
+  } //! quick
 
   if (configVerbose > 9) fprintf(stderr, "Random Data: 0x%" PRIx64 "\n", out);
 
@@ -174,11 +180,11 @@ uint32_t randomu32(struct randstate *rstate) {
   }
 }
 
-/*Return an integer in the range [0, high], without modular bias*/
+/*Return an integer in the range [0, s], without modular bias*/
 /*This is a slight modification of Lemire's approach, as we want [0,s] rather than [0,s)*/
-/*See "Fast Random Integer Generation in an Interval" by Lemire (2018) (https://arxiv.org/abs/1805.10941) */
-/* The relevant text explaining the central factor underlying this opaque approach is:
- * "Given an integer x ∈ [0, 2^L), we have that (x × s) ÷ 2^L ∈ [0, s). By multiplying by s, we take
+/*See "Fast Random Integer Generation in an Interval" by Lemire (2018) (https://dl.acm.org/doi/epdf/10.1145/3230636)
+ * The relevant text explaining the central factor underlying this opaque approach is:
+ * "Given an integer x in [0, 2^L), we have that (x × s) ÷ 2^L in [0, s). By multiplying by s, we take
  * integer values in the range [0, 2^L) and map them to multiples of s in [0, s × 2^L). By dividing by 2^L,
  * we map all multiples of s in [0, 2^L) to 0, all multiples of s in [2^L, 2 × 2^L) to one, and so forth. The
  * (i + 1)th interval is [i × 2^L, (i + 1) × 2^L). By Lemma 2.1, there are exactly floor(2^L/s) multiples of s in
@@ -221,7 +227,7 @@ uint32_t randomRange(uint32_t s, struct randstate *rstate) {
   }
 }
 
-/*Return an integer in the range [0, high], without modular bias*/
+/*Return an integer in the range [0, s], without modular bias*/
 uint64_t randomRange64(uint64_t s, struct randstate *rstate) {
   uint64_t x;
   uint128_t m;
